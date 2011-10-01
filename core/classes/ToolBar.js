@@ -65,26 +65,20 @@ ToolBarModel.prototype.getAction = function() {
 };
 
 ToolBarModel.prototype.setActionState = function(actionState) {
-	var _actionState = null;
-	var old = this.getActionState();
-	if(typeof this._actions == 'undefined'){
-		_actionState = {};
-		_actionState[DBDesigner.Action.SELECT] = true;
-		_actionState[DBDesigner.Action.ADD_TABLE] = true;
-		_actionState[DBDesigner.Action.ADD_COLUMN] = true;
-		_actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true
-		_actionState[DBDesigner.Action.SAVE] = true;
-		_actionState[DBDesigner.Action.DROP_TABLE] = false;
-	}
-	else _actionState = old;
-	_actionState = $.extend(_actionState, actionState);
-	if(_actionState != old){
-		this._actionState = _actionState;
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'actionState', oldValue: old, newValue: _actionState});	
-	}
+	this._actionState = $.extend({}, this.getActionState(), actionState);
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'actionState'});	
 };
 
 ToolBarModel.prototype.getActionState = function() {
+	if(typeof this._actionState == 'undefined'){
+		this._actionState = {};
+		this._actionState[DBDesigner.Action.SELECT] = true;
+		this._actionState[DBDesigner.Action.ADD_TABLE] = true;
+		this._actionState[DBDesigner.Action.ADD_COLUMN] = false;
+		this._actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+		this._actionState[DBDesigner.Action.SAVE] = true;
+		this._actionState[DBDesigner.Action.DROP_TABLE] = false;
+	}
 	return this._actionState;
 };
 
@@ -145,8 +139,8 @@ ToolBarUI.prototype.updateActionState = function() {
 	var actionState = model.getActionState();
 	for(var action in actionState){
 		sel = '.' + this.getCssClass(action);
-		if(actionState[action] === false) dom.find(sel).addClass('ui-state-disabled').removeClass('ui-state-default');
-		else dom.find(sel).addClass('ui-state-default').removeClass('ui-state-disabled');
+		if(actionState[action] === false) dom.find(sel).addClass('ui-state-disabled');
+		else dom.find(sel).removeClass('ui-state-disabled');
 	}
 };
 

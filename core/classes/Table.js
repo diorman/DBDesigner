@@ -15,6 +15,10 @@ Table.prototype.getName = function(){
 	return this.getModel().getName();
 };
 
+Table.prototype.isSelected = function(){
+	return this.getModel().isSelected();
+};
+
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
@@ -23,6 +27,9 @@ Table.prototype.modelPropertyChanged = function(event) {
 			break;
 		case 'collapsed':
 			ui.updateCollapsed(event.newValue);
+			break;
+		case 'selected':
+			this.trigger(Table.Event.SELECTION_CHANGED, {tableIsSelected: event.newValue});
 			break;
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
@@ -88,6 +95,19 @@ TableModel.prototype.setCollapsed = function(b){
 	}
 };
 
+TableModel.prototype.isSelected = function(){
+	if(typeof this._selected == 'undefined') this._selected = false;
+	return this._selected;
+};
+
+TableModel.prototype.setSelected = function(b){
+	var oldValue = this.isSelected();
+	if(oldValue != b){
+		this._selected = b;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'selected', oldValue: oldValue, newValue: b});
+	}
+};
+
 // *****************************************************************************
 
 TableUI = function(controller) {
@@ -102,9 +122,12 @@ $.extend(TableUI.prototype, ComponentUI);
 
 TableUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
+	var selectionChanged = $.proxy(this.selectionChanged, this);
 	dom.bind({
 		dragstart: $.proxy(this.onDragStart, this),
-		dragstop: $.proxy(this.onDragStop, this)
+		dragstop: $.proxy(this.onDragStop, this),
+		selectableselected: selectionChanged,
+		selectableunselected: selectionChanged
 	});
 	dom.find('a.button').click($.proxy(this.onButtonPressed, this));
 	dom.find('div.header').dblclick($.proxy(this.onHeaderDblClicked, this));
@@ -114,6 +137,8 @@ TableUI.prototype.updateView = function(){
 	var model = this.getController().getModel();
 	this.updatePosition(model.getPosition());
 	this.updateName(model.getName());
+	this.updateCollapsed(model.isCollapsed());
+	this.updateSelected(model.isSelected());
 };
 
 TableUI.prototype.updatePosition = function(position){
@@ -175,4 +200,22 @@ TableUI.prototype.updateCollapsed = function(b){
 			.addClass('ui-icon-circle-triangle-s');
 	}
 	this.updateWidth();
+};
+
+TableUI.prototype.updateSelected = function(b){
+	var dom = this.getDom();
+	var hasClass = dom.hasClass('ui-selected');
+	if(b && !hasClass) dom.addClass('ui-selected');
+	else if(!b && hasClass) dom.removeClass('ui-selected');
+};
+
+TableUI.prototype.selectionChanged = function(event){
+	var selected = event.type == 'selectableselected';
+	this.getController().getModel().setSelected(selected);
+};
+
+// *****************************************************************************
+
+Table.Event = {
+	SELECTION_CHANGED: 'selectionchanged',
 };

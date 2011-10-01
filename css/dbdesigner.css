@@ -141,6 +141,9 @@ div.canvas div.db-table div.header a.button{
 	margin: 2px 1px 0px;
 	visibility: hidden;
 }
+
+div.canvas div.db-table div.header a.button:active {top: 1px;}
+
 div.canvas div.db-table div.header a.button span{
     position: absolute;
 	top: 50%;

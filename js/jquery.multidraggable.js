@@ -30,28 +30,28 @@
 		mousedown: function(event){
 			var $this = $(this);
 			if(!event.ctrlKey && !$this.hasClass('ui-selected')){
-				$this.siblings('.ui-selected').removeClass('ui-selected');
-				$this.addClass('ui-selected');
+				$this.addClass('ui-selected').trigger('selectableselected')
+				.siblings('.ui-selected').removeClass('ui-selected').trigger('selectableunselected');
 			}
 		},
 		click: function(event){
 			var $this = $(this);
 			if(event.ctrlKey) {
 				if($this.hasClass('ui-selected')) {
-					$this.removeClass('ui-selected');
+					$this.removeClass('ui-selected').trigger('selectableunselected');
 				} 
 				else {
-					$this.addClass('ui-selected');
+					$this.addClass('ui-selected').trigger('selectableselected');
 				}
-				//this.model.dispatchEvent(CanvasEvent.SELECTION_CHANGE);
 			}else if($this.hasClass('ui-selected')){
-				$this.siblings('.ui-selected').removeClass('ui-selected');
-				$this.addClass('ui-selected');
+				$this.siblings('.ui-selected').removeClass('ui-selected').trigger('selectableunselected');
 			}
 		},
 		group: $(),
 		
 		selectionChange: function(event, ui){
+			var div = (event.type == 'selectableselected')? ui.selected : ui.unselected ;
+			$(div).trigger(event.type);
 		}
 	};
 	$.fn.extend({

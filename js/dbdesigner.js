@@ -267,26 +267,20 @@ ToolBarModel.prototype.getAction = function() {
 };
 
 ToolBarModel.prototype.setActionState = function(actionState) {
-	var _actionState = null;
-	var old = this.getActionState();
-	if(typeof this._actions == 'undefined'){
-		_actionState = {};
-		_actionState[DBDesigner.Action.SELECT] = true;
-		_actionState[DBDesigner.Action.ADD_TABLE] = true;
-		_actionState[DBDesigner.Action.ADD_COLUMN] = true;
-		_actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true
-		_actionState[DBDesigner.Action.SAVE] = true;
-		_actionState[DBDesigner.Action.DROP_TABLE] = false;
-	}
-	else _actionState = old;
-	_actionState = $.extend(_actionState, actionState);
-	if(_actionState != old){
-		this._actionState = _actionState;
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'actionState', oldValue: old, newValue: _actionState});	
-	}
+	this._actionState = $.extend({}, this.getActionState(), actionState);
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'actionState'});	
 };
 
 ToolBarModel.prototype.getActionState = function() {
+	if(typeof this._actionState == 'undefined'){
+		this._actionState = {};
+		this._actionState[DBDesigner.Action.SELECT] = true;
+		this._actionState[DBDesigner.Action.ADD_TABLE] = true;
+		this._actionState[DBDesigner.Action.ADD_COLUMN] = false;
+		this._actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+		this._actionState[DBDesigner.Action.SAVE] = true;
+		this._actionState[DBDesigner.Action.DROP_TABLE] = false;
+	}
 	return this._actionState;
 };
 
@@ -347,8 +341,8 @@ ToolBarUI.prototype.updateActionState = function() {
 	var actionState = model.getActionState();
 	for(var action in actionState){
 		sel = '.' + this.getCssClass(action);
-		if(actionState[action] === false) dom.find(sel).addClass('ui-state-disabled').removeClass('ui-state-default');
-		else dom.find(sel).addClass('ui-state-default').removeClass('ui-state-disabled');
+		if(actionState[action] === false) dom.find(sel).addClass('ui-state-disabled');
+		else dom.find(sel).removeClass('ui-state-disabled');
 	}
 };
 
@@ -902,6 +896,10 @@ Table.prototype.getName = function(){
 	return this.getModel().getName();
 };
 
+Table.prototype.isSelected = function(){
+	return this.getModel().isSelected();
+};
+
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
@@ -910,6 +908,9 @@ Table.prototype.modelPropertyChanged = function(event) {
 			break;
 		case 'collapsed':
 			ui.updateCollapsed(event.newValue);
+			break;
+		case 'selected':
+			this.trigger(Table.Event.SELECTION_CHANGED, {tableIsSelected: event.newValue});
 			break;
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
@@ -975,6 +976,19 @@ TableModel.prototype.setCollapsed = function(b){
 	}
 };
 
+TableModel.prototype.isSelected = function(){
+	if(typeof this._selected == 'undefined') this._selected = false;
+	return this._selected;
+};
+
+TableModel.prototype.setSelected = function(b){
+	var oldValue = this.isSelected();
+	if(oldValue != b){
+		this._selected = b;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'selected', oldValue: oldValue, newValue: b});
+	}
+};
+
 // *****************************************************************************
 
 TableUI = function(controller) {
@@ -989,9 +1003,12 @@ $.extend(TableUI.prototype, ComponentUI);
 
 TableUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
+	var selectionChanged = $.proxy(this.selectionChanged, this);
 	dom.bind({
 		dragstart: $.proxy(this.onDragStart, this),
-		dragstop: $.proxy(this.onDragStop, this)
+		dragstop: $.proxy(this.onDragStop, this),
+		selectableselected: selectionChanged,
+		selectableunselected: selectionChanged
 	});
 	dom.find('a.button').click($.proxy(this.onButtonPressed, this));
 	dom.find('div.header').dblclick($.proxy(this.onHeaderDblClicked, this));
@@ -1001,6 +1018,8 @@ TableUI.prototype.updateView = function(){
 	var model = this.getController().getModel();
 	this.updatePosition(model.getPosition());
 	this.updateName(model.getName());
+	this.updateCollapsed(model.isCollapsed());
+	this.updateSelected(model.isSelected());
 };
 
 TableUI.prototype.updatePosition = function(position){
@@ -1063,6 +1082,24 @@ TableUI.prototype.updateCollapsed = function(b){
 	}
 	this.updateWidth();
 };
+
+TableUI.prototype.updateSelected = function(b){
+	var dom = this.getDom();
+	var hasClass = dom.hasClass('ui-selected');
+	if(b && !hasClass) dom.addClass('ui-selected');
+	else if(!b && hasClass) dom.removeClass('ui-selected');
+};
+
+TableUI.prototype.selectionChanged = function(event){
+	var selected = event.type == 'selectableselected';
+	this.getController().getModel().setSelected(selected);
+};
+
+// *****************************************************************************
+
+Table.Event = {
+	SELECTION_CHANGED: 'selectionchanged',
+};
 TableCollection = function(){
 	this._tables = [];
 	this._selectedTables = [];
@@ -1076,5 +1113,50 @@ TableCollection.prototype.getTableByName = function(name){
 };
 
 TableCollection.prototype.add = function(table){
-	this._tables.push(table);
+	if(table.isSelected()) this.addToSelection(table);
+	if($.inArray(table, this._tables) == -1) this._tables.push(table);
+	
+	table.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
 };
+
+TableCollection.prototype.addToSelection = function(table){
+	if($.inArray(table, this._selectedTables) == -1) this._selectedTables.push(table);
+};
+
+TableCollection.prototype.removeFromSelection = function(table){
+	var index = $.inArray(table, this._selectedTables);
+	if(index >= 0) this._selectedTables.splice(index, 1);
+};
+
+TableCollection.prototype.tableSelectionChanged = function(event){
+	var l = this._selectedTables.length;
+	if(event.tableIsSelected) this.addToSelection(event.sender);
+	else this.removeFromSelection(event.sender);
+	
+	var l2 = this._selectedTables.length;
+	
+	if(l != l2){
+		var actionState = {};
+		switch(l2){
+			case 0:
+				actionState[DBDesigner.Action.ADD_COLUMN] = false;
+				actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+				actionState[DBDesigner.Action.DROP_TABLE] = false;
+				break;
+			case 1:
+				actionState[DBDesigner.Action.ADD_COLUMN] = true;
+				actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true;
+				actionState[DBDesigner.Action.DROP_TABLE] = true;
+				break;
+			default:
+				actionState[DBDesigner.Action.ADD_COLUMN] = false;
+				actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+				actionState[DBDesigner.Action.DROP_TABLE] = true;
+				break;
+		}
+		
+		DBDesigner.app.toolBar.setActionState(actionState);
+	}
+};
+
+
