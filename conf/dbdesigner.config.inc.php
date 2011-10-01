@@ -10,12 +10,15 @@
 
 		const table = 'erdiagrams';
 
-		const jquery = './libraries/js/jquery.js';
+		
+		const dbdesignerJS = 'plugins/DBDesigner/js/dbdesigner.js';
 
-		const jquery_ui = './libraries/js/dbdesigner/jquery-ui-1.8.2.custom.min.js';
+		const jquery = 'plugins/DBDesigner/js/jquery-1.6.2.min.js';
 
-		const jquery_ui_theme = './themes/default/dbdesigner/jqueryui/jquery-ui-1.8.2.custom.css';
+		const jqueryUi = 'plugins/DBDesigner/js/jquery-ui-1.8.16.custom.min.js';
 
-		const theme = './themes/default/dbdesigner/dbdesigner.css';
+		const jqueryUiTheme = 'plugins/DBDesigner/css/jqueryui/jquery-ui-1.8.16.custom.css';
+
+		const theme = 'plugins/DBDesigner/css/dbdesigner.css';
 
 	}

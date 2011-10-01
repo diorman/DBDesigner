@@ -90,7 +90,7 @@ class DBDesigner extends Plugin {
 		switch ($plugin_functions_parameters['section']) {
 			case 'schema':
 				$tabs['showDefault'] = array (
-					'title' => $this->lang['strerdiagram'],
+					'title' => $this->lang['strerdiagrams'],
 					'url' => 'plugin.php',
 					'urlvars' => array(
 						'subject' => 'server', 
@@ -636,25 +636,47 @@ class DBDesigner extends Plugin {
 		if(is_null($diagram)) {
 			$this->showDefault();
 			exit;
-		}//<!--//--><![CDATA[//><!-- //--><!]]>
+		}
 		
+		$templateManager = $this->getTemplateManager();
 		
+		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/reset.css" />';
+		$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::jqueryUiTheme.'" />';
+		$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::theme.'" />';
+		
+		$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jquery.'"></script>';
+		$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jqueryUi.'"></script>';
+		$scripts .= '<script type="text/javascript" src="plugins/DBDesigner/js/jquery.multidraggable.js"></script>';
+		$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::dbdesignerJS.'"></script>';
 		
 		ob_start(); ?>
 			<script type="text/javascript">
 				//<!--//--><![CDATA[//><!--
-				var globals = {};
-				globals.lang = {
-					<?php echo implode(',', $this->getJSLanguage()); ?>
+				DBDesigner.lang = <?php echo $this->getJSLanguage(); ?>;
+				DBDesigner.maxNameLength = "<?php echo $data->_maxNameLen; ?>";
+				DBDesigner.dataTypes = <?php echo $this->getDataTypes(); ?>;
+				DBDesigner.server = "<?php echo $_REQUEST["server"]; ?>";
+				DBDesigner.database = "<?php echo $diagram->pgDatabase; ?>";
+				DBDesigner.schema = "<?php echo $diagram->pgSchema; ?>";
+				DBDesigner.erdiagramId = "<?php echo $diagram->id; ?>";
+				DBDesigner.templateManager = <?php echo $templateManager; ?>;
+				DBDesigner.Action = {
+					SELECT: 'select',
+					ADD_TABLE: 'addTable',
+					EDIT_TABLE: 'editTable',
+					ADD_FOREIGNKEY: 'addFk',
+					ADD_COLUMN: 'addColumn',
+					DROP_TABLE: 'dropTable',
+					SAVE: 'save'
 				};
+				DBDesigner.Event = { PROPERTY_CHANGED: 'propertyChanged' };
 				
-				globals.maxNameLength = "<?php echo $data->_maxNameLen; ?>";
-				globals.dataTypes = [<?php echo implode(',', $this->getDataTypes()); ?>];
-				globals.server = "<?php echo $_REQUEST["server"]; ?>";
-				globals.database = "<?php echo $diagram->pgDatabase; ?>";
-				globals.schema = "<?php echo $diagram->pgSchema; ?>";
-				globals.erdiagramId = "<?php echo $diagram->id; ?>";
-
+				//Disable the default stylesheet
+				$(function(){
+					$('head link[rel="stylesheet"][href$="global.css"]').prop('disabled', true);
+					DBDesigner.init();
+					$('#loading-msg').remove();
+				});
 				//--><!]]>
 			</script>
 		<?php $scripts .= ob_get_clean();
@@ -664,8 +686,17 @@ class DBDesigner extends Plugin {
 		$misc->printBody();
 		//printVars();
 		echo "<noscript>{$this->lang['strerdiagramnoscript']}</noscript>";
+		echo '<p id="loading-msg">'.$this->lang['strloading'].'</p>';
 		$misc->printFooter();
 	}
+	
+	function getTemplateManager(){
+		global $data;
+		$templateManager = array();
+		require_once 'plugins/DBDesigner/core/templateManager.php';
+		return $this->jsonEncode($templateManager );
+	}
+	
 	
 	function getDataTypes(){
         global $data;
@@ -683,13 +714,13 @@ class DBDesigner extends Plugin {
         $unpredefined_size_types = array_diff(array_keys($types_for_js), $predefined_size_types);
         $escaped_predef_types = array(); // the JS escaped array elements
         foreach($predefined_size_types as $value) {
-            $escaped_types[] = "{typedef: '".strtoupper($value)."', size_predefined: true}";
+			$escaped_types[] = array('typedef' => strtoupper($value), 'size_predefined' => TRUE);
         }
         foreach($unpredefined_size_types as $value) {
-            $escaped_types[] = "{typedef: '".strtoupper($value)."', size_predefined: false}";
+			$escaped_types[] = array('typedef' => strtoupper($value), 'size_predefined' => FALSE);
         }
-		asort($escaped_types);
-        return $escaped_types;
+		sort($escaped_types);
+        return $this->jsonEncode($escaped_types);
     }
 	
 	function getJSLanguage(){
@@ -756,8 +787,26 @@ class DBDesigner extends Plugin {
 		
 		$js_lang = array();
 		foreach ($lang_keys as $key){
-			$js_lang[] = $key.': "'.html_entity_decode($this->lang[$key], ENT_NOQUOTES, $this->lang['appcharset']).'"';
+			$js_lang[$key] = html_entity_decode($this->lang[$key], ENT_NOQUOTES, $this->lang['appcharset']);
 		}
-		return $js_lang;
+		return $this->jsonEncode($js_lang);
+	}
+	
+	function jsonEncode($data){
+		if(!function_exists('json_encode')){
+			require_once 'plugins/DBDesigner/classes/JSON.php';
+			$value = new Services_JSON();
+			return $value->encode($data);
+		}
+		return json_encode($data);
+	}
+	
+	function jsonDecode($data){
+		if(!function_exists('json_decode')){
+			require_once 'plugins/DBDesigner/classes/JSON.php';
+			$value = new Services_JSON();
+			return $value->decode($data);
+		}
+		return json_decode($data);
 	}
 }
