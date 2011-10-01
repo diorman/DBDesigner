@@ -8,7 +8,9 @@
     /*include_once './conf/dbdesigner.config.inc.php';*/
 
     class ERDiagram{
-        //store vars are used to get info about diagrams
+        private static $settedUp = FALSE;
+
+		//store vars are used to get info about diagrams
         private static $storeDriver;
         private static $storeDatabase;
         private static $storeSchema;
@@ -76,39 +78,44 @@
 		}
 		
 		
+		public static function isSettedUp(){
+			return ERDiagram::$settedUp;
+		}
 		
         public static function setUpDrivers(){
+			if(ERDiagram::$settedUp) return TRUE;
             global $misc;
 			ERDiagram::$storeDatabase = DBDesignerConfig::database;
             ERDiagram::$storeSchema = DBDesignerConfig::schema;
             ERDiagram::$storeTable = DBDesignerConfig::table;
             $status = ERDiagram::checkDatabaseAndSchema();
-            if($status == 0){
+            if($status){
                 ERDiagram::$logicDatabase = isset($_REQUEST['database'])? $_REQUEST['database'] : '';
                 ERDiagram::$logicSchema = isset($_REQUEST['schema'])?$_REQUEST['schema'] : '';
                 ERDiagram::$logicDriver = $misc->getDatabaseAccessor(ERDiagram::$logicDatabase);
             }
+			ERDiagram::$settedUp = $status;
 			return $status;
         }
 
         /**
          * Checks to see if the diagrams database and schema exists
-         * @return 0 Success
-         * @return -1 Fail
+         * @return TRUE Success
+         * @return FALSE Fail
          */
         public static function checkDatabaseAndSchema(){
             global $data, $misc;
             $rs = $data->getDatabase(ERDiagram::$storeDatabase);
-            if ($rs->recordCount() != 1) return -1;
+            if ($rs->recordCount() != 1) return FALSE;
 
             // Create a new database access object.
             ERDiagram::$storeDriver = $misc->getDatabaseAccessor(ERDiagram::$storeDatabase);
             
             $sql = "SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname='".pg_escape_string(ERDiagram::$storeSchema)."'";
             $rs = ERDiagram::$storeDriver->selectSet($sql);
-            if($rs->recordCount() != 1) return -1;
+            if($rs->recordCount() != 1) return FALSE;
             ERDiagram::$storeDriver->setSchema(ERDiagram::$storeSchema);
-            return 0;
+            return TRUE;
         }
 
 		public static function load($id){

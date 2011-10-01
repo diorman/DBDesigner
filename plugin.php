@@ -18,17 +18,38 @@ class DBDesigner extends Plugin {
 	 * @param $language Current phpPgAdmin language. If it was not found in the plugin, English will be used.
 	 */
 	function __construct($language) {
-		global $data, $lang;
+		global $data, $lang, $misc;
 		
-		//Set default action in case of empty action
-		if(isset($_REQUEST['plugin']) && $_REQUEST['plugin'] == $this->name && isset($_REQUEST['action']) && empty($_REQUEST['action'])){
-			$_REQUEST['action'] = 'showDefault';
-		}
-		parent::__construct($language);
-		$this->lang = array_merge($lang, $this->lang);
 		if(!is_null($data)) ERDiagram::setUpDrivers();
+		parent::__construct($language);
+		
+		
+		if(isset($_REQUEST['plugin']) && $_REQUEST['plugin'] == $this->name && (!isset($_REQUEST['action']) || empty($_REQUEST['action']))){
+			//Set default action in case of empty action
+			$_REQUEST['action'] = 'showDefault';				
+		}
 	}
 
+	
+	function _($langkey){
+		global $lang;
+		if(isset($this->lang[$langkey])) return $this->lang[$langkey];
+		return $lang[$langkey];
+	}
+	
+	function checkInstallation(){
+		if(!ERDiagram::isSettedUp()){
+			global $misc;
+			$misc->printHeader($this->_('strerdiagrams'));
+			$misc->printBody();
+			$misc->printTrail('schema');
+			$misc->printMsg($this->_('strbadinstallation'));
+			$misc->printFooter();
+			exit;
+		}
+	}
+	
+	
 	/**
 	 * This method returns the functions that will hook in the phpPgAdmin core.
 	 * To do include a function just put in the $hooks array the follwing code:
@@ -65,6 +86,8 @@ class DBDesigner extends Plugin {
 	 * @return $actions
 	 */
 	function get_actions() {
+		if(!ERDiagram::isSettedUp()) return array('showDefault', 'tree');
+		
 		$actions = array(
 			'showDefault',
 			'showCreateEdit',
@@ -90,7 +113,7 @@ class DBDesigner extends Plugin {
 		switch ($plugin_functions_parameters['section']) {
 			case 'schema':
 				$tabs['showDefault'] = array (
-					'title' => $this->lang['strerdiagrams'],
+					'title' => $this->_('strerdiagrams'),
 					'url' => 'plugin.php',
 					'urlvars' => array(
 						'subject' => 'server', 
@@ -105,11 +128,10 @@ class DBDesigner extends Plugin {
 		}
 	}
 
-
 	function showDefault($msg = '') {
-        global $erdiagrams, $misc;
-
-		$misc->printHeader($this->lang['strerdiagrams']);
+        global $misc;
+		$this->checkInstallation();
+		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
         $misc->printTrail('schema');
 		$misc->printTabs('schema','showDefault');
@@ -119,28 +141,28 @@ class DBDesigner extends Plugin {
 
         $columns = array(
             'erdiagram' => array(
-                'title' => $this->lang['strerdiagram'],
+                'title' => $this->_('strerdiagram'),
                 'field' => field('name'),
                 'url' => "plugin.php?plugin={$this->name}&amp;action=showDiagram&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
             ),
             'owner' => array(
-                'title' => $this->lang['strowner'],
+                'title' => $this->_('strowner'),
                 'field' => field('owner_name'),
             ),
             'date_created' => array(
-                'title' => $this->lang['strcreated'],
+                'title' => $this->_('strcreated'),
                 'field' => field('date_created'),
             ),
             'last_update' => array(
-                'title' => $this->lang['strlastupdate'],
+                'title' => $this->_('strlastupdate'),
                 'field' => field('last_update'),
             ),
             'actions' => array(
-                'title' => $this->lang['stractions'],
+                'title' => $this->_('stractions'),
             ),
             'comment' => array(
-                'title' => $this->lang['strcomment'],
+                'title' => $this->_('strcomment'),
                 'field' => field('comment'),
             ),
         );
@@ -151,30 +173,30 @@ class DBDesigner extends Plugin {
                 'url' => 'plugin.php?plugin='.$this->name,
             ),
             'edit' => array(
-                'title' => $this->lang['stredit'],
+                'title' => $this->_('stredit'),
                 'url'   => "plugin.php?plugin={$this->name}&amp;action=showCreateEdit&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
             ),
             'drop' => array(
-                'title' => $this->lang['strdrop'],
+                'title' => $this->_('strdrop'),
                 'url'   => "plugin.php?plugin={$this->name}&amp;action=showDrop&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
                 'multiaction' => 'showDrop',
             ),
             'open' => array(
-                'title' => $this->lang['stropen'],
+                'title' => $this->_('stropen'),
                 'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
             ),
             'opennewwindow' => array(
-                'title' => $this->lang['stropeninnewwindow'],
+                'title' => $this->_('stropeninnewwindow'),
                 'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;new_window=true&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
             ),
         );
 				
 		
-        $misc->printTable($diagrams, $columns, $actions, 'dbdesigner-dbdesigner', $this->lang['strnoerdiagrams']);
+        $misc->printTable($diagrams, $columns, $actions, 'dbdesigner-dbdesigner', $this->_('strnoerdiagrams'));
 		
 		$navlinks = array (
 			array (
@@ -189,7 +211,7 @@ class DBDesigner extends Plugin {
 							'action' => 'showCreateEdit')
 					)
 				),
-				'content' => $this->lang['strcreateerdiagram'] 
+				'content' => $this->_('strcreateerdiagram') 
 			)
 		);
 		$misc->printNavLinks($navlinks, 'dbdesigner-dbdesigner');
@@ -206,11 +228,11 @@ class DBDesigner extends Plugin {
 			exit;
 		}
 
-		$misc->printHeader($this->lang['strerdiagrams']);
+		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
         $misc->printTrail('schema');
 		$misc->printTabs('schema','showDefault');
-		$misc->printTitle(($diagram->id == 0)? $this->lang['strcreateerdiagram']: $this->lang['strediterdiagram']);
+		$misc->printTitle(($diagram->id == 0)? $this->_('strcreateerdiagram'): $this->_('strediterdiagram'));
         $misc->printMsg($msg);
 
         //Due owner always have privileges, he is removed from select controls
@@ -227,7 +249,7 @@ class DBDesigner extends Plugin {
 			<table style="width:100%">
 				<tr>
 					<th class="data left required">
-						<label for="diagramName"><?php echo htmlspecialchars($this->lang['strname']) ?></label>
+						<label for="diagramName"><?php echo htmlspecialchars($this->_('strname')) ?></label>
 					</th>
 					<td class="data1">
 						<input id="diagramName" name="diagram[name]" size="32" maxlength="<?php echo $data->_maxNameLen; ?>" value="<?php echo htmlspecialchars($diagram->name) ?>" />
@@ -235,7 +257,7 @@ class DBDesigner extends Plugin {
 				</tr>
 				<tr>
 					<th class="data left">
-						<label for="diagramComment"><?php echo $this->lang['strcomment'] ?></label>
+						<label for="diagramComment"><?php echo $this->_('strcomment') ?></label>
 					</th>
 					<td class="data1">
 						<textarea id="diagramComment" name="diagram[comment]" rows="3" cols="32"><?php echo htmlspecialchars($diagram->comment)?></textarea>
@@ -243,16 +265,16 @@ class DBDesigner extends Plugin {
 				</tr>
 				
 				<tr>
-					<th class="data left" colspan="2" style="text-align:center;"><?php echo $this->lang['strprivileges']; ?></th>
+					<th class="data left" colspan="2" style="text-align:center;"><?php echo $this->_('strprivileges'); ?></th>
 				</tr>
 				<tr>
-					<th class="data left"><?php echo $this->lang['strowner'] ?></th>
+					<th class="data left"><?php echo $this->_('strowner'); ?></th>
 					<td class="data1"><?php echo htmlspecialchars($diagram->ownerName); ?></td>
 				</tr>
 				
 				
 				<tr>
-					<th class="data left"><label for="diagramGroups"><?php echo $this->lang['strgroups']; ?></label></th>
+					<th class="data left"><label for="diagramGroups"><?php echo $this->_('strgroups'); ?></label></th>
 					<td class="data1">
 						<table>
 							<tr>
@@ -267,9 +289,9 @@ class DBDesigner extends Plugin {
 									</select>
 								</td>
 								<td class="data1">
-									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramGroups','diagramGrantedGroups')" title="<?php echo $this->lang['strgrant']; ?>">&Gg;</a>
+									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramGroups','diagramGrantedGroups')" title="<?php echo $this->_('strgrant'); ?>">&Gg;</a>
 									<br />
-									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramGrantedGroups','diagramGroups')" title="<?php echo $this->lang['strrevoke']; ?>">&Ll;</a>
+									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramGrantedGroups','diagramGroups')" title="<?php echo $this->_('strrevoke'); ?>">&Ll;</a>
 								</td>
 								<td class="data1">
 									<select id="diagramGrantedGroups" name="diagram[granted_groups][]" style="width:150px;" multiple="multiple" size="10">
@@ -287,7 +309,7 @@ class DBDesigner extends Plugin {
 				</tr>
 				
 				<tr>
-					<th class="data left"><label for="diagramUsers"><?php echo $this->lang['strusers']; ?></label></th>
+					<th class="data left"><label for="diagramUsers"><?php echo $this->_('strusers'); ?></label></th>
 					<td class="data1">
 						<table>
 							<tr>
@@ -302,9 +324,9 @@ class DBDesigner extends Plugin {
 									</select>
 								</td>
 								<td class="data1">
-									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramUsers','diagramGrantedUsers')" title="<?php echo $this->lang['strgrant']; ?>">&Gg;</a>
+									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramUsers','diagramGrantedUsers')" title="<?php echo $this->_('strgrant'); ?>">&Gg;</a>
 									<br />
-									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramGrantedUsers','diagramUsers')" title="<?php echo $this->lang['strrevoke']; ?>">&Ll;</a>
+									<a href="#" onclick="return ERDiagram.swapSelectedOptions('diagramGrantedUsers','diagramUsers')" title="<?php echo $this->_('strrevoke'); ?>">&Ll;</a>
 								</td>
 								<td class="data1">
 									<select id="diagramGrantedUsers" name="diagram[granted_users][]" style="width:150px;" multiple="multiple" size="10">
@@ -327,8 +349,8 @@ class DBDesigner extends Plugin {
 			<input type="hidden" name="diagram[id]" value="<?php echo htmlspecialchars($diagram->id);?>" />
 			<input type="hidden" name="action" value="save" />
 			<div>
-				<input type="submit" name="create" value="<?php echo ($diagram->id == 0)? $this->lang['strcreate']: $this->lang['stralter']?>" />
-				<input type="submit" name="cancel" value="<?php echo $this->lang['strcancel'];?>" />
+				<input type="submit" name="create" value="<?php echo ($diagram->id == 0)? $this->_('strcreate'): $this->_('stralter'); ?>" />
+				<input type="submit" name="cancel" value="<?php echo $this->_('strcancel');?>" />
 			</div>
 		</form>
 		
@@ -340,10 +362,10 @@ class DBDesigner extends Plugin {
 		if(isset($_POST['cancel'])) $this->showDefault();
 		else {
 			$diagram = ERDiagram::loadFromRequest();
-			if(empty ($diagram->name)) $this->showCreateEdit($this->lang['strerdiagramneedsname']);
+			if(empty ($diagram->name)) $this->showCreateEdit($this->_('strerdiagramneedsname'));
 			else {
-				$success_msg = ($diagram->id == 0)? $this->lang['strerdiagramcreated'] : $this->lang['strerdiagramaltered'];
-				$fail_msg = ($diagram->id == 0)? $this->lang['strerdiagramcreatedbad']: $this->lang['strerdiagramalteredbad'];
+				$success_msg = ($diagram->id == 0)? $this->_('strerdiagramcreated') : $this->_('strerdiagramaltered');
+				$fail_msg = ($diagram->id == 0)? $this->_('strerdiagramcreatedbad'): $this->_('strerdiagramalteredbad');
 				
 				$status = $diagram->save();
 				if ($status == 0){
@@ -365,11 +387,11 @@ class DBDesigner extends Plugin {
 			exit;
 		}
 
-		$misc->printHeader($this->lang['strerdiagrams']);
+		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
         $misc->printTrail('schema');
 		$misc->printTabs('schema','showDefault');
-		$misc->printTitle($this->lang['strerdiagramproperties']);
+		$misc->printTitle($this->_('strerdiagramproperties'));
 
         //Due owner always have privileges, he is removed from select controls
 		$temp = array_merge($diagram->rolesWithPrivileges, array($diagram->owner));
@@ -384,7 +406,7 @@ class DBDesigner extends Plugin {
 		<table>
 			<tr>
 				<th class="data left">
-					<?php echo htmlspecialchars($this->lang['strname']) ?>
+					<?php echo htmlspecialchars($this->_('strname')) ?>
 				</th>
 				<td class="data1">
 					<?php echo htmlspecialchars($diagram->name) ?>
@@ -392,7 +414,7 @@ class DBDesigner extends Plugin {
 			</tr>
 			<tr>
 				<th class="data left">
-					<?php echo htmlspecialchars($this->lang['strcreated']) ?>
+					<?php echo htmlspecialchars($this->_('strcreated')) ?>
 				</th>
 				<td class="data1">
 					<?php echo htmlspecialchars($diagram->dateCreated) ?>
@@ -400,7 +422,7 @@ class DBDesigner extends Plugin {
 			</tr>
 			<tr>
 				<th class="data left">
-					<?php echo htmlspecialchars($this->lang['strlastupdate']) ?>
+					<?php echo htmlspecialchars($this->_('strlastupdate')) ?>
 				</th>
 				<td class="data1">
 					<?php echo htmlspecialchars($diagram->lastUpdate) ?>
@@ -408,7 +430,7 @@ class DBDesigner extends Plugin {
 			</tr>
 			<tr>
 				<th class="data left">
-					<?php echo $this->lang['strcomment'] ?>
+					<?php echo $this->_('strcomment') ?>
 				</th>
 				<td class="data1">
 					<?php echo htmlspecialchars($diagram->comment)?>
@@ -416,16 +438,16 @@ class DBDesigner extends Plugin {
 			</tr>
 
 			<tr>
-				<th class="data left" colspan="2" style="text-align:center;"><?php echo $this->lang['strprivileges']; ?></th>
+				<th class="data left" colspan="2" style="text-align:center;"><?php echo $this->_('strprivileges'); ?></th>
 			</tr>
 			<tr>
-				<th class="data left"><?php echo $this->lang['strowner'] ?></th>
+				<th class="data left"><?php echo $this->_('strowner') ?></th>
 				<td class="data1"><?php echo htmlspecialchars($diagram->ownerName); ?></td>
 			</tr>
 
 
 			<tr>
-				<th class="data left"><?php echo $this->lang['strgroups']; ?></th>
+				<th class="data left"><?php echo $this->_('strgroups'); ?></th>
 				<td class="data1">
 					<?php while (!$groups2->EOF){
 						echo htmlspecialchars($groups2->fields['groname']);
@@ -436,7 +458,7 @@ class DBDesigner extends Plugin {
 			</tr>
 
 			<tr>
-				<th class="data left"><?php echo $this->lang['strusers']; ?></th>
+				<th class="data left"><?php echo $this->_('strusers'); ?></th>
 				<td class="data1">
 					<?php while (!$users2->EOF){
 						echo htmlspecialchars($users2->fields['usename']);
@@ -464,7 +486,7 @@ class DBDesigner extends Plugin {
 						)
 					)
 				),
-				'content' => $this->lang['stredit'] 
+				'content' => $this->_('stredit') 
 			),
 			array (
 				'attr'=> array (
@@ -480,7 +502,7 @@ class DBDesigner extends Plugin {
 						)
 					)
 				),
-				'content' => $this->lang['strdrop'] 
+				'content' => $this->_('strdrop') 
 			),
 			array (
 				'attr'=> array (
@@ -495,7 +517,7 @@ class DBDesigner extends Plugin {
 						)
 					)
 				),
-				'content' => $this->lang['stropen'] 
+				'content' => $this->_('stropen') 
 			),
 			array (
 				'attr'=> array (
@@ -511,7 +533,7 @@ class DBDesigner extends Plugin {
 						)
 					)
 				),
-				'content' => $this->lang['stropeninnewwindow'] 
+				'content' => $this->_('stropeninnewwindow') 
 			),
 		);
 		$misc->printNavLinks($navlinks, 'dbdesigner-dbdesigner');
@@ -521,13 +543,11 @@ class DBDesigner extends Plugin {
 	
 	function tree() {
         global $misc, $data;
-        global $status, $erdiagrams;
 
-        if($status != 0){
-            $diagrams = new ADORecordSet_empty();
-            $attrs = array();
-        }
-        else{
+		$diagrams = new ADORecordSet_empty();
+		$attrs = array();
+		
+        if(ERDiagram::isSettedUp()){
             $diagrams = ERDiagram::getList();
 
             $reqvars = $misc->getRequestVars();
@@ -554,16 +574,16 @@ class DBDesigner extends Plugin {
 		global $misc;
 		
 		if (empty($_REQUEST['erdiagram_id']) && empty($_REQUEST['ma'])) {
-			$this->showDefault($this->lang['strspecifyerdiagramtodrop']);
+			$this->showDefault($this->_('strspecifyerdiagramtodrop'));
             exit;
         }
 		
 		
-		$misc->printHeader($this->lang['strerdiagrams']);
+		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
 		$misc->printTrail('schema');
 		$misc->printTabs('schema','showDefault');
-		$misc->printTitle($this->lang['strdroperdiagram']);
+		$misc->printTitle($this->_('strdroperdiagram'));
 		
 		echo '<form action="plugin.php?plugin='.$this->name.'" method="post">';
 		
@@ -573,7 +593,7 @@ class DBDesigner extends Plugin {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
 				$diagram = ERDiagram::load($a['erdiagram_id']);
 				if(!is_null($diagram)){
-					echo '<p>'.sprintf($this->lang['strconfdroperdiagram'], $misc->printVal($diagram->name)).'</p>';
+					echo '<p>'.sprintf($this->_('strconfdroperdiagram'), $misc->printVal($diagram->name)).'</p>';
 					printf('<input type="hidden" name="erdiagram_id[]" value="%s" />', htmlspecialchars($a['erdiagram_id']));
 				}
 			}
@@ -582,7 +602,7 @@ class DBDesigner extends Plugin {
 
 			$diagram = ERDiagram::load($_REQUEST['erdiagram_id']);
 			if(!is_null($diagram)){
-				echo '<p>'.sprintf($this->lang['strconfdroperdiagram'], $misc->printVal($diagram->name)).'</p>';
+				echo '<p>'.sprintf($this->_('strconfdroperdiagram'), $misc->printVal($diagram->name)).'</p>';
 				printf('<input type="hidden" name="erdiagram_id" value="%s" />', htmlspecialchars($_REQUEST['erdiagram_id']));
 			}
 		}// END if multi drop
@@ -590,8 +610,8 @@ class DBDesigner extends Plugin {
 		echo '<input type="hidden" name="action" value="drop" />';
 		echo $misc->form;
 
-		echo '<input type="submit" name="drop" value="'.$this->lang['strdrop'].'" />';
-		echo '<input type="submit" name="cancel" value="'.$this->lang['strcancel'].'" />';
+		echo '<input type="submit" name="drop" value="'.$this->_('strdrop').'" />';
+		echo '<input type="submit" name="cancel" value="'.$this->_('strcancel').'" />';
 		echo '</form>';
 		
 		
@@ -608,9 +628,9 @@ class DBDesigner extends Plugin {
 						$status = $diagram->drop();
 						if ($status == 0){
 							$_reload_browser = true;
-							$msg.= sprintf('%s: %s<br />', htmlentities($diagram->name), $this->lang['strerdiagramdropped']);
+							$msg.= sprintf('%s: %s<br />', htmlentities($diagram->name), $this->_('strerdiagramdropped'));
 						}else
-							$msg.= sprintf('%s: %s<br />', htmlentities($diagram->name), $this->lang['strerdiagramdroppedbad']);
+							$msg.= sprintf('%s: %s<br />', htmlentities($diagram->name), $this->_('strerdiagramdroppedbad'));
 					}
                 }
             } else {
@@ -619,10 +639,10 @@ class DBDesigner extends Plugin {
                 $status = $diagram->drop();
                 if ($status == 0) {
                     $_reload_browser = true;
-					$msg = $this->lang['strerdiagramdropped'];
+					$msg = $this->_('strerdiagramdropped');
                 }
                 else
-                    $msg = $this->lang['strerdiagramdroppedbad'];
+                    $msg = $this->_('strerdiagramdroppedbad');
             }
 		}
 		$this->showDefault($msg);
@@ -684,9 +704,8 @@ class DBDesigner extends Plugin {
 		$_no_bottom_link = TRUE;
 		$misc->printHeader(htmlspecialchars($diagram->name), $scripts);
 		$misc->printBody();
-		//printVars();
-		echo "<noscript>{$this->lang['strerdiagramnoscript']}</noscript>";
-		echo '<p id="loading-msg">'.$this->lang['strloading'].'</p>';
+		echo "<noscript>{$this->_('strerdiagramnoscript')}</noscript>";
+		echo '<p id="loading-msg">'.$this->_('strloading').'</p>';
 		$misc->printFooter();
 	}
 	
@@ -787,7 +806,7 @@ class DBDesigner extends Plugin {
 		
 		$js_lang = array();
 		foreach ($lang_keys as $key){
-			$js_lang[$key] = html_entity_decode($this->lang[$key], ENT_NOQUOTES, $this->lang['appcharset']);
+			$js_lang[$key] = htmlspecialchars(html_entity_decode($this->_($key), ENT_NOQUOTES, $this->_('appcharset')));
 		}
 		return $this->jsonEncode($js_lang);
 	}

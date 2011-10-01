@@ -31,6 +31,7 @@
 	$lang['strerdiagramdropped'] = 'E-R Diagram dropped.';
 	$lang['strerdiagramdroppedbad'] = 'E-R Diagram drop failed.';
 	$lang['strerdiagramnoscript'] = 'Your browser does not support JavaScript';
+	$lang['strbadinstallation'] = 'This plugin is not properly installed';
 		
 	$lang['strarray'] = 'Array';
 	$lang['straltertable'] = 'Alter table';
