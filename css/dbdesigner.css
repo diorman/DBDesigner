@@ -141,9 +141,7 @@ div.canvas div.db-table div.header a.button{
 	margin: 2px 1px 0px;
 	visibility: hidden;
 }
-
 div.canvas div.db-table div.header a.button:active {top: 1px;}
-
 div.canvas div.db-table div.header a.button span{
     position: absolute;
 	top: 50%;
@@ -155,7 +153,6 @@ div.canvas div.db-table div.column-container{
     padding: 3px;
     background-color: #FFFFFF;
 }
-
 div.canvas div.ui-selected, div.canvas div.ui-selecting{
     border-color: #336699;
     z-index: 30;
@@ -165,11 +162,58 @@ div.canvas div.ui-selected, div.canvas div.ui-selecting{
     /*filter: progid:DXImageTransform.Microsoft.Shadow(Strength=5, Direction=135, Color='#888888'); /* IE 6, IE 7 */
     -ms-filter: progid:DXImageTransform.Microsoft.Shadow(Strength=5, Direction=135, Color='#888888'); /* IE 8 */
 }
-
 div.canvas div.ui-selected div.header a.button { visibility: visible;}
-
 div.canvas div.db-table-collapsed div.column-container {display: none;}
 
+/* Dialog */
+div.ui-dialog-titlebar, div.ui-dialog-content {font-size: 0.82em;}
+
+div.ui-dialog-content .label {
+	display: block;
+	float: left;
+	background-color: #E6E6CC;
+	width: 200px;
+	text-align: center;
+	font-weight: bold;
+	height: 100%;
+	line-height: 25px;
+	margin-right: 4px;
+}
+div.ui-dialog-content div.field-text, div.ui-dialog-content div.field-check, div.ui-dialog-content div.field-textarea  {
+	clear:both;
+	margin-bottom: 4px;
+}
+
+div.ui-dialog-content div.field-text input, textarea {
+	width: 200px;
+	height: 19px;
+	padding: 2px;
+	border: 1px solid #E6E6CC;
+}
+
+div.ui-dialog-content div.field-textarea textarea {
+	resize: none;
+	height: 39px;
+}
+div.ui-dialog-content div.field-textarea .label {
+	height: 45px;
+	line-height: 45px;
+}
+
+div.ui-dialog-content div.buttons-placeholder { text-align: center; padding: 10px 0px;}
+div.ui-dialog-content div.buttons-placeholder input{
+	min-width: 80px;
+	margin-right: 5px;
+}
+div.ui-dialog-content ul.error-list{
+	color: #CD0A0A;
+	margin: 10px 0px;
+}
+div.ui-dialog-content ul.error-list li{
+	list-style-type: disc;
+	list-style-position: inside;
+}
+div.ui-dialog-content .required {text-decoration: underline;}
 /*
 p.message {
     color: #336699;

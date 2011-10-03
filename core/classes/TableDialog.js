@@ -12,14 +12,14 @@ TableDialog.prototype.createTable = function(position){
 	tableModel.setPosition(position);
 	model.setTableModel(tableModel);
 	model.setAction(DBDesigner.Action.ADD_TABLE);
-	this.getUI().open();
+	this.getUI().open(DBDesigner.lang.strcreatetable);
 };
 
 TableDialog.prototype.editTable = function(table){
 	var model = this.getModel();
 	model.setTableModel(table.getModel());
 	model.setAction(DBDesigner.Action.EDIT_TABLE);
-	this.getUI().open();
+	this.getUI().open(DBDesigner.lang.straltertable);
 };
 
 TableDialog.prototype.saveTable = function(form){
@@ -44,12 +44,12 @@ TableDialog.prototype.validateForm = function(form){
 	var isValid = true;
 	var ui = this.getUI();
 	if(form.name == '') {
-		ui.showError('table-name', DBDesigner.lang.strtableneedsname);
+		ui.showError(DBDesigner.lang.strtableneedsname);
 		isValid = false;
 	}
 	var tableWithSameName = DBDesigner.app.tableCollection.getTableByName(form.name);
 	if(tableWithSameName != null && tableWithSameName.getModel() != this.getTableModel()){
-		ui.showError('table-name', DBDesigner.lang.strtableexists);
+		ui.showError(DBDesigner.lang.strtableexists);
 		isValid = false;
 	}
 	
@@ -95,7 +95,7 @@ TableDialogUI = function(controller) {
 	this.setTemplateID('TableDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
 };
 
 $.extend(TableDialogUI.prototype, ComponentUI);
@@ -107,7 +107,7 @@ TableDialogUI.prototype.bindEvents = function(){
 };
 
 
-TableDialogUI.prototype.open = function(){
+TableDialogUI.prototype.open = function(title){
 	var tableModel = this.getController().getTableModel();
 	var dom = this.getDom();
 	
@@ -117,8 +117,8 @@ TableDialogUI.prototype.open = function(){
 		$('#table-dialog_table-name').val(tableModel.getName());
 		$('#table-dialog_withoutoids').prop('checked', tableModel.getWithoutOIDS());
 		$('#table-dialog_table-comment').val(tableModel.getComment());
-		dom.dialog('open');
-		window.setTimeout(function(){dom.find('.focusable').focus()}, 500);
+		dom.dialog('open').dialog('option', 'title', title);
+		window.setTimeout(function(){dom.find('.focusable').focus()}, 200);
 	}
 };
 
@@ -137,17 +137,10 @@ TableDialogUI.prototype.save = function(){
 	this.getController().saveTable(form);
 };
 
-TableDialogUI.prototype.showError = function(fieldWrapper, message){
-	var dom = this.getDom();
-	var $fieldWrapper = dom.find('div.' + fieldWrapper);
-	var $perror = $fieldWrapper.find('p.ui-state-error');
-	if($perror.length == 0) {
-		$perror = $('<p class="ui-state-error"></p>');
-		$fieldWrapper.append($perror);
-	}
-	$perror.text(message);
+TableDialogUI.prototype.showError = function(message){
+	$('<li></li>').text(message).appendTo(this.getDom().find('ul.error-list').show());
 };
 
 TableDialogUI.prototype.cleanErrors = function(){
-	this.getDom().find('p.ui-state-error').remove();
+	this.getDom().find('ul.error-list').empty().hide();
 };

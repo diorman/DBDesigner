@@ -53,17 +53,22 @@
 <?php /******************** Table Dialog Template **/ ?>
 <?php ob_start(); ?>
 	<div class="table-dialog">
-		<div class="field-single table-name">
-			<label for="table-dialog_table-name"><?php echo $this->_('strname'); ?></label>
+		<ul class="error-list hide"></ul>
+		<div class="field-text table-name">
+			<label class="label required" for="table-dialog_table-name"><?php echo $this->_('strname'); ?></label>
 			<input class="focusable" type="text" id="table-dialog_table-name" maxlength="<?php echo $data->_maxNameLen; ?>" />
+			<div class="clear"></div>
 		</div>
-		<div class="field-single table-option">
+		<div class="field-check table-option">
+			<span class="label"><?php echo $this->_('stroptions'); ?></span>
 			<label for="table-dialog_withoutoids">WITHOUT OIDS</label>
 			<input type="checkbox" id="table-dialog_withoutoids" checked="checked" />
+			<div class="clear"></div>
 		</div>
-		<div class="field-single table-comment">
-			<label for="table-dialog_table-comment"><?php echo $this->_('strcomment'); ?></label>
+		<div class="field-textarea table-comment">
+			<label class="label" for="table-dialog_table-comment"><?php echo $this->_('strcomment'); ?></label>
 			<textarea id="table-dialog_table-comment"></textarea>
+			<div class="clear"></div>
 		</div>
 		<div class="buttons-placeholder">
 			<input type="button" id="table-dialog_save" value="Save" />
