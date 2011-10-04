@@ -54,7 +54,7 @@ TableCollection.prototype.count = function(){
 };
 
 TableCollection.prototype.alterTable = function(event){
-	this.trigger(Table.Event.ALTER_TABLE, {table: event.sender});
+	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, event.table);
 };
 
 TableCollection.prototype.getSelectedTables = function(){

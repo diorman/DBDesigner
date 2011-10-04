@@ -40,8 +40,16 @@ Table.prototype.modelPropertyChanged = function(event) {
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
 };
 
-Table.prototype.editTable = function(){
-	this.trigger(Table.Event.ALTER_TABLE);
+Table.prototype.alterTable = function(){
+	this.trigger(Table.Event.ALTER_TABLE, {table: this});
+};
+
+Table.prototype.getColumnCollection = function(){
+	return this.getModel().getColumnCollection();
+};
+
+Table.prototype.refresh = function(){
+	this.getUI().updateWidth();
 };
 
 // *****************************************************************************
@@ -113,6 +121,11 @@ TableModel.prototype.setSelected = function(b){
 	}
 };
 
+TableModel.prototype.getColumnCollection = function(){
+	if(typeof this._columnCollection == 'undefined') this._columnCollection = new ColumnCollection();
+	return this._columnCollection;
+};
+
 // *****************************************************************************
 
 TableUI = function(controller) {
@@ -179,13 +192,18 @@ TableUI.prototype.onButtonPressed = function(event){
 
 TableUI.prototype.onHeaderDblClicked = function(event){
 	if($(event.target).is('div.header, span.title')){
-		this.getController().editTable();
+		this.getController().alterTable();
 	}
 };
 
 TableUI.prototype.updateWidth = function(){
 	var dom = this.getDom();
 	var w = dom.find('div.header > span.title').outerWidth() + 54/*(buttons)*/;
+	if(!this.getController().getModel().isCollapsed()){
+		dom.find('span.definition').each(function(){
+			w = Math.max($(this).outerWidth() + 22, w);
+		});
+	}
 	dom.css({width: w, minWidth: w});
 };
 

@@ -122,7 +122,7 @@
 		
 		<div class="field-check">
 			<label class="label" for="column-dialog_column-primarykey"><?php echo $this->_('strprimarykey'); ?></label>
-			<input type="checkbox" id="column-dialog_column-pk" />
+			<input type="checkbox" id="column-dialog_column-primarykey" />
 			<div class="clear"></div>
 		</div>
 		
@@ -155,3 +155,7 @@
 		</div>
 	</div>
 <?php $templateManager['ColumnDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+
+
+<?php /******************** Canvas Template **/ ?>
+<?php $templateManager['Column'] = '<div class="db-column"><span class="keys"></span><span class="definition"></span></div>'; ?>

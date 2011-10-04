@@ -20,6 +20,26 @@ DBObjectModel = {
 	getComment: function(){
 		if(typeof this._comment == 'undefined') this._comment = '';
 		return this._comment;
+	},
+	setFlagState: function(flag, state){
+		var flags = this.getFlags();
+		var flagIsOn = (flags & flag) != 0;
+		if(flagIsOn ^ state){
+			this._flags = state? flags | flag : flags ^ flag; 
+			this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'flags', newValue: this._flags, oldValue: flags});
+		}
+	},
+	setFlags: function(flags){
+		var oldValue = this.getFlags();
+		if(oldValue != flags){
+			this._flags = flags;
+			this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'flags', newValue: flags, oldValue: oldValue});
+		}
+	},
+
+	getFlags: function(){
+		if(typeof this._flags == 'undefined') this._flags = 0;
+		return this._flags;
 	}
 };
 

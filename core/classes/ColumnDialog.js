@@ -6,15 +6,20 @@ ColumnDialog = function() {
 
 $.extend(ColumnDialog.prototype, DBObjectDialog);
 
-ColumnDialog.prototype.createColumn = function(){
+ColumnDialog.prototype.createColumn = function(table){
 	var model = this.getModel();
+	var columnModel = new ColumnModel();
+	columnModel.setParent(table);
 	model.setAction(DBDesigner.Action.ADD_COLUMN);
-	model.setDBObjectModel(new ColumnModel());
+	model.setDBObjectModel(columnModel);
 	this.getUI().open(DBDesigner.lang.straddcolumn);
 };
 
-ColumnDialog.prototype.editColumn = function(){
-
+ColumnDialog.prototype.editColumn = function(column){
+	var model = this.getModel();
+	model.setAction(DBDesigner.Action.ALTER_COLUMN);
+	model.setDBObjectModel(column.getModel());
+	this.getUI().open(DBDesigner.lang.straltercolumn);
 };
 
 ColumnDialog.prototype.saveColumn = function(form){
@@ -23,10 +28,25 @@ ColumnDialog.prototype.saveColumn = function(form){
 	var action = model.getAction();
 	
 	if(this.validateForm(form)){
-
+		var flags = 0;
+		if(form.isArray) flags |= ColumnModel.flag.ARRAY;
+		if(form.isPrimaryKey) flags |= ColumnModel.flag.PRIMARY_KEY;
+		if(form.isUniqueKey) flags |= ColumnModel.flag.UNIQUE_KEY;
+		if(form.isNotnull) flags |= ColumnModel.flag.NOTNULL;
+		if(columnModel.isForeignKey()) flags |= ColumnModel.flag.FOREIGN_KEY;
 		
-		if(action == DBDesigner.Action.ADD_TABLE){
-			DBDesigner.app.tableCollection.add(new Table(tableModel));
+		
+		columnModel.setName(form.name);
+		columnModel.setType(form.type);
+		columnModel.setLength(form.length);
+		columnModel.setDefault(form.def);
+		columnModel.setComment(form.comment);
+		columnModel.setFlags(flags);
+		
+		
+		if(action == DBDesigner.Action.ADD_COLUMN){
+			var column = new Column(columnModel);
+			columnModel.getParent().getColumnCollection().add(column);
 		}
 		
 		this.getUI().close();
@@ -37,9 +57,16 @@ ColumnDialog.prototype.validateForm = function(form){
 	var isValid = true;
 	var ui = this.getUI();
 	var lowType = form.type.toLowerCase();
+	var columnModel = this.getModel().getDBObjectModel();
+	var columnCollection = columnModel.getParent().getColumnCollection();
+	var columnWithSameName = columnCollection.getColumnByName(form.name);
 
 	if(form.name == ''){
 		ui.showError(DBDesigner.lang.strcolneedsname, DBDesigner.lang.strname);
+		isValid = false;
+	}
+	else if(columnWithSameName != null && columnWithSameName.getModel() != columnModel){
+		ui.showError(DBDesigner.lang.strcolexists, DBDesigner.lang.strname);
 		isValid = false;
 	}
 	if((lowType == 'numeric' && !/^(\d+(,\d+)?)?$/.test(form.length)) || (lowType != 'numeric' && !/^\d*$/.test(form.length))){
@@ -103,9 +130,15 @@ ColumnDialogUI.prototype.open = function(title){
 	this.cleanErrors();
 	
 	if(columnModel != null){
-		$('#column-dialog_column-type').prop('selectedIndex', 0).trigger('change');
+		$('#column-dialog_column-type').val(columnModel.getType()).trigger('change');
 		$('#column-dialog_column-name').val(columnModel.getName());
+		$('#column-dialog_column-length').val(columnModel.getLength());
 		$('#column-dialog_column-comment').val(columnModel.getComment());
+		$('#column-dialog_column-array').prop('checked', columnModel.isArray());
+		$('#column-dialog_column-primarykey').prop('checked', columnModel.isPrimaryKey());
+		$('#column-dialog_column-uniquekey').prop('checked', columnModel.isUniqueKey());
+		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotnull());
+		$('#column-dialog_column-default').val(columnModel.getDefault());
 		dom.dialog('open').dialog('option', 'title', title);
 		this.focus();
 	}
@@ -120,9 +153,8 @@ ColumnDialogUI.prototype.save = function(){
 		type: $('#column-dialog_column-type').val(),
 		isArray: $('#column-dialog_column-array').prop('checked'),
 		isPrimaryKey: $('#column-dialog_column-primarykey').prop('checked'),
-		isForeignKey: $('#column-dialog_column-foreignkey').prop('checked'),
-		isUniqueKey: $('#column-dialog_column-foreignkey').prop('checked'),
-		isNotNull: $('#column-dialog_column-foreignkey').prop('checked'),
+		isUniqueKey: $('#column-dialog_column-uniquekey').prop('checked'),
+		isNotnull: $('#column-dialog_column-notnull').prop('checked'),
 		def: $.trim($('#column-dialog_column-default').val()),
 		comment: $.trim($('#column-dialog_column-comment').val())
 	};

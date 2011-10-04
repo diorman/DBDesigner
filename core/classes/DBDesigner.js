@@ -18,16 +18,26 @@ DBDesigner.init = function(){
 };
 
 
-DBDesigner.prototype.doAction = function(action) {
-	if(DBDesigner.app.canvas) DBDesigner.app.canvas.setCapturingPlacement(false);
+DBDesigner.prototype.doAction = function(action, extra) {
 		
 	switch(action){	
 		case DBDesigner.Action.ADD_TABLE:
 			DBDesigner.app.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
-			DBDesigner.app.columnDialog.createColumn();
+			DBDesigner.app.columnDialog.createColumn(this.tableCollection.getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.ALTER_COLUMN:
+			DBDesigner.app.columnDialog.editColumn(extra);
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.ALTER_TABLE:
+			DBDesigner.app.tableDialog.editTable(extra);
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.SELECT: 
+			DBDesigner.app.canvas.setCapturingPlacement(false);
 			break;
 	}
 };
@@ -86,7 +96,7 @@ DBDesigner.prototype.setColumnDialog = function() {
 DBDesigner.prototype.setTableCollection = function() {
 	this.tableCollection = new TableCollection();
 	this.tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
-	this.tableCollection.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
+	//this.tableCollection.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
 };
 
 DBDesigner.prototype.tableSelectionChanged = function(event){

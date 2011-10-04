@@ -17,7 +17,8 @@ FILES=	classes/EventDispatcher.js \
 	classes/Table.js \
 	classes/Column.js \
 	classes/TableCollection.js \
-	classes/Events.js \
+	classes/ColumnCollection.js \
+	classes/Const.js \
 
 
 default:    ${FILES}

@@ -680,16 +680,6 @@ class DBDesigner extends Plugin {
 				DBDesigner.schema = "<?php echo $diagram->pgSchema; ?>";
 				DBDesigner.erdiagramId = "<?php echo $diagram->id; ?>";
 				DBDesigner.templateManager = <?php echo $templateManager; ?>;
-				DBDesigner.Action = {
-					SELECT: 'select',
-					ADD_TABLE: 'addTable',
-					EDIT_TABLE: 'editTable',
-					ADD_FOREIGNKEY: 'addFk',
-					ADD_COLUMN: 'addColumn',
-					DROP_TABLE: 'dropTable',
-					SAVE: 'save'
-				};
-				DBDesigner.Event = { PROPERTY_CHANGED: 'propertyChanged' };
 				
 				//Disable the default stylesheet
 				$(function(){
