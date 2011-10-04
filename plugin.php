@@ -717,7 +717,7 @@ class DBDesigner extends Plugin {
 	}
 	
 	
-	function getDataTypes(){
+	function getDataTypes($json = TRUE){
         global $data;
         $types = $data->getTypes(true, false, true);
         $types_for_js = array();
@@ -739,7 +739,9 @@ class DBDesigner extends Plugin {
 			$escaped_types[] = array('typedef' => strtoupper($value), 'size_predefined' => FALSE);
         }
 		sort($escaped_types);
-        return $this->jsonEncode($escaped_types);
+		
+		if($json) return $this->jsonEncode($escaped_types);
+		return $escaped_types;
     }
 	
 	function getJSLanguage(){
@@ -802,6 +804,8 @@ class DBDesigner extends Plugin {
 			'strswitchuser',
 			'straligntables',
 			'strconstraintneedsname',
+			'strbadinteger',
+			'strbadnumericlength'
 		);
 		
 		$js_lang = array();

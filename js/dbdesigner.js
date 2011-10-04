@@ -91,8 +91,9 @@ ComponentUI = {
 	},
 	
 	find: function(selector){
-		if(typeof this._dom == 'undefined') return $();
-		return this.getDom().find(selector);
+		var dom = this.getDom();
+		if(typeof dom == 'undefined') return $();
+		return dom.find(selector);
 	}
 };
 
@@ -103,16 +104,35 @@ $.extend(ComponentUI, EventDispatcher);
 
 DBDesigner = function(data){
 	
-	
+	this.setGlobalUIBehavior();
+	this.setTableCollection();
 	this.setToolBar();
 	this.setCanvas();
 	this.setObjectDetail();
 	this.setTableDialog();
-	this.setTableCollection();
-	this.setGlobalUIBehavior();
+	this.setColumnDialog();
 	
 	//this.toolBar.setAction(globals.Action.ADD_TABLE);
 	
+};
+
+DBDesigner.init = function(){
+	DBDesigner.app = new DBDesigner();
+};
+
+
+DBDesigner.prototype.doAction = function(action) {
+	if(DBDesigner.app.canvas) DBDesigner.app.canvas.setCapturingPlacement(false);
+		
+	switch(action){	
+		case DBDesigner.Action.ADD_TABLE:
+			DBDesigner.app.canvas.setCapturingPlacement(true);
+			break;
+		case DBDesigner.Action.ADD_COLUMN:
+			DBDesigner.app.columnDialog.createColumn();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+	}
 };
 
 /**
@@ -120,26 +140,11 @@ DBDesigner = function(data){
  */
 DBDesigner.prototype.setToolBar = function(){
 	this.toolBar = new ToolBar();
-	this.toolBar.bind(DBDesigner.Event.PROPERTY_CHANGED, this.actionChanged, this);
-	/*var a = {};
-	a[DBDesigner.Action.SELECT] = true;
-	this.toolBar.setActionState(a);*/
+	this.toolBar.bind(ToolBar.Event.ACTION_CHANGED, this.toolBarActionChanged, this);
 };
 
-/**
- * Listener for changes on toolbar's properties
- */
-DBDesigner.prototype.actionChanged = function(event){
-	if(event.property == 'action'){
-		switch(event.newValue){
-			case DBDesigner.Action.ADD_TABLE:
-				this.canvas.setCapturingPlacement(true);
-				break;
-			case DBDesigner.Action.SELECT:
-				this.canvas.setCapturingPlacement(false);
-				break;
-		}
-	}
+DBDesigner.prototype.toolBarActionChanged = function(event){
+	this.doAction(event.action);
 };
 
 /**
@@ -152,8 +157,10 @@ DBDesigner.prototype.setCanvas = function(){
 
 DBDesigner.prototype.canvasPlacementCaptured = function(event){
 	//this.tableDialog.getUI().getDom().dialog('open');
-	this.toolBar.setAction(DBDesigner.Action.SELECT);
-	this.tableDialog.createTable({top:event.top, left:event.left});
+	if(DBDesigner.Action.ADD_TABLE){
+		this.toolBar.setAction(DBDesigner.Action.SELECT);
+		this.tableDialog.createTable(event.position);
+	}
 };
 
 
@@ -162,28 +169,55 @@ DBDesigner.prototype.canvasPlacementCaptured = function(event){
  */
 DBDesigner.prototype.setObjectDetail = function(){
 	this.objectDetail = new ObjectDetail();
-	this.objectDetail.bind(DBDesigner.Event.PROPERTY_CHANGED, this.objectDetailChanged, this);
+	this.objectDetail.bind(ObjectDetail.Event.STATE_CHANGED, this.objectDetailStateChanged, this);
 	this.objectDetail.setCollapsed(true);
 };
 
-/**
- * Listener for changes on objectDetail's properties
- */
-DBDesigner.prototype.objectDetailChanged = function(event){
-	switch(event.property){
-		case 'collapsed':
-			this.canvas.setCollapsed(!event.newValue);
-			break;
-	}
+DBDesigner.prototype.objectDetailStateChanged = function(event){
+	this.canvas.setCollapsed(!event.isCollapsed);
 };
+
 
 DBDesigner.prototype.setTableDialog = function() {
 	this.tableDialog = new TableDialog();
 };
 
+DBDesigner.prototype.setColumnDialog = function() {
+	this.columnDialog = new ColumnDialog();
+};
+
 DBDesigner.prototype.setTableCollection = function() {
 	this.tableCollection = new TableCollection();
+	this.tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
+	this.tableCollection.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
 };
+
+DBDesigner.prototype.tableSelectionChanged = function(event){
+	var actionState = {};
+	switch(this.tableCollection.count()){
+		case 0:
+			actionState[DBDesigner.Action.ADD_COLUMN] = false;
+			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+			actionState[DBDesigner.Action.DROP_TABLE] = false;
+			break;
+		case 1:
+			actionState[DBDesigner.Action.ADD_COLUMN] = true;
+			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true;
+			actionState[DBDesigner.Action.DROP_TABLE] = true;
+			break;
+		default:
+			actionState[DBDesigner.Action.ADD_COLUMN] = false;
+			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+			actionState[DBDesigner.Action.DROP_TABLE] = true;
+			break;
+	}
+	DBDesigner.app.toolBar.setActionState(actionState);
+};
+
+DBDesigner.prototype.alterTable = function(event){
+	this.tableDialog.editTable(event.table);
+};
+
 
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('a.button').live('hover', function(event){ 
@@ -191,16 +225,7 @@ DBDesigner.prototype.setGlobalUIBehavior = function(){
 		if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
 	});
 };
-
-
-
-
-
-
-
-DBDesigner.init = function(){
-	DBDesigner.app = new DBDesigner();
-};/**
+/**
  *
  * Class to manage the toolbar of the designer
  *
@@ -212,7 +237,6 @@ ToolBar = function() {
 	this.setModel(model);
 	this.setUI(new ToolBarUI(this));
 };
-
 $.extend(ToolBar.prototype, Component);
 
 ToolBar.prototype.setAction = function(action) {
@@ -232,9 +256,11 @@ ToolBar.prototype.getActionState = function() {
 };
 
 ToolBar.prototype.modelPropertyChanged = function(event) {
-	if(event.property == 'action') this.getUI().updateCurrentAction();
-	else if(event.property == 'actionState') this.getUI().updateActionState();
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
+	if(event.property == 'action') {
+		this.getUI().updateCurrentAction();
+		this.trigger(ToolBar.Event.ACTION_CHANGED, {action: event.newValue});
+	}
+	else if(event.property == 'actionState') this.getUI().updateActionState();	
 }
 
 
@@ -379,7 +405,6 @@ Canvas = function() {
 	this.setUI(new CanvasUI(this));
 };
 $.extend(Canvas.prototype, Component);
-Canvas.Event = {PLACEMENT_CAPTURED: 'placementcaptured'};
 
 /**
  * Sets the collapsed state of the canvas
@@ -410,8 +435,7 @@ Canvas.prototype.modelPropertyChanged = function(event) {
 		case 'collapsed':
 			ui.updateCanvasState();
 			break;
-	}
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
+	}	
 };
 
 /**
@@ -431,8 +455,8 @@ Canvas.prototype.isCapturingPlacement = function() {
 	return this.getModel().isCapturingPlacement();
 };
 
-Canvas.prototype.triggerPlacementCaptured = function(position) {
-	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, position);
+Canvas.prototype.placementCaptured = function(position) {
+	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, {position: position});
 };
 
 // *****************************************************************************
@@ -532,7 +556,7 @@ CanvasUI.prototype.mousePressed = function(event) {
                 left: event.pageX + dom.scrollLeft() - offset.left,
                 top: event.pageY + dom.scrollTop() - offset.top
             };
-			controller.triggerPlacementCaptured(position);
+			controller.placementCaptured(position);
 		}
 		/*
 		if(this.model.isAddingTable()){
@@ -608,9 +632,9 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 	switch(event.property){
 		case 'collapsed':
 			ui.updatePanelState();
+			this.trigger(ObjectDetail.Event.STATE_CHANGED, {isCollapsed: event.newValue});
 			break;
 	}
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
 }
 
 // *****************************************************************************
@@ -701,40 +725,89 @@ ObjectDetailUI.prototype.updatePanelState = function() {
 	}
 };
 
+DBObjectDialog = {
+	getDBObjectModel: function(){
+		return this.getModel().getDBObjectModel();
+	}
+}
+$.extend(DBObjectDialog, Component);
+
+DBObjectDialogModel = {
+	setAction: function(action){
+		this._action = action;
+	},
+	getAction: function(){
+		if(typeof this._action == 'undefined') this._action = null;
+		return this._action;
+	},
+	setDBObjectModel: function(dbObjectModel){
+		this._dbObjectModel = dbObjectModel;
+	},
+	getDBObjectModel: function(){
+		if(typeof this._dbObjectModel == 'undefined') this._dbObjectModel = null;
+		return this._dbObjectModel;
+	}
+};
+$.extend(DBObjectDialogModel, EventDispatcher);
+
+
+
+DBObjectDialogUI = {
+	cleanErrors: function(){
+		this.getDom().find('ul.error-list').empty().hide();
+	},
+	
+	showError: function(message, field){
+		$('<li></li>').text(field + ': ' + message).appendTo(this.getDom().find('ul.error-list').show());
+	},
+	
+	close: function(){
+		this.getDom().dialog('close');
+	},
+	focus: function (){
+		var $focusable = this.find('.focusable');
+		window.setTimeout(function(){$focusable.focus()}, 200);
+	}
+};
+$.extend(DBObjectDialogUI, ComponentUI);
+
+
 TableDialog = function() {	
 	this.setModel(new TableDialogModel());
 	this.setUI(new TableDialogUI(this));
 };
 
-$.extend(TableDialog.prototype, Component);
+$.extend(TableDialog.prototype, DBObjectDialog);
 
 TableDialog.prototype.createTable = function(position){
 	var tableModel = new TableModel();
 	var model = this.getModel();
 	tableModel.setPosition(position);
-	model.setTableModel(tableModel);
+	model.setDBObjectModel(tableModel);
 	model.setAction(DBDesigner.Action.ADD_TABLE);
 	this.getUI().open(DBDesigner.lang.strcreatetable);
 };
 
 TableDialog.prototype.editTable = function(table){
 	var model = this.getModel();
-	model.setTableModel(table.getModel());
+	model.setDBObjectModel(table.getModel());
 	model.setAction(DBDesigner.Action.EDIT_TABLE);
 	this.getUI().open(DBDesigner.lang.straltertable);
 };
 
 TableDialog.prototype.saveTable = function(form){
 	var model = this.getModel();
-	var tableModel = model.getTableModel();
+	var tableModel = model.getDBObjectModel();
 	var action = model.getAction();
 	
 	if(this.validateForm(form)){
 		tableModel.setName(form.name);
 		tableModel.setWithoutOIDS(form.withoutOIDS);
 		tableModel.setComment(form.comment);
+		tableModel.setSelected(true);
 		
 		if(action == DBDesigner.Action.ADD_TABLE){
+			DBDesigner.app.tableCollection.emptySelection();
 			DBDesigner.app.tableCollection.add(new Table(tableModel));
 		}
 		
@@ -746,11 +819,11 @@ TableDialog.prototype.validateForm = function(form){
 	var isValid = true;
 	var ui = this.getUI();
 	if(form.name == '') {
-		ui.showError(DBDesigner.lang.strtableneedsname);
+		ui.showError(DBDesigner.lang.strtableneedsname, DBDesigner.lang.strname);
 		isValid = false;
 	}
 	var tableWithSameName = DBDesigner.app.tableCollection.getTableByName(form.name);
-	if(tableWithSameName != null && tableWithSameName.getModel() != this.getTableModel()){
+	if(tableWithSameName != null && tableWithSameName.getModel() != this.getDBObjectModel()){
 		ui.showError(DBDesigner.lang.strtableexists);
 		isValid = false;
 	}
@@ -758,38 +831,13 @@ TableDialog.prototype.validateForm = function(form){
 	return isValid;
 }
 
-TableDialog.prototype.getTableModel = function(){
-	return this.getModel().getTableModel();
-};
-
 // *****************************************************************************
 
 TableDialogModel = function() {
 	
 };
 
-$.extend(TableDialogModel.prototype, EventDispatcher);
-
-TableDialogModel.prototype.setTableModel = function(tableModel){
-	this._tableModel = tableModel;
-};
-
-TableDialogModel.prototype.getTableModel = function(){
-	if(typeof this._tableModel == 'undefined') this._tableModel = null;
-	return this._tableModel;
-};
-
-TableDialogModel.prototype.setAction = function(action){
-	this._action = action;
-};
-
-TableDialogModel.prototype.getAction = function(){
-	if(typeof this._action == 'undefined') this._action = DBDesigner.Action.ADD_TABLE;
-	return this._action;
-};
-
-
-
+$.extend(TableDialogModel.prototype, DBObjectDialogModel);
 
 // *****************************************************************************
 
@@ -800,7 +848,7 @@ TableDialogUI = function(controller) {
 	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
 };
 
-$.extend(TableDialogUI.prototype, ComponentUI);
+$.extend(TableDialogUI.prototype, DBObjectDialogUI);
 
 TableDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
@@ -810,7 +858,7 @@ TableDialogUI.prototype.bindEvents = function(){
 
 
 TableDialogUI.prototype.open = function(title){
-	var tableModel = this.getController().getTableModel();
+	var tableModel = this.getController().getDBObjectModel();
 	var dom = this.getDom();
 	
 	this.cleanErrors();
@@ -820,12 +868,8 @@ TableDialogUI.prototype.open = function(title){
 		$('#table-dialog_withoutoids').prop('checked', tableModel.getWithoutOIDS());
 		$('#table-dialog_table-comment').val(tableModel.getComment());
 		dom.dialog('open').dialog('option', 'title', title);
-		window.setTimeout(function(){dom.find('.focusable').focus()}, 200);
+		this.focus();
 	}
-};
-
-TableDialogUI.prototype.close = function(){
-	this.getDom().dialog('close');
 };
 
 TableDialogUI.prototype.save = function(){
@@ -838,14 +882,151 @@ TableDialogUI.prototype.save = function(){
 	};
 	this.getController().saveTable(form);
 };
-
-TableDialogUI.prototype.showError = function(message){
-	$('<li></li>').text(message).appendTo(this.getDom().find('ul.error-list').show());
+ColumnDialog = function() {	
+	this.setModel(new ColumnDialogModel());
+	this.setUI(new ColumnDialogUI(this));
 };
 
-TableDialogUI.prototype.cleanErrors = function(){
-	this.getDom().find('ul.error-list').empty().hide();
-};DBObject = {
+$.extend(ColumnDialog.prototype, DBObjectDialog);
+
+ColumnDialog.prototype.createColumn = function(){
+	var model = this.getModel();
+	model.setAction(DBDesigner.Action.ADD_COLUMN);
+	model.setDBObjectModel(new ColumnModel());
+	this.getUI().open(DBDesigner.lang.straddcolumn);
+};
+
+ColumnDialog.prototype.editColumn = function(){
+
+};
+
+ColumnDialog.prototype.saveColumn = function(form){
+	var model = this.getModel();
+	var columnModel = model.getDBObjectModel();
+	var action = model.getAction();
+	
+	if(this.validateForm(form)){
+
+		
+		if(action == DBDesigner.Action.ADD_TABLE){
+			DBDesigner.app.tableCollection.add(new Table(tableModel));
+		}
+		
+		this.getUI().close();
+	}
+};
+
+ColumnDialog.prototype.validateForm = function(form){
+	var isValid = true;
+	var ui = this.getUI();
+	var lowType = form.type.toLowerCase();
+
+	if(form.name == ''){
+		ui.showError(DBDesigner.lang.strcolneedsname, DBDesigner.lang.strname);
+		isValid = false;
+	}
+	if((lowType == 'numeric' && !/^(\d+(,\d+)?)?$/.test(form.length)) || (lowType != 'numeric' && !/^\d*$/.test(form.length))){
+		ui.showError(DBDesigner.lang.strbadinteger, DBDesigner.lang.strlength);
+		isValid = false;
+	}
+	else if(/^d+$/.test(form.length)) {
+		//Remove left side 0's
+		form.length = parseInt(form.length) + '';
+		//add scale of 0
+		if(lowType == 'numeric') form.length += ',0';
+	}
+	else if(lowType == 'numeric' && /^\d+,\d+$/.test(form.length)){
+		var splitted = form.length.split(',');
+		var precision = parseInt(splitted[0]);
+		var scale = parseInt(splitted[1]);
+		if(scale > precision){
+			ui.showError(DBDesigner.lang.strbadnumericlength.replace('%d', scale).replace('%d', precision), DBDesigner.lang.strlength);
+			isValid = false;
+		}
+		form.length = precision + ',' + scale;
+	}
+	return isValid;
+}
+
+
+// *****************************************************************************
+
+ColumnDialogModel = function() {
+	
+};
+
+$.extend(ColumnDialogModel.prototype, DBObjectDialogModel);
+
+
+
+// *****************************************************************************
+
+ColumnDialogUI = function(controller) {
+	this.setTemplateID('ColumnDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+};
+
+$.extend(ColumnDialogUI.prototype, DBObjectDialogUI);
+
+ColumnDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.find('#column-dialog_cancel').click($.proxy(this.close, this));
+	dom.find('#column-dialog_save').click($.proxy(this.save, this));
+	dom.find('#column-dialog_column-type').change($.proxy(this.dataTypeChanged, this));
+};
+
+
+ColumnDialogUI.prototype.open = function(title){
+	
+	var columnModel = this.getController().getDBObjectModel();
+	var dom = this.getDom();
+	
+	this.cleanErrors();
+	
+	if(columnModel != null){
+		$('#column-dialog_column-type').prop('selectedIndex', 0).trigger('change');
+		$('#column-dialog_column-name').val(columnModel.getName());
+		$('#column-dialog_column-comment').val(columnModel.getComment());
+		dom.dialog('open').dialog('option', 'title', title);
+		this.focus();
+	}
+	
+};
+
+ColumnDialogUI.prototype.save = function(){
+	this.cleanErrors();
+	
+	var form = {
+		name: $.trim($('#column-dialog_column-name').val()),
+		type: $('#column-dialog_column-type').val(),
+		isArray: $('#column-dialog_column-array').prop('checked'),
+		isPrimaryKey: $('#column-dialog_column-primarykey').prop('checked'),
+		isForeignKey: $('#column-dialog_column-foreignkey').prop('checked'),
+		isUniqueKey: $('#column-dialog_column-foreignkey').prop('checked'),
+		isNotNull: $('#column-dialog_column-foreignkey').prop('checked'),
+		def: $.trim($('#column-dialog_column-default').val()),
+		comment: $.trim($('#column-dialog_column-comment').val())
+	};
+	form.length = (this.typeHasPredefinedSize(form.type))? '': $.trim($('#column-dialog_column-length').val()).replace(/\s+/g, '');
+	this.getController().saveColumn(form);
+};
+
+ColumnDialogUI.prototype.dataTypeChanged = function(event){
+	var sizePredefined = this.typeHasPredefinedSize($(event.currentTarget).val());
+	var $input = $('#column-dialog_column-length').prop('disabled', sizePredefined);
+	if(sizePredefined) $input.val('');
+};
+
+ColumnDialogUI.prototype.typeHasPredefinedSize = function(type){
+	for(var i = 0, n = DBDesigner.dataTypes.length; i < n; i++){
+		if(DBDesigner.dataTypes[i].typedef == type){
+			return DBDesigner.dataTypes[i].size_predefined;
+		}
+	}
+	return false;
+};DBObjectModel = {
 	setName: function(name){
 		var oldName = this.getName();
 		if(oldName != name){
@@ -870,7 +1051,7 @@ TableDialogUI.prototype.cleanErrors = function(){
 	}
 };
 
-$.extend(DBObject, EventDispatcher);
+$.extend(DBObjectModel, EventDispatcher);
 
 
 Table = function() {
@@ -893,6 +1074,11 @@ Table.prototype.isSelected = function(){
 	return this.getModel().isSelected();
 };
 
+Table.prototype.setSelected = function(b){
+	this.getModel().setSelected(b);
+	this.getUI().updateSelected(b);
+};
+
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
@@ -910,7 +1096,7 @@ Table.prototype.modelPropertyChanged = function(event) {
 };
 
 Table.prototype.editTable = function(){
-	DBDesigner.app.tableDialog.editTable(this);
+	this.trigger(Table.Event.ALTER_TABLE);
 };
 
 // *****************************************************************************
@@ -919,7 +1105,7 @@ TableModel = function() {
 	
 };
 
-$.extend(TableModel.prototype, DBObject);
+$.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.prototype.setPosition = function(position){
 	var oldPosition = this.getPosition();
@@ -1088,15 +1274,17 @@ TableUI.prototype.selectionChanged = function(event){
 	this.getController().getModel().setSelected(selected);
 };
 
-// *****************************************************************************
+ColumnModel = function(){};
+$.extend(ColumnModel.prototype, DBObjectModel);
 
-Table.Event = {
-	SELECTION_CHANGED: 'selectionchanged',
-};
+
+
+
 TableCollection = function(){
 	this._tables = [];
 	this._selectedTables = [];
 };
+$.extend(TableCollection.prototype, EventDispatcher);
 
 TableCollection.prototype.getTableByName = function(name){
 	for(var i = 0, n = this._tables.length; i < n; i++){
@@ -1110,46 +1298,52 @@ TableCollection.prototype.add = function(table){
 	if($.inArray(table, this._tables) == -1) this._tables.push(table);
 	
 	table.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
+	table.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
 };
 
 TableCollection.prototype.addToSelection = function(table){
-	if($.inArray(table, this._selectedTables) == -1) this._selectedTables.push(table);
+	if($.inArray(table, this._selectedTables) == -1) {
+		this._selectedTables.push(table);
+		if(this._selectedTables.length == 1 || this._selectedTables.length == 2)
+			this.trigger(Table.Event.SELECTION_CHANGED);
+	}
 };
 
 TableCollection.prototype.removeFromSelection = function(table){
 	var index = $.inArray(table, this._selectedTables);
-	if(index >= 0) this._selectedTables.splice(index, 1);
-};
-
-TableCollection.prototype.tableSelectionChanged = function(event){
-	var l = this._selectedTables.length;
-	if(event.tableIsSelected) this.addToSelection(event.sender);
-	else this.removeFromSelection(event.sender);
-	
-	var l2 = this._selectedTables.length;
-	
-	if(l != l2){
-		var actionState = {};
-		switch(l2){
-			case 0:
-				actionState[DBDesigner.Action.ADD_COLUMN] = false;
-				actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
-				actionState[DBDesigner.Action.DROP_TABLE] = false;
-				break;
-			case 1:
-				actionState[DBDesigner.Action.ADD_COLUMN] = true;
-				actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true;
-				actionState[DBDesigner.Action.DROP_TABLE] = true;
-				break;
-			default:
-				actionState[DBDesigner.Action.ADD_COLUMN] = false;
-				actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
-				actionState[DBDesigner.Action.DROP_TABLE] = true;
-				break;
-		}
-		
-		DBDesigner.app.toolBar.setActionState(actionState);
+	if(index >= 0) {
+		this._selectedTables.splice(index, 1);
+		if(this._selectedTables.length == 1 || this._selectedTables.length == 0)
+			this.trigger(Table.Event.SELECTION_CHANGED);
 	}
 };
 
+TableCollection.prototype.tableSelectionChanged = function(event){
+	if(event.tableIsSelected) this.addToSelection(event.sender);
+	else this.removeFromSelection(event.sender);
+};
 
+TableCollection.prototype.emptySelection = function(){
+	var tables = this.getSelectedTables();
+	for(var i = 0, n = tables.length; i < n; i++){
+		tables[i].setSelected(false);
+	}
+};
+
+TableCollection.prototype.count = function(){
+	return this._selectedTables.length;
+};
+
+TableCollection.prototype.alterTable = function(event){
+	this.trigger(Table.Event.ALTER_TABLE, {table: event.sender});
+};
+
+TableCollection.prototype.getSelectedTables = function(){
+	return [].concat(this._selectedTables);
+};ToolBar.Event = {ACTION_CHANGED: 'toolbaractionchanged'};
+
+Table.Event = {SELECTION_CHANGED: 'tableselectionchanged', ALTER_TABLE: 'tablealtertable'};
+
+Canvas.Event = {PLACEMENT_CAPTURED: 'canvasplacementcaptured'};
+
+ObjectDetail.Event = {STATE_CHANGED: 'objectdetailstatechanged'};

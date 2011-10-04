@@ -19,6 +19,11 @@ Table.prototype.isSelected = function(){
 	return this.getModel().isSelected();
 };
 
+Table.prototype.setSelected = function(b){
+	this.getModel().setSelected(b);
+	this.getUI().updateSelected(b);
+};
+
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
@@ -36,7 +41,7 @@ Table.prototype.modelPropertyChanged = function(event) {
 };
 
 Table.prototype.editTable = function(){
-	DBDesigner.app.tableDialog.editTable(this);
+	this.trigger(Table.Event.ALTER_TABLE);
 };
 
 // *****************************************************************************
@@ -45,7 +50,7 @@ TableModel = function() {
 	
 };
 
-$.extend(TableModel.prototype, DBObject);
+$.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.prototype.setPosition = function(position){
 	var oldPosition = this.getPosition();
@@ -212,10 +217,4 @@ TableUI.prototype.updateSelected = function(b){
 TableUI.prototype.selectionChanged = function(event){
 	var selected = event.type == 'selectableselected';
 	this.getController().getModel().setSelected(selected);
-};
-
-// *****************************************************************************
-
-Table.Event = {
-	SELECTION_CHANGED: 'selectionchanged',
 };

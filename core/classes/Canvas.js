@@ -11,7 +11,6 @@ Canvas = function() {
 	this.setUI(new CanvasUI(this));
 };
 $.extend(Canvas.prototype, Component);
-Canvas.Event = {PLACEMENT_CAPTURED: 'placementcaptured'};
 
 /**
  * Sets the collapsed state of the canvas
@@ -42,8 +41,7 @@ Canvas.prototype.modelPropertyChanged = function(event) {
 		case 'collapsed':
 			ui.updateCanvasState();
 			break;
-	}
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
+	}	
 };
 
 /**
@@ -63,8 +61,8 @@ Canvas.prototype.isCapturingPlacement = function() {
 	return this.getModel().isCapturingPlacement();
 };
 
-Canvas.prototype.triggerPlacementCaptured = function(position) {
-	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, position);
+Canvas.prototype.placementCaptured = function(position) {
+	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, {position: position});
 };
 
 // *****************************************************************************
@@ -164,7 +162,7 @@ CanvasUI.prototype.mousePressed = function(event) {
                 left: event.pageX + dom.scrollLeft() - offset.left,
                 top: event.pageY + dom.scrollTop() - offset.top
             };
-			controller.triggerPlacementCaptured(position);
+			controller.placementCaptured(position);
 		}
 		/*
 		if(this.model.isAddingTable()){

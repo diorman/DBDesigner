@@ -1,16 +1,35 @@
 
 DBDesigner = function(data){
 	
-	
+	this.setGlobalUIBehavior();
+	this.setTableCollection();
 	this.setToolBar();
 	this.setCanvas();
 	this.setObjectDetail();
 	this.setTableDialog();
-	this.setTableCollection();
-	this.setGlobalUIBehavior();
+	this.setColumnDialog();
 	
 	//this.toolBar.setAction(globals.Action.ADD_TABLE);
 	
+};
+
+DBDesigner.init = function(){
+	DBDesigner.app = new DBDesigner();
+};
+
+
+DBDesigner.prototype.doAction = function(action) {
+	if(DBDesigner.app.canvas) DBDesigner.app.canvas.setCapturingPlacement(false);
+		
+	switch(action){	
+		case DBDesigner.Action.ADD_TABLE:
+			DBDesigner.app.canvas.setCapturingPlacement(true);
+			break;
+		case DBDesigner.Action.ADD_COLUMN:
+			DBDesigner.app.columnDialog.createColumn();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+	}
 };
 
 /**
@@ -18,26 +37,11 @@ DBDesigner = function(data){
  */
 DBDesigner.prototype.setToolBar = function(){
 	this.toolBar = new ToolBar();
-	this.toolBar.bind(DBDesigner.Event.PROPERTY_CHANGED, this.actionChanged, this);
-	/*var a = {};
-	a[DBDesigner.Action.SELECT] = true;
-	this.toolBar.setActionState(a);*/
+	this.toolBar.bind(ToolBar.Event.ACTION_CHANGED, this.toolBarActionChanged, this);
 };
 
-/**
- * Listener for changes on toolbar's properties
- */
-DBDesigner.prototype.actionChanged = function(event){
-	if(event.property == 'action'){
-		switch(event.newValue){
-			case DBDesigner.Action.ADD_TABLE:
-				this.canvas.setCapturingPlacement(true);
-				break;
-			case DBDesigner.Action.SELECT:
-				this.canvas.setCapturingPlacement(false);
-				break;
-		}
-	}
+DBDesigner.prototype.toolBarActionChanged = function(event){
+	this.doAction(event.action);
 };
 
 /**
@@ -50,8 +54,10 @@ DBDesigner.prototype.setCanvas = function(){
 
 DBDesigner.prototype.canvasPlacementCaptured = function(event){
 	//this.tableDialog.getUI().getDom().dialog('open');
-	this.toolBar.setAction(DBDesigner.Action.SELECT);
-	this.tableDialog.createTable({top:event.top, left:event.left});
+	if(DBDesigner.Action.ADD_TABLE){
+		this.toolBar.setAction(DBDesigner.Action.SELECT);
+		this.tableDialog.createTable(event.position);
+	}
 };
 
 
@@ -60,42 +66,59 @@ DBDesigner.prototype.canvasPlacementCaptured = function(event){
  */
 DBDesigner.prototype.setObjectDetail = function(){
 	this.objectDetail = new ObjectDetail();
-	this.objectDetail.bind(DBDesigner.Event.PROPERTY_CHANGED, this.objectDetailChanged, this);
+	this.objectDetail.bind(ObjectDetail.Event.STATE_CHANGED, this.objectDetailStateChanged, this);
 	this.objectDetail.setCollapsed(true);
 };
 
-/**
- * Listener for changes on objectDetail's properties
- */
-DBDesigner.prototype.objectDetailChanged = function(event){
-	switch(event.property){
-		case 'collapsed':
-			this.canvas.setCollapsed(!event.newValue);
-			break;
-	}
+DBDesigner.prototype.objectDetailStateChanged = function(event){
+	this.canvas.setCollapsed(!event.isCollapsed);
 };
+
 
 DBDesigner.prototype.setTableDialog = function() {
 	this.tableDialog = new TableDialog();
 };
 
+DBDesigner.prototype.setColumnDialog = function() {
+	this.columnDialog = new ColumnDialog();
+};
+
 DBDesigner.prototype.setTableCollection = function() {
 	this.tableCollection = new TableCollection();
+	this.tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
+	this.tableCollection.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
 };
+
+DBDesigner.prototype.tableSelectionChanged = function(event){
+	var actionState = {};
+	switch(this.tableCollection.count()){
+		case 0:
+			actionState[DBDesigner.Action.ADD_COLUMN] = false;
+			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+			actionState[DBDesigner.Action.DROP_TABLE] = false;
+			break;
+		case 1:
+			actionState[DBDesigner.Action.ADD_COLUMN] = true;
+			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true;
+			actionState[DBDesigner.Action.DROP_TABLE] = true;
+			break;
+		default:
+			actionState[DBDesigner.Action.ADD_COLUMN] = false;
+			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+			actionState[DBDesigner.Action.DROP_TABLE] = true;
+			break;
+	}
+	DBDesigner.app.toolBar.setActionState(actionState);
+};
+
+DBDesigner.prototype.alterTable = function(event){
+	this.tableDialog.editTable(event.table);
+};
+
 
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('a.button').live('hover', function(event){ 
 		var $this = $(this);
 		if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
 	});
-};
-
-
-
-
-
-
-
-DBDesigner.init = function(){
-	DBDesigner.app = new DBDesigner();
 };

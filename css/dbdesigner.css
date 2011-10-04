@@ -166,7 +166,7 @@ div.canvas div.ui-selected div.header a.button { visibility: visible;}
 div.canvas div.db-table-collapsed div.column-container {display: none;}
 
 /* Dialog */
-div.ui-dialog-titlebar, div.ui-dialog-content {font-size: 0.82em;}
+div.ui-dialog-titlebar span.ui-dialog-title, div.ui-dialog-content {font-size: 0.82em;}
 
 div.ui-dialog-content .label {
 	display: block;
@@ -175,22 +175,24 @@ div.ui-dialog-content .label {
 	width: 200px;
 	text-align: center;
 	font-weight: bold;
-	height: 100%;
-	line-height: 25px;
+	line-height: 20px;
+	height: 20px;
 	margin-right: 4px;
 }
-div.ui-dialog-content div.field-text, div.ui-dialog-content div.field-check, div.ui-dialog-content div.field-textarea  {
+div.ui-dialog-content div.field-text, div.ui-dialog-content div.field-check,
+div.ui-dialog-content div.field-textarea, div.ui-dialog-content div.field-select  {
 	clear:both;
-	margin-bottom: 4px;
+	margin-bottom: 2px;
 }
 
-div.ui-dialog-content div.field-text input, textarea {
+div.ui-dialog-content div.field-text input, div.ui-dialog-content div.field-textarea textarea,
+div.ui-dialog-content div.field-select select {
 	width: 200px;
-	height: 19px;
+	height: 14px;
 	padding: 2px;
 	border: 1px solid #E6E6CC;
 }
-
+div.ui-dialog-content div.field-select select { width: 206px; height: 20px; }
 div.ui-dialog-content div.field-textarea textarea {
 	resize: none;
 	height: 39px;
@@ -213,7 +215,7 @@ div.ui-dialog-content ul.error-list li{
 	list-style-type: disc;
 	list-style-position: inside;
 }
-div.ui-dialog-content .required {text-decoration: underline;}
+div.ui-dialog-content div.required .label{text-decoration: underline;}
 /*
 p.message {
     color: #336699;

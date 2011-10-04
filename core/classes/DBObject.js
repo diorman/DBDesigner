@@ -1,4 +1,4 @@
-DBObject = {
+DBObjectModel = {
 	setName: function(name){
 		var oldName = this.getName();
 		if(oldName != name){
@@ -23,5 +23,5 @@ DBObject = {
 	}
 };
 
-$.extend(DBObject, EventDispatcher);
+$.extend(DBObjectModel, EventDispatcher);
 

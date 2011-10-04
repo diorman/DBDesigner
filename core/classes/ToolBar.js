@@ -10,7 +10,6 @@ ToolBar = function() {
 	this.setModel(model);
 	this.setUI(new ToolBarUI(this));
 };
-
 $.extend(ToolBar.prototype, Component);
 
 ToolBar.prototype.setAction = function(action) {
@@ -30,9 +29,11 @@ ToolBar.prototype.getActionState = function() {
 };
 
 ToolBar.prototype.modelPropertyChanged = function(event) {
-	if(event.property == 'action') this.getUI().updateCurrentAction();
-	else if(event.property == 'actionState') this.getUI().updateActionState();
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
+	if(event.property == 'action') {
+		this.getUI().updateCurrentAction();
+		this.trigger(ToolBar.Event.ACTION_CHANGED, {action: event.newValue});
+	}
+	else if(event.property == 'actionState') this.getUI().updateActionState();	
 }
 
 

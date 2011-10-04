@@ -34,8 +34,9 @@ ComponentUI = {
 	},
 	
 	find: function(selector){
-		if(typeof this._dom == 'undefined') return $();
-		return this.getDom().find(selector);
+		var dom = this.getDom();
+		if(typeof dom == 'undefined') return $();
+		return dom.find(selector);
 	}
 };
 

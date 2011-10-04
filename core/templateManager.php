@@ -54,25 +54,25 @@
 <?php ob_start(); ?>
 	<div class="table-dialog">
 		<ul class="error-list hide"></ul>
-		<div class="field-text table-name">
-			<label class="label required" for="table-dialog_table-name"><?php echo $this->_('strname'); ?></label>
+		<div class="field-text required">
+			<label class="label" for="table-dialog_table-name"><?php echo $this->_('strname'); ?></label>
 			<input class="focusable" type="text" id="table-dialog_table-name" maxlength="<?php echo $data->_maxNameLen; ?>" />
 			<div class="clear"></div>
 		</div>
-		<div class="field-check table-option">
+		<div class="field-check">
 			<span class="label"><?php echo $this->_('stroptions'); ?></span>
 			<label for="table-dialog_withoutoids">WITHOUT OIDS</label>
 			<input type="checkbox" id="table-dialog_withoutoids" checked="checked" />
 			<div class="clear"></div>
 		</div>
-		<div class="field-textarea table-comment">
+		<div class="field-textarea">
 			<label class="label" for="table-dialog_table-comment"><?php echo $this->_('strcomment'); ?></label>
 			<textarea id="table-dialog_table-comment"></textarea>
 			<div class="clear"></div>
 		</div>
 		<div class="buttons-placeholder">
-			<input type="button" id="table-dialog_save" value="Save" />
-			<input type="button" id="table-dialog_cancel" value="Cancel" />
+			<input type="button" id="table-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="table-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['TableDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
@@ -89,3 +89,69 @@
 		</div>
 	</div>
 <?php $templateManager['Table'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+
+<?php /******************** Column Dialog Template **/ ?>
+<?php ob_start(); ?>
+	<div class="column-dialog">
+		<ul class="error-list hide"></ul>
+		<div class="field-text required">
+			<label class="label" for="column-dialog_column-name"><?php echo $this->_('strname'); ?></label>
+			<input class="focusable" type="text" id="column-dialog_column-name" maxlength="<?php echo $data->_maxNameLen; ?>" />
+			<div class="clear"></div>
+		</div>
+		<div class="field-select required">
+			<label class="label" for="column-dialog_column-type"><?php echo $this->_('strtype'); ?></label>
+			<select type="text" id="column-dialog_column-type">
+				<?php foreach($this->getDataTypes(FALSE) as $dataType): ?>
+					<option value="<?php echo htmlspecialchars($dataType['typedef']) ?>"><?php echo htmlspecialchars($dataType['typedef']) ?></option>
+				<?php endforeach; ?>
+			</select>
+			<div class="clear"></div>
+		</div>
+		<div class="field-text">
+			<label class="label" for="column-dialog_column-length"><?php echo $this->_('strlength'); ?></label>
+			<input type="text" id="column-dialog_column-length" />
+			<div class="clear"></div>
+		</div>
+		
+		<div class="field-check">
+			<label class="label" for="column-dialog_column-array"><?php echo $this->_('strarray'); ?></label>
+			<input type="checkbox" id="column-dialog_column-array" />
+			<div class="clear"></div>
+		</div>
+		
+		<div class="field-check">
+			<label class="label" for="column-dialog_column-primarykey"><?php echo $this->_('strprimarykey'); ?></label>
+			<input type="checkbox" id="column-dialog_column-pk" />
+			<div class="clear"></div>
+		</div>
+		
+		<div class="field-check">
+			<label class="label" for="column-dialog_column-uniquekey"><?php echo $this->_('struniquekey'); ?></label>
+			<input type="checkbox" id="column-dialog_column-uniquekey" />
+			<div class="clear"></div>
+		</div>
+		
+		<div class="field-check">
+			<label class="label" for="column-dialog_column-notnull"><?php echo $this->_('strnotnull'); ?></label>
+			<input type="checkbox" id="column-dialog_column-notnull" />
+			<div class="clear"></div>
+		</div>
+		
+		
+		<div class="field-text">
+			<label class="label" for="column-dialog_column-default"><?php echo $this->_('strdefault'); ?></label>
+			<input type="text" id="column-dialog_column-default" />
+			<div class="clear"></div>
+		</div>
+		<div class="field-textarea">
+			<label class="label" for="column-dialog_column-comment"><?php echo $this->_('strcomment'); ?></label>
+			<textarea id="column-dialog_column-comment"></textarea>
+			<div class="clear"></div>
+		</div>
+		<div class="buttons-placeholder">
+			<input type="button" id="column-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="column-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
+		</div>
+	</div>
+<?php $templateManager['ColumnDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

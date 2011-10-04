@@ -34,9 +34,9 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 	switch(event.property){
 		case 'collapsed':
 			ui.updatePanelState();
+			this.trigger(ObjectDetail.Event.STATE_CHANGED, {isCollapsed: event.newValue});
 			break;
 	}
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
 }
 
 // *****************************************************************************

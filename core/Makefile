@@ -10,10 +10,14 @@ FILES=	classes/EventDispatcher.js \
 	classes/ToolBar.js \
 	classes/Canvas.js \
 	classes/ObjectDetail.js \
+	classes/DBObjectDialog.js \
 	classes/TableDialog.js \
+	classes/ColumnDialog.js \
 	classes/DBObject.js \
 	classes/Table.js \
+	classes/Column.js \
 	classes/TableCollection.js \
+	classes/Events.js \
 
 
 default:    ${FILES}
