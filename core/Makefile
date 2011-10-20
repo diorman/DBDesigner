@@ -18,6 +18,8 @@ FILES=	classes/EventDispatcher.js \
 	classes/Column.js \
 	classes/TableCollection.js \
 	classes/ColumnCollection.js \
+	classes/ForeignKey.js \
+	classes/ForeignKeyDialog.js \
 	classes/Const.js \
 
 

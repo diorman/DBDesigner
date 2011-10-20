@@ -25,3 +25,32 @@ ColumnCollection.prototype.alterColumn = function(event){
 ColumnCollection.prototype.columnChanged = function(event){
 	event.column.getParent().refresh();
 };
+
+
+ColumnCollection.prototype.getColumnNames = function(){
+	var cNames = [];
+	for(var i = 0, n = this._columns.length; i < n; i++){
+		cNames.push(this._columns[i].getName());
+	}
+	cNames.sort();
+	return cNames;
+};
+
+ColumnCollection.prototype.getReferenceableColumns = function(){
+	var columns = [];
+	for(var i = 0, n = this._columns.length; i < n; i++){
+		if(this._columns[i].isPrimaryKey() || this._columns[i].isUniqueKey()){
+			columns.push(this._columns[i]);
+		}
+	}
+	return columns;
+};
+
+ColumnCollection.prototype.getReferenceableColumnNames = function(){
+	var columns = this.getReferenceableColumns();
+	var cNames = [];
+	for(var i = 0, n = columns.length; i < n; i++){
+		cNames.push(columns[i].getName());
+	}
+	return cNames;
+};

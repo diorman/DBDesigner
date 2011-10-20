@@ -188,7 +188,7 @@ div.canvas div.db-table div.column-container div.db-column span.fk { background-
 div.canvas div.db-table div.column-container div.db-column span.uk { background-image: url(../../../images/themes/default/UniqueConstraint.png); }
 div.canvas div.db-table div.column-container div.db-column span.pk-fk { background-image: url(../images/PrimaryKey_ForeignKey.png); }
 div.canvas div.db-table div.column-container div.db-column span.uk-fk { background-image: url(../images/UniqueConstraint_ForeignKey.png); }
-
+div.canvas div.db-table div.column-container div.db-column-hover {background-color: #EFEFEF;}
 /* Dialog */
 div.ui-dialog-titlebar span.ui-dialog-title, div.ui-dialog-content {font-size: 0.82em;}
 
@@ -240,6 +240,27 @@ div.ui-dialog-content ul.error-list li{
 	list-style-position: inside;
 }
 div.ui-dialog-content div.required .label{text-decoration: underline;}
+
+
+div.foreignkey-dialog table{
+	border-collapse: collapse;
+	margin-bottom: 15px;
+}
+
+div.foreignkey-dialog table tr{
+	height: 20px;
+	line-height: 20px;
+	text-align: center;
+}
+
+div.foreignkey-dialog table th{
+	background-color: #E6E6CC;
+	width: 184px;
+	font-weight: bold;
+}
+div.foreignkey-dialog table th, div.foreignkey-dialog table td { border: 1px solid #E6E6CC; }
+
+div.foreignkey-dialog table th.delete { width: 38px;}
 /*
 p.message {
     color: #336699;

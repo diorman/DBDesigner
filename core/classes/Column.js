@@ -29,6 +29,14 @@ Column.prototype.alterColumn = function(){
 	this.trigger(Column.Event.ALTER_COLUMN, {column: this});
 };
 
+Column.prototype.isPrimaryKey = function(){
+	return this.getModel().isPrimaryKey();
+};
+
+Column.prototype.isUniqueKey = function(){
+	return this.getModel().isUniqueKey();
+};
+
 // *****************************************************************************
 
 
@@ -75,48 +83,48 @@ ColumnModel.prototype.getDefault = function(){
 };
 
 ColumnModel.prototype.setArray = function(b){
-	this.setFlagState(ColumnModel.flag.Array, b);
+	this.setFlagState(ColumnModel.Flag.Array, b);
 };
 
 ColumnModel.prototype.isArray = function(){
-	return (this.getFlags() & ColumnModel.flag.ARRAY) != 0;
+	return (this.getFlags() & ColumnModel.Flag.ARRAY) != 0;
 };
 
 ColumnModel.prototype.setPrimaryKey = function(b){
-	this.setFlagState(ColumnModel.flag.PRIMARY_KEY, b);
+	this.setFlagState(ColumnModel.Flag.PRIMARY_KEY, b);
 };
 
 ColumnModel.prototype.isPrimaryKey = function(){
-	return (this.getFlags() & ColumnModel.flag.PRIMARY_KEY) != 0;
+	return (this.getFlags() & ColumnModel.Flag.PRIMARY_KEY) != 0;
 };
 
 ColumnModel.prototype.setForeignKey = function(b){
-	this.setFlagState(ColumnModel.flag.FOREIGN_KEY, b);
+	this.setFlagState(ColumnModel.Flag.FOREIGN_KEY, b);
 };
 
 ColumnModel.prototype.isForeignKey = function(){
-	return (this.getFlags() & ColumnModel.flag.FOREIGN_KEY) != 0;
+	return (this.getFlags() & ColumnModel.Flag.FOREIGN_KEY) != 0;
 };
 
 ColumnModel.prototype.setUniqueKey = function(b){
-	this.setFlagState(ColumnModel.flag.UNIQUE_KEY, b);
+	this.setFlagState(ColumnModel.Flag.UNIQUE_KEY, b);
 };
 
 ColumnModel.prototype.isUniqueKey = function(){
-	return (this.getFlags() & ColumnModel.flag.UNIQUE_KEY) != 0;
+	return (this.getFlags() & ColumnModel.Flag.UNIQUE_KEY) != 0;
 };
 
 ColumnModel.prototype.setNotnull = function(b){
-	this.setFlagState(ColumnModel.flag.NOTNULL, b);
+	this.setFlagState(ColumnModel.Flag.NOTNULL, b);
 };
 
 ColumnModel.prototype.isNotnull = function(){
-	return (this.getFlags() & ColumnModel.flag.NOTNULL) != 0;
+	return (this.getFlags() & ColumnModel.Flag.NOTNULL) != 0;
 };
 
 ColumnModel.prototype.setParent = function(table){
 	this._parent = table;
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'change', newValue: table, oldValue: null});
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'parent', newValue: table, oldValue: null});
 };
 
 ColumnModel.prototype.getParent = function(){

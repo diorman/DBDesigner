@@ -60,3 +60,12 @@ TableCollection.prototype.alterTable = function(event){
 TableCollection.prototype.getSelectedTables = function(){
 	return [].concat(this._selectedTables);
 };
+
+TableCollection.prototype.getTableNames = function(){
+	var tNames = [];
+	for(var i = 0, n = this._tables.length; i < n; i++){
+		tNames.push(this._tables[i].getName());
+	}
+	tNames.sort();
+	return tNames;
+};

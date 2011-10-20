@@ -23,10 +23,24 @@ Column.Event = {
 	ALTER_COLUMN: 'columnaltercolumn',
 };
 
-ColumnModel.flag = {
+ColumnModel.Flag = {
 	ARRAY: 1,
 	PRIMARY_KEY: 2,
 	UNIQUE_KEY: 4,
 	FOREIGN_KEY: 8,
 	NOTNULL: 16
+};
+
+ForeignKeyModel.Action = {
+	NO_ACTION: 'a',
+	RESTRICT: 'r',
+	CASCADE: 'c',
+	SET_NULL: 'n',
+	SET_DEFAULT: 'd'
+};
+
+ForeignKeyModel.Flag = {
+	DEFERRABLE: 1,
+	DEFERRED: 2,
+	MATCH_FULL: 3
 };

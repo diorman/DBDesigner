@@ -738,6 +738,7 @@ class DBDesigner extends Plugin {
 		$lang_keys = array(
 			'strname',
 			'strok',
+			'strremove',
 			'stroptions',
 			'strcomment',
 			'strcancel',

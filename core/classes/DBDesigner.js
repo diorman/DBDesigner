@@ -8,6 +8,7 @@ DBDesigner = function(data){
 	this.setObjectDetail();
 	this.setTableDialog();
 	this.setColumnDialog();
+	this.setForeignKeyDialog();
 	
 	//this.toolBar.setAction(globals.Action.ADD_TABLE);
 	
@@ -38,6 +39,10 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			break;
 		case DBDesigner.Action.SELECT: 
 			DBDesigner.app.canvas.setCapturingPlacement(false);
+			break;
+		case DBDesigner.Action.ADD_FOREIGNKEY:
+			DBDesigner.app.foreignKeyDialog.createForeignKey(this.tableCollection.getSelectedTables()[0]);
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 	}
 };
@@ -93,6 +98,10 @@ DBDesigner.prototype.setColumnDialog = function() {
 	this.columnDialog = new ColumnDialog();
 };
 
+DBDesigner.prototype.setForeignKeyDialog = function() {
+	this.foreignKeyDialog = new ForeignKeyDialog();
+};
+
 DBDesigner.prototype.setTableCollection = function() {
 	this.tableCollection = new TableCollection();
 	this.tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
@@ -130,5 +139,10 @@ DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('a.button').live('hover', function(event){ 
 		var $this = $(this);
 		if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
+	});
+	
+	$('div.db-column').live('hover', function(event){ 
+		var $this = $(this);
+		$this.toggleClass('db-column-hover'); 
 	});
 };

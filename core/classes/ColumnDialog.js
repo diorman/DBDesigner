@@ -29,10 +29,10 @@ ColumnDialog.prototype.saveColumn = function(form){
 	
 	if(this.validateForm(form)){
 		var flags = 0;
-		if(form.isArray) flags |= ColumnModel.flag.ARRAY;
-		if(form.isPrimaryKey) flags |= ColumnModel.flag.PRIMARY_KEY;
-		if(form.isUniqueKey) flags |= ColumnModel.flag.UNIQUE_KEY;
-		if(form.isNotnull) flags |= ColumnModel.flag.NOTNULL;
+		if(form.isArray) flags |= ColumnModel.Flag.ARRAY;
+		if(form.isPrimaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
+		if(form.isUniqueKey) flags |= ColumnModel.Flag.UNIQUE_KEY;
+		if(form.isNotnull) flags |= ColumnModel.Flag.NOTNULL;
 		if(columnModel.isForeignKey()) flags |= ColumnModel.flag.FOREIGN_KEY;
 		
 		
