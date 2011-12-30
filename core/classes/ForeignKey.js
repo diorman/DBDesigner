@@ -1,3 +1,21 @@
+ForeignKey = function() {
+	//If the constructor gets a ColumnModel object as first parameter, it is set as the model
+	//otherwise a new model is created
+	
+	if(arguments.length > 0 && arguments[0] instanceof ForeignKeyModel) this.setModel(arguments[0]);
+	else this.setModel(new ForeignKeyModel());
+	
+	//this.setUI(new ForeignKeyUI(this));
+};
+
+$.extend(ForeignKey.prototype, Component);
+
+ForeignKey.prototype.getName = function(){
+	return this.getModel().getName();
+};
+
+// *****************************************************************************
+
 ForeignKeyModel = function(){};
 
 
@@ -36,14 +54,13 @@ ForeignKeyModel.prototype.setDeleteAction = function(action){
 	this._updateAction = action;
 };
 
-ForeignKeyModel.prototype.getLocalColumns = function(){
-	if(typeof this._localColumns == 'undefined') this._localColumns = new ColumnCollection();
-	return this._localColumns;
+ForeignKeyModel.prototype.getColumns = function(){
+	if(typeof this._columns == 'undefined') this._columns = [];
+	return this._columns;
 };
 
-ForeignKeyModel.prototype.getReferencedColumns = function(){
-	if(typeof this._referencedColumns == 'undefined') this._referencedColumns = new ColumnCollection();
-	return this._referencedColumns;
+ForeignKeyModel.prototype.setColumns = function(columns){
+	this._columns = columns;
 };
 
 ForeignKeyModel.prototype.setDeferrable = function(b){

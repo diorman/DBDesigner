@@ -259,8 +259,7 @@ div.foreignkey-dialog table th{
 	font-weight: bold;
 }
 div.foreignkey-dialog table th, div.foreignkey-dialog table td { border: 1px solid #E6E6CC; }
-
-div.foreignkey-dialog table th.delete { width: 38px;}
+div.foreignkey-dialog table th.remove { width: 38px;}
 /*
 p.message {
     color: #336699;

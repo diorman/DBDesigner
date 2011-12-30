@@ -32,7 +32,8 @@ DBObjectDialogUI = {
 	},
 	
 	showError: function(message, field){
-		$('<li></li>').text(field + ': ' + message).appendTo(this.getDom().find('ul.error-list').show());
+		message = (typeof field == 'undefined')? message : field + ': ' + message;
+		$('<li></li>').text(message).appendTo(this.getDom().find('ul.error-list').show());
 	},
 	
 	close: function(){
@@ -41,6 +42,16 @@ DBObjectDialogUI = {
 	focus: function (){
 		var $focusable = this.find('.focusable');
 		window.setTimeout(function(){$focusable.focus()}, 200);
+	},
+	setKeyPressEvent: function(){
+		//console.log(event);
+		var _this = this;
+		this.getDom().keypress(function(event){
+			var $eventTarget = $(event.target);
+			if(event.charCode == 13 && $eventTarget.is('input') && !$eventTarget.is('input[type="button"]')){
+				_this.save();
+			}
+		});
 	}
 };
 $.extend(DBObjectDialogUI, ComponentUI);

@@ -61,6 +61,10 @@ TableCollection.prototype.getSelectedTables = function(){
 	return [].concat(this._selectedTables);
 };
 
+TableCollection.prototype.getTables = function(){
+	return [].concat(this._tables);
+};
+
 TableCollection.prototype.getTableNames = function(){
 	var tNames = [];
 	for(var i = 0, n = this._tables.length; i < n; i++){

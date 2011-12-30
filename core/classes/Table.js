@@ -48,6 +48,10 @@ Table.prototype.getColumnCollection = function(){
 	return this.getModel().getColumnCollection();
 };
 
+Table.prototype.getForeignKeyCollection = function(){
+	return this.getModel().getForeignKeyCollection();
+};
+
 Table.prototype.refresh = function(){
 	this.getUI().updateWidth();
 };
@@ -124,6 +128,11 @@ TableModel.prototype.setSelected = function(b){
 TableModel.prototype.getColumnCollection = function(){
 	if(typeof this._columnCollection == 'undefined') this._columnCollection = new ColumnCollection();
 	return this._columnCollection;
+};
+
+TableModel.prototype.getForeignKeyCollection = function(){
+	if(typeof this._foreignKeyCollection == 'undefined') this._foreignKeyCollection = new ForeignKeyCollection();
+	return this._foreignKeyCollection;
 };
 
 // *****************************************************************************

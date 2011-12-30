@@ -174,7 +174,7 @@
 		
 			<div id="foreignkey-dialog_properties-tab">
 			
-				<div class="field-text required">
+				<div class="field-text">
 					<label class="label" for="foreignkey-dialog_foreignkey-name"><?php echo $this->_('strname'); ?></label>
 					<input class="focusable" type="text" id="foreignkey-dialog_foreignkey-name" maxlength="<?php echo $data->_maxNameLen; ?>" />
 					<div class="clear"></div>
@@ -226,24 +226,18 @@
 					<textarea id="foreignkey-dialog_foreignkey-comment"></textarea>
 					<div class="clear"></div>
 				</div>
-				<div class="buttons-placeholder">
-					<input type="button" id="foreignkey-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
-					<input type="button" id="foreignkey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
-				</div>
 			</div>
 			<div id="foreignkey-dialog_columns-tab">
 
 				<table>
-					<tr>
-						<th>Local</th>
-						<th>Referenced</th>
-						<th class="delete"></th>
-					</tr>
-					<tr>
-						<td>col1</td>
-						<td>col2</td>
-						<td class="delete">X</td>
-					</tr>
+					<thead>
+						<tr>
+							<th><?php echo $this->_('strlocalcolumn'); ?></th>
+							<th><?php echo $this->_('strreferencing'); ?></th>
+							<th class="remove">&nbsp;</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
 				</table>
 
 				<div class="field-select">
@@ -260,6 +254,10 @@
 					<input type="button" id="foreignkey-dialog_addcolumns" value="<?php echo $this->_('stradd'); ?>" />
 				</div>
 			</div>
+		</div>
+		<div class="buttons-placeholder">
+			<input type="button" id="foreignkey-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="foreignkey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['ForeignKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

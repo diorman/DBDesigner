@@ -156,6 +156,7 @@ ColumnUI.prototype.updateView = function(){
 	else if(model.isPrimaryKey()) $keys.attr('class', 'keys pk');
 	else if(model.isUniqueKey()) $keys.attr('class', 'keys uk');
 	else if(model.isForeignKey()) $keys.attr('class', 'keys fk');
+	else $keys.attr('class', 'keys');
 	
 	if(model.isNotnull() || model.isPrimaryKey()) dom.addClass('notnull');
 	else dom.removeClass('notnull');

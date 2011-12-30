@@ -33,7 +33,7 @@ ColumnDialog.prototype.saveColumn = function(form){
 		if(form.isPrimaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
 		if(form.isUniqueKey) flags |= ColumnModel.Flag.UNIQUE_KEY;
 		if(form.isNotnull) flags |= ColumnModel.Flag.NOTNULL;
-		if(columnModel.isForeignKey()) flags |= ColumnModel.flag.FOREIGN_KEY;
+		if(columnModel.isForeignKey()) flags |= ColumnModel.Flag.FOREIGN_KEY;
 		
 		
 		columnModel.setName(form.name);
@@ -119,6 +119,7 @@ ColumnDialogUI.prototype.bindEvents = function(){
 	dom.find('#column-dialog_cancel').click($.proxy(this.close, this));
 	dom.find('#column-dialog_save').click($.proxy(this.save, this));
 	dom.find('#column-dialog_column-type').change($.proxy(this.dataTypeChanged, this));
+	this.setKeyPressEvent();
 };
 
 

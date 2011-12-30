@@ -36,6 +36,10 @@ ColumnCollection.prototype.getColumnNames = function(){
 	return cNames;
 };
 
+ColumnCollection.prototype.getColumns = function(){
+	return [].concat(this._columns);
+};
+
 ColumnCollection.prototype.getReferenceableColumns = function(){
 	var columns = [];
 	for(var i = 0, n = this._columns.length; i < n; i++){
