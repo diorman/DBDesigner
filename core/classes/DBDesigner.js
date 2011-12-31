@@ -1,5 +1,9 @@
 
 DBDesigner = function(data){
+	if(!Vector.checkSupport()){
+        $('<p></p>').text(DBDesigner.lang.strnographics).appendTo('body');
+        return;
+    }
 	
 	this.setGlobalUIBehavior();
 	this.setTableCollection();
@@ -9,7 +13,6 @@ DBDesigner = function(data){
 	this.setTableDialog();
 	this.setColumnDialog();
 	this.setForeignKeyDialog();
-	
 	//this.toolBar.setAction(globals.Action.ADD_TABLE);
 	
 };
@@ -37,7 +40,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.tableDialog.editTable(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
-		case DBDesigner.Action.SELECT: 
+		case DBDesigner.Action.SELECT:
 			DBDesigner.app.canvas.setCapturingPlacement(false);
 			break;
 		case DBDesigner.Action.ADD_FOREIGNKEY:

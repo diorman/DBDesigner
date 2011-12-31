@@ -38,35 +38,6 @@ ForeignKeyDialog.prototype.editForeignKey = function(foreignKey){
 };
 
 ForeignKeyDialog.prototype.saveForeignKey = function(form){
-	/*
-	var model = this.getModel();
-	var columnModel = model.getDBObjectModel();
-	var action = model.getAction();
-	
-	if(this.validateForm(form)){
-		var flags = 0;
-		if(form.isArray) flags |= ColumnModel.flag.ARRAY;
-		if(form.isPrimaryKey) flags |= ColumnModel.flag.PRIMARY_KEY;
-		if(form.isUniqueKey) flags |= ColumnModel.flag.UNIQUE_KEY;
-		if(form.isNotnull) flags |= ColumnModel.flag.NOTNULL;
-		if(columnModel.isForeignKey()) flags |= ColumnModel.flag.FOREIGN_KEY;
-		
-		
-		columnModel.setName(form.name);
-		columnModel.setType(form.type);
-		columnModel.setLength(form.length);
-		columnModel.setDefault(form.def);
-		columnModel.setComment(form.comment);
-		columnModel.setFlags(flags);
-		
-		
-		if(action == DBDesigner.Action.ADD_COLUMN){
-			var column = new Column(columnModel);
-			columnModel.getParent().getColumnCollection().add(column);
-		}
-		
-		this.getUI().close();
-	}*/
 	var model = this.getModel();
 	var foreignKeyModel = model.getDBObjectModel();
 	var action = model.getAction();
@@ -81,6 +52,7 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 		foreignKeyModel.setComment(form.comment);
 		foreignKeyModel.setFlags(flags);
 		foreignKeyModel.setColumns(form.columns);
+		foreignKeyModel.setReferencedTable(form.referencedTable);
 		
 		if(action == DBDesigner.Action.ADD_FOREIGNKEY){
 			var foreignKey = new ForeignKey(foreignKeyModel);
@@ -323,7 +295,6 @@ ForeignKeyDialogUI.prototype.open = function(title){
 };
 
 ForeignKeyDialogUI.prototype.save = function(){
-	console.log('save');
 	this.cleanErrors();
 	var form = {
 		name: $.trim($('#foreignkey-dialog_foreignkey-name').val()),

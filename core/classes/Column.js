@@ -37,6 +37,10 @@ Column.prototype.isUniqueKey = function(){
 	return this.getModel().isUniqueKey();
 };
 
+Column.prototype.setHighLight = function(b){
+	this.getUI().setHighLight(b);
+};
+
 // *****************************************************************************
 
 
@@ -177,3 +181,8 @@ ColumnUI.prototype.bindEvents = function(){
 	this.getDom().dblclick($.proxy(this.onDblClick, this));
 };
 
+ColumnUI.prototype.setHighLight = function(b){
+	var dom = this.getDom();
+	if(b) dom.addClass('db-column-highlight');
+	else dom.removeClass('db-column-highlight');
+};

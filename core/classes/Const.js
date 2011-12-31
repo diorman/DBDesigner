@@ -13,14 +13,18 @@ DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
 
 ToolBar.Event = {ACTION_CHANGED: 'toolbaractionchanged'};
 
-Table.Event = {SELECTION_CHANGED: 'tableselectionchanged', ALTER_TABLE: 'tablealtertable'};
+Table.Event = {
+	SELECTION_CHANGED: 'tableselectionchanged', 
+	ALTER_TABLE: 'tablealtertable',
+	VIEW_BOX_CHANGED: 'tableviewboxchanged'
+};
 
 Canvas.Event = {PLACEMENT_CAPTURED: 'canvasplacementcaptured'};
 
 ObjectDetail.Event = {STATE_CHANGED: 'objectdetailstatechanged'};
 
 Column.Event = {
-	ALTER_COLUMN: 'columnaltercolumn',
+	ALTER_COLUMN: 'columnaltercolumn'
 };
 
 ColumnModel.Flag = {
@@ -44,3 +48,8 @@ ForeignKeyModel.Flag = {
 	DEFERRED: 2,
 	MATCH_FULL: 3
 };
+
+ForeignKeyUI.TRIANGLE_SIZE = 7;
+
+Vector.SVG = 'svg';
+Vector.VML = 'vml';

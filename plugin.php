@@ -796,7 +796,8 @@ class DBDesigner extends Plugin {
 			'straligntables',
 			'strconstraintneedsname',
 			'strbadinteger',
-			'strbadnumericlength'
+			'strbadnumericlength',
+			'strnographics'
 		);
 		
 		$js_lang = array();

@@ -135,7 +135,11 @@ CanvasUI = function(controller) {
 	this.setTemplateID('Canvas');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').multiDraggableArea({filter: 'div.db-table'});
+	var dom = this.getDom();
+	if(Vector.type == Vector.SVG){
+		dom.append(Vector.createElement("svg"));
+	}
+	dom.appendTo('body').multiDraggableArea({filter: 'div.db-table'});
 };
 $.extend(CanvasUI.prototype, ComponentUI);
 

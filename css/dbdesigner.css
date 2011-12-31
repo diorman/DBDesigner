@@ -188,7 +188,9 @@ div.canvas div.db-table div.column-container div.db-column span.fk { background-
 div.canvas div.db-table div.column-container div.db-column span.uk { background-image: url(../../../images/themes/default/UniqueConstraint.png); }
 div.canvas div.db-table div.column-container div.db-column span.pk-fk { background-image: url(../images/PrimaryKey_ForeignKey.png); }
 div.canvas div.db-table div.column-container div.db-column span.uk-fk { background-image: url(../images/UniqueConstraint_ForeignKey.png); }
-div.canvas div.db-table div.column-container div.db-column-hover {background-color: #EFEFEF;}
+div.canvas div.db-table div.column-container div.db-column-hover, 
+div.canvas div.db-table div.column-container div.db-column-highlight {background-color: #EFEFEF;}
+div.canvas div.db-table div.column-container div.db-column-highlight span.definition {color: #E59700;}
 /* Dialog */
 div.ui-dialog-titlebar span.ui-dialog-title, div.ui-dialog-content {font-size: 0.82em;}
 
@@ -260,6 +262,8 @@ div.foreignkey-dialog table th{
 }
 div.foreignkey-dialog table th, div.foreignkey-dialog table td { border: 1px solid #E6E6CC; }
 div.foreignkey-dialog table th.remove { width: 38px;}
+svg {position: absolute; top: 0; left: 0;}
+polyline {cursor: pointer;}
 /*
 p.message {
     color: #336699;

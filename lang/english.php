@@ -61,6 +61,7 @@
 	$lang['strconstraintneedsname'] = 'You must give a name for your constraint.';
 	$lang['strbadinteger'] = 'Invalid input syntax for integer';
 	$lang['strbadnumericlength'] = 'Scale %d must be between 0 and precision %d';
+	$lang['strnographics'] = 'Your brownser do not support graphics';
 	/*
 		'strname',
 		'strok',

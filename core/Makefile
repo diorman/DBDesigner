@@ -6,6 +6,7 @@ FILES=	classes/EventDispatcher.js \
 	classes/Component.js \
 	classes/ComponentUI.js \
 	classes/ComponentModel.js \
+	classes/Vector.js \
 	classes/DBDesigner.js \
 	classes/ToolBar.js \
 	classes/Canvas.js \

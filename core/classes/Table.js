@@ -24,6 +24,14 @@ Table.prototype.setSelected = function(b){
 	this.getUI().updateSelected(b);
 };
 
+Table.prototype.setPosition = function(position){
+	this.getModel().setPosition(position);
+};
+
+Table.prototype.getPosition = function(){
+	return this.getModel().getPosition();
+};
+
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
@@ -54,6 +62,15 @@ Table.prototype.getForeignKeyCollection = function(){
 
 Table.prototype.refresh = function(){
 	this.getUI().updateWidth();
+};
+
+Table.prototype.triggerViewBoxChanged = function(data){
+	if(typeof data != 'object') data = {};
+	this.trigger(Table.Event.VIEW_BOX_CHANGED, data);
+};
+
+Table.prototype.getSize = function(){
+	return this.getUI().getSize();
 };
 
 // *****************************************************************************
@@ -178,13 +195,17 @@ TableUI.prototype.updateName = function(name){
 };
 
 TableUI.prototype.onDragStart = function(){
-	console.log('dragstart');
+	this.getController().triggerViewBoxChanged({dragging: true});
 };
 
 TableUI.prototype.onDragStop = function(){
-	console.log(this.getDom().width());
-	console.log(this.find('div.header > span.title').outerWidth());
-	
+	var $canvas = $('#canvas');
+	var position = this.getDom().position();
+	var controller = this.getController();
+	position.left += $canvas.scrollLeft();
+	position.top += $canvas.scrollTop();
+	controller.setPosition(position);
+	controller.triggerViewBoxChanged();
 };
 
 TableUI.prototype.onButtonPressed = function(event){
@@ -206,14 +227,16 @@ TableUI.prototype.onHeaderDblClicked = function(event){
 };
 
 TableUI.prototype.updateWidth = function(){
+	var controller = this.getController();
 	var dom = this.getDom();
 	var w = dom.find('div.header > span.title').outerWidth() + 54/*(buttons)*/;
-	if(!this.getController().getModel().isCollapsed()){
+	if(!controller.getModel().isCollapsed()){
 		dom.find('span.definition').each(function(){
 			w = Math.max($(this).outerWidth() + 22, w);
 		});
 	}
 	dom.css({width: w, minWidth: w});
+	controller.triggerViewBoxChanged();
 };
 
 TableUI.prototype.updateCollapsed = function(b){
@@ -244,4 +267,13 @@ TableUI.prototype.updateSelected = function(b){
 TableUI.prototype.selectionChanged = function(event){
 	var selected = event.type == 'selectableselected';
 	this.getController().getModel().setSelected(selected);
+};
+
+TableUI.prototype.getSize = function(){
+	var dom = this.getDom();
+	var size = {
+		width: dom.outerWidth(),
+		height: dom.outerHeight()
+	}
+	return size;
 };
