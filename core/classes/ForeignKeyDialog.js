@@ -32,9 +32,9 @@ ForeignKeyDialog.prototype.createForeignKey= function(table){
 
 ForeignKeyDialog.prototype.editForeignKey = function(foreignKey){
 	var model = this.getModel();
-	model.setAction(DBDesigner.Action.ALTER_COLUMN);
-	model.setDBObjectModel(column.getModel());
-	this.getUI().open(DBDesigner.lang.straltercolumn);
+	model.setAction(DBDesigner.Action.ALTER_FOREIGNKEY);
+	model.setDBObjectModel(foreignKey.getModel());
+	this.getUI().open(DBDesigner.lang.stralterforeignkey);
 };
 
 ForeignKeyDialog.prototype.saveForeignKey = function(form){
@@ -235,6 +235,7 @@ ForeignKeyDialogUI.prototype.open = function(title){
 	
 	var foreignKeyModel = this.getController().getDBObjectModel();
 	var dom = this.getDom();
+	var controller = this.getController();
 	
 	this.cleanErrors();
 	
@@ -250,21 +251,28 @@ ForeignKeyDialogUI.prototype.open = function(title){
 		else $('#foreignkey-dialog_foreignkey-deferred').prop('checked', false).prop('disabled', true);
 		
 		/** Update tables **/
-		var tables = DBDesigner.app.tableCollection.getTables();
+		var tNames = DBDesigner.app.tableCollection.getTableNames();
 		var $options = $();
 		var $option;
 		var i = 0;
 		var tName = '';
-		for (i = 0; i < tables.length; i++){
-			tName = tables[i].getName();
-			$option = $('<option></option>').attr('value', tName).text(tName);
+		var $referencedTable = $('#foreignkey-dialog_foreignkey-references');
+		for (i = 0; i < tNames.length; i++){
+			$option = $('<option></option>').attr('value', tNames[i]).text(tNames[i]);
 			$options = $options.add($option);
 		}
-		if($options.length > 0) $('#foreignkey-dialog_foreignkey-references').html($options).trigger('change');
-		else $('#foreignkey-dialog_foreignkey-references').empty().trigger('change');
+		if($options.length > 0) $referencedTable.html($options);
+		else $referencedTable.empty();
 		
+		if(controller.getModel().getAction() == DBDesigner.Action.ALTER_FOREIGNKEY){
+			$referencedTable.val(foreignKeyModel.getReferencedTable().getName()).prop('disabled', true);
+		}else {
+			$referencedTable.prop('disabled', false);
+		}
 		
-		this.getController().setSelectedColumns(foreignKeyModel.getColumns());
+		$referencedTable.trigger('change');
+		
+		controller.setSelectedColumns(foreignKeyModel.getColumns());
 		
 		/** Update local columns **/
 		this.updateLocalColumns();

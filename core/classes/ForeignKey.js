@@ -62,6 +62,10 @@ ForeignKey.prototype.onTableViewBoxChanged = function(event){
 	}
 };
 
+ForeignKey.prototype.alterForeignKey = function(){
+	this.trigger(ForeignKey.Event.ALTER_FOREIGNKEY);
+};
+
 // *****************************************************************************
 
 ForeignKeyModel = function(){};
@@ -104,11 +108,57 @@ ForeignKeyModel.prototype.setDeleteAction = function(action){
 
 ForeignKeyModel.prototype.getColumns = function(){
 	if(typeof this._columns == 'undefined') this._columns = [];
-	return this._columns;
+	return [].concat(this._columns);
 };
 
 ForeignKeyModel.prototype.setColumns = function(columns){
+	var oldColumns = this.getColumns();
+	var i;
+	var oldLocalColumns = [];
+	var oldForeignColumns = [];
+	var newLocalColumns = [];
+	var newForeignColumns = [];
+	
 	this._columns = columns;
+	
+	for(i = 0; i < oldColumns.length; i++){
+		oldLocalColumns.push(oldColumns[i].localColumn);
+		oldForeignColumns.push(oldColumns[i].foreignColumn);
+	}
+	for(i = 0; i < columns.length; i++){
+		if($.inArray(columns[i].localColumn, oldLocalColumns) == -1){
+			columns[i].localColumn.setForeignKey(true);
+		}
+		if($.inArray(columns[i].foreignColumn, oldForeignColumns) == -1){
+			columns[i].foreignColumn.bind(Column.Event.COLUMN_TYPE_CHANGED, this.onForeignColumnTypeChanged, this);
+			columns[i].foreignColumn.trigger(Column.Event.COLUMN_TYPE_CHANGED);
+		}
+		newLocalColumns.push(columns[i].localColumn);
+		newForeignColumns.push(columns[i].foreignColumn);
+	}
+	for(i = 0; i < oldColumns.length; i++){
+		if($.inArray(oldLocalColumns[i], newLocalColumns) == -1){
+			oldLocalColumns[i].setForeignKey(false);
+		}
+		if($.inArray(oldForeignColumns[i], newForeignColumns) == -1){
+			oldForeignColumns[i].unbind(Column.Event.COLUMN_TYPE_CHANGED, this.onForeignColumnTypeChanged, this);
+		}
+	}
+};
+
+ForeignKeyModel.prototype.onForeignColumnTypeChanged = function(event){
+	var columns = this.getColumns();
+	for(var i = 0; i < columns.length; i++){
+		if(columns[i].foreignColumn == event.sender){
+			var type = columns[i].foreignColumn.getType();
+			if(type == 'SERIAL') type = 'INTEGER';
+			else if(type == 'BIGSERIAL') type = 'BIGINT';
+			columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
+			columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
+			columns[i].localColumn.setType(type);
+			break;
+		}
+	}
 };
 
 ForeignKeyModel.prototype.setDeferrable = function(b){
@@ -183,8 +233,8 @@ ForeignKeyUI.prototype.updateView = function(){
 			left: Math.floor(referencedTableSize.width/2) + referencedTablePos.left,
 			top: Math.floor(referencedTableSize.height/2) + referencedTablePos.top
 		};
-		var i1 = this.intersect(parentSize,parentPos, p1, p2);
-		var i2 = this.intersect(referencedTableSize, referencedTablePos, p1, p2);
+		var i1 = this.intersect(referencedTableSize, referencedTablePos, p1, p2);
+		var i2 = this.intersect(parentSize,parentPos, p1, p2);
         if(i1 && i2){
             if(i1.s == 'v' && i2.s == 'v'){
                 var X = Math.floor((i2.left - i1.left) / 2);
@@ -312,7 +362,15 @@ ForeignKeyUI.prototype.getConnector = function(){
 			this._connector.strokeweight = '2';
 			$('#canvas').append(this._connector);
 		}
-		$(this._connector).hover($.proxy(this.onConnectorHover, this));
+		/*$(this._connector).bind({
+			hover: $.proxy(this.onConnectorHover, this),
+			dblclick: $.proxy(this.onConnectorDblclick, this)
+		});*/
+		$(this._connector).bind({
+			hover: $.proxy(this.onConnectorHover, this),
+			mousedown: this.onConnectorMouseDown,
+			dblclick: $.proxy(this.onConnectorDblclick, this)
+		});
 	}
 	return this._connector;
 };
@@ -394,4 +452,12 @@ ForeignKeyUI.prototype.onConnectorHover = function(event){
 		}
 		this.getController().setHighLight(false);
 	}
+};
+
+ForeignKeyUI.prototype.onConnectorMouseDown = function(event){
+	event.stopPropagation();
+};
+
+ForeignKeyUI.prototype.onConnectorDblclick = function(event){
+	this.getController().alterForeignKey();
 };

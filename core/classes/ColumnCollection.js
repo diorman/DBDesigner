@@ -13,17 +13,12 @@ ColumnCollection.prototype.getColumnByName = function(name){
 ColumnCollection.prototype.add = function(column){
 	if($.inArray(column, this._columns) == -1){
 		this._columns.push(column);
-		column.bind(Column.Event.ALTER_COLUMN, this.alterColumn, this);
-		column.bind(Column.Event.COLUMN_CHANGED, this.columnChanged, this);
+		column.bind(Column.Event.ALTER_REQUEST, this.alterColumn, this);
 	}
 };
 
 ColumnCollection.prototype.alterColumn = function(event){
-	DBDesigner.app.doAction(DBDesigner.Action.ALTER_COLUMN, event.column);
-};
-
-ColumnCollection.prototype.columnChanged = function(event){
-	event.column.getParent().refresh();
+	DBDesigner.app.doAction(DBDesigner.Action.ALTER_COLUMN, event.sender);
 };
 
 

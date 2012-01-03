@@ -19,6 +19,9 @@ Column.prototype.modelPropertyChanged = function(event){
 		case 'parent':
 			this.getUI().updateParent();
 			break;
+		case 'type':
+		case 'length': 
+		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);
 		default:
 			this.getUI().updateView();
 			break;
@@ -26,7 +29,7 @@ Column.prototype.modelPropertyChanged = function(event){
 };
 
 Column.prototype.alterColumn = function(){
-	this.trigger(Column.Event.ALTER_COLUMN, {column: this});
+	this.trigger(Column.Event.ALTER_REQUEST);
 };
 
 Column.prototype.isPrimaryKey = function(){
@@ -37,8 +40,36 @@ Column.prototype.isUniqueKey = function(){
 	return this.getModel().isUniqueKey();
 };
 
+Column.prototype.isArray = function(){
+	return this.getModel().isArray();
+};
+
 Column.prototype.setHighLight = function(b){
 	this.getUI().setHighLight(b);
+};
+
+Column.prototype.setForeignKey = function(b){
+	this.getModel().setForeignKey(b);
+};
+
+Column.prototype.setLength = function(length){
+	this.getModel().setLength(length);
+};
+
+Column.prototype.setType = function(type){
+	this.getModel().setType(type);
+};
+
+Column.prototype.setArray = function(b){
+	this.getModel().setArray(b);
+};
+
+Column.prototype.getType = function(){
+	return this.getModel().getType();
+};
+
+Column.prototype.getLength = function(){
+	return this.getModel().getLength();
 };
 
 // *****************************************************************************
@@ -87,7 +118,7 @@ ColumnModel.prototype.getDefault = function(){
 };
 
 ColumnModel.prototype.setArray = function(b){
-	this.setFlagState(ColumnModel.Flag.Array, b);
+	this.setFlagState(ColumnModel.Flag.ARRAY, b);
 };
 
 ColumnModel.prototype.isArray = function(){
@@ -103,7 +134,11 @@ ColumnModel.prototype.isPrimaryKey = function(){
 };
 
 ColumnModel.prototype.setForeignKey = function(b){
-	this.setFlagState(ColumnModel.Flag.FOREIGN_KEY, b);
+	if(typeof this._foreignKeyCount == 'undefined') this._foreignKeyCount = 0;
+	this._foreignKeyCount += b? 1 : -1;
+	if(this._foreignKeyCount == 0 || this._foreignKeyCount == 1){
+		this.setFlagState(ColumnModel.Flag.FOREIGN_KEY, b);
+	}
 };
 
 ColumnModel.prototype.isForeignKey = function(){
@@ -152,6 +187,8 @@ ColumnUI.prototype.updateView = function(){
 	var dom = this.getDom();
 	var $keys = dom.find('span.keys');
 	var def = model.getName() + ' : ' + model.getType();
+	var length = model.getLength();
+	if(length != '') def += '(' + length + ')';
 	if(model.isArray()) def += '[]';
 	
 	dom.find('span.definition').text(def);

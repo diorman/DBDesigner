@@ -33,6 +33,7 @@
 				$this.addClass('ui-selected').trigger('selectableselected')
 				.siblings('.ui-selected').removeClass('ui-selected').trigger('selectableunselected');
 			}
+			event.stopPropagation();
 		},
 		click: function(event){
 			var $this = $(this);

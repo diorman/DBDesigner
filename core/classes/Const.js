@@ -3,6 +3,7 @@ DBDesigner.Action = {
 	ADD_TABLE: 'actionaddtable',
 	ALTER_TABLE: 'actionedittable',
 	ADD_FOREIGNKEY: 'actionaddfk',
+	ALTER_FOREIGNKEY: 'actionalterfk',
 	ADD_COLUMN: 'actionaddcolumn',
 	ALTER_COLUMN: 'actionaltercolumn',
 	DROP_TABLE: 'actiondroptable',
@@ -24,7 +25,8 @@ Canvas.Event = {PLACEMENT_CAPTURED: 'canvasplacementcaptured'};
 ObjectDetail.Event = {STATE_CHANGED: 'objectdetailstatechanged'};
 
 Column.Event = {
-	ALTER_COLUMN: 'columnaltercolumn'
+	COLUMN_TYPE_CHANGED: 'columntypechanged',
+	ALTER_REQUEST: 'columnalterrequest'
 };
 
 ColumnModel.Flag = {
@@ -46,7 +48,11 @@ ForeignKeyModel.Action = {
 ForeignKeyModel.Flag = {
 	DEFERRABLE: 1,
 	DEFERRED: 2,
-	MATCH_FULL: 3
+	MATCH_FULL: 4
+};
+
+ForeignKey.Event = {
+	ALTER_FOREIGNKEY: 'foreignkeyalterforeignkey'
 };
 
 ForeignKeyUI.TRIANGLE_SIZE = 7;

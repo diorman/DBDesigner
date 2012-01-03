@@ -131,15 +131,22 @@ ColumnDialogUI.prototype.open = function(title){
 	this.cleanErrors();
 	
 	if(columnModel != null){
-		$('#column-dialog_column-type').val(columnModel.getType()).trigger('change');
+		$('#column-dialog_column-type').val(columnModel.getType()).prop('disabled', false).trigger('change');
 		$('#column-dialog_column-name').val(columnModel.getName());
 		$('#column-dialog_column-length').val(columnModel.getLength());
 		$('#column-dialog_column-comment').val(columnModel.getComment());
-		$('#column-dialog_column-array').prop('checked', columnModel.isArray());
+		$('#column-dialog_column-array').prop({checked: columnModel.isArray(), disabled: false});
 		$('#column-dialog_column-primarykey').prop('checked', columnModel.isPrimaryKey());
 		$('#column-dialog_column-uniquekey').prop('checked', columnModel.isUniqueKey());
 		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotnull());
 		$('#column-dialog_column-default').val(columnModel.getDefault());
+		
+		if(columnModel.isForeignKey()){
+			$('#column-dialog_column-type').prop('disabled', true);
+			$('#column-dialog_column-array').prop('disabled', true);
+			$('#column-dialog_column-length').prop('disabled', true);
+		}
+		
 		dom.dialog('open').dialog('option', 'title', title);
 		this.focus();
 	}

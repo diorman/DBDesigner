@@ -47,6 +47,10 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.foreignKeyDialog.createForeignKey(this.tableCollection.getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
+		case DBDesigner.Action.ALTER_FOREIGNKEY:
+			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 	}
 };
 

@@ -13,9 +13,13 @@ ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
-		//column.bind(Column.Event.ALTER_COLUMN, this.alterColumn, this);
+		foreignKey.bind(ForeignKey.Event.ALTER_FOREIGNKEY, this.alterForeignKey, this);
 		//column.bind(Column.Event.COLUMN_CHANGED, this.columnChanged, this);
 	}
+};
+
+ForeignKeyCollection.prototype.alterForeignKey = function(event){
+	DBDesigner.app.doAction(DBDesigner.Action.ALTER_FOREIGNKEY, event.sender);
 };
 /*
 ForeignKeyCollection.prototype.alterColumn = function(event){
