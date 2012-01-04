@@ -350,7 +350,7 @@ ForeignKeyUI.prototype.drawSvgHelper = function(point){
 ForeignKeyUI.prototype.getConnector = function(){
 	if(typeof this._connector == 'undefined'){
 		this._connector = Vector.createElement('polyline');
-
+		this._connector.style.cursor = 'pointer';
 		if(Vector.type == Vector.SVG){
 			this._connector.setAttribute('stroke', 'black');
 			this._connector.setAttribute('stroke-width', '2');
@@ -360,12 +360,10 @@ ForeignKeyUI.prototype.getConnector = function(){
 			this._connector.stroke = 'true';
 			this._connector.strokecolor = 'black';
 			this._connector.strokeweight = '2';
+			this._connector.style.position = 'absolute';
+			this._connector.filled = false;
 			$('#canvas').append(this._connector);
 		}
-		/*$(this._connector).bind({
-			hover: $.proxy(this.onConnectorHover, this),
-			dblclick: $.proxy(this.onConnectorDblclick, this)
-		});*/
 		$(this._connector).bind({
 			hover: $.proxy(this.onConnectorHover, this),
 			mousedown: this.onConnectorMouseDown,
@@ -380,7 +378,7 @@ ForeignKeyUI.prototype.drawConnector = function(pointsX, pointsY){
 	if(Vector.type == Vector.SVG) {
 		this.getConnector().setAttribute('points', points);
 	}else{
-		
+		this.getConnector().points.value = points;
 	}
 };
 
@@ -392,7 +390,7 @@ ForeignKeyUI.prototype.getDiamond = function(){
 			$('#canvas').find('svg').append(this._diamond);
 		}else{
 			this._diamond = Vector.createElement('shape');
-			this._diamond.stroke = 'false';
+			this._diamond.stroke = false;
 			this._diamond.fillcolor = 'black';
 			this._diamond.coordorigin = '0 0';
 			this._diamond.coordsize = '10 10';
@@ -439,16 +437,27 @@ ForeignKeyUI.prototype.hide = function(){
 };
 
 ForeignKeyUI.prototype.onConnectorHover = function(event){
+	var diamond;
 	if(event.type == 'mouseenter'){
 		if(Vector.type == Vector.SVG){
 			this.getConnector().setAttribute('stroke', '#E59700');
 			this.getDiamond().setAttribute('fill', '#E59700');
+		}else{
+			diamond = this.getDiamond();
+			diamond.fillcolor = '#E59700';
+			diamond.strokecolor = '#E59700';
+			this.getConnector().strokecolor = '#E59700';
 		}
 		this.getController().setHighLight(true);
 	}else{
 		if(Vector.type == Vector.SVG){
 			this.getConnector().setAttribute('stroke', 'black');
 			this.getDiamond().setAttribute('fill', 'black');
+		}else{
+			diamond = this.getDiamond();
+			diamond.fillcolor = 'black';
+			diamond.strokecolor = 'black';
+			this.getConnector().strokecolor = 'black';
 		}
 		this.getController().setHighLight(false);
 	}

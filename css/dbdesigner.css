@@ -68,6 +68,9 @@ div.canvas div.inner-canvas{
     bottom:15px;/*space for some browser's scroll bar*/
 	width: 100%;
 	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
 }
 
 /* Object Detail*/
@@ -263,7 +266,6 @@ div.foreignkey-dialog table th{
 div.foreignkey-dialog table th, div.foreignkey-dialog table td { border: 1px solid #E6E6CC; }
 div.foreignkey-dialog table th.remove { width: 38px;}
 svg {position: absolute; top: 0; left: 0;}
-polyline {cursor: pointer;}
 /*
 p.message {
     color: #336699;

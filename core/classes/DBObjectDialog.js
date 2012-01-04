@@ -40,15 +40,17 @@ DBObjectDialogUI = {
 		this.getDom().dialog('close');
 	},
 	focus: function (){
+		$(document.activeElement).blur();
 		var $focusable = this.find('.focusable');
-		window.setTimeout(function(){$focusable.focus()}, 200);
+		window.setTimeout(function(){
+			$focusable.focus();
+		}, 250);
 	},
 	setKeyPressEvent: function(){
-		//console.log(event);
 		var _this = this;
 		this.getDom().keypress(function(event){
 			var $eventTarget = $(event.target);
-			if(event.charCode == 13 && $eventTarget.is('input') && !$eventTarget.is('input[type="button"]')){
+			if(event.keyCode == 13 && $eventTarget.is('input') && !$eventTarget.is('input[type="button"]')){
 				_this.save();
 			}
 		});

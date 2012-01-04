@@ -158,7 +158,7 @@ ColumnDialogUI.prototype.save = function(){
 	
 	var form = {
 		name: $.trim($('#column-dialog_column-name').val()),
-		type: $('#column-dialog_column-type').val(),
+		type: $.trim($('#column-dialog_column-type').val()),
 		isArray: $('#column-dialog_column-array').prop('checked'),
 		isPrimaryKey: $('#column-dialog_column-primarykey').prop('checked'),
 		isUniqueKey: $('#column-dialog_column-uniquekey').prop('checked'),
