@@ -736,6 +736,7 @@ class DBDesigner extends Plugin {
 	
 	function getJSLanguage(){
 		$lang_keys = array(
+			'stryes',
 			'strname',
 			'strok',
 			'strremove',

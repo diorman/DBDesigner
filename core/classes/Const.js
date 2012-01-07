@@ -7,17 +7,22 @@ DBDesigner.Action = {
 	ADD_COLUMN: 'actionaddcolumn',
 	ALTER_COLUMN: 'actionaltercolumn',
 	DROP_TABLE: 'actiondroptable',
-	SAVE: 'save'
+	SAVE: 'actionsave',
+	SHOW_TABLE_DETAIL: 'actionshowtabledetail' 
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
 
 ToolBar.Event = {ACTION_CHANGED: 'toolbaractionchanged'};
 
+DBObject.Event = { DBOBJECT_ALTERED: 'dbobjectaltered' };
+
 Table.Event = {
 	SELECTION_CHANGED: 'tableselectionchanged', 
-	ALTER_TABLE: 'tablealtertable',
-	VIEW_BOX_CHANGED: 'tableviewboxchanged'
+	ALTER_REQUEST: 'tablealterrequest',
+	TABLE_ALTERED: 'tabletablealtered',
+	VIEW_BOX_CHANGED: 'tableviewboxchanged',
+	DETAIL_REQUEST: 'tabledetailrequest'
 };
 
 Canvas.Event = {PLACEMENT_CAPTURED: 'canvasplacementcaptured'};
@@ -26,7 +31,8 @@ ObjectDetail.Event = {STATE_CHANGED: 'objectdetailstatechanged'};
 
 Column.Event = {
 	COLUMN_TYPE_CHANGED: 'columntypechanged',
-	ALTER_REQUEST: 'columnalterrequest'
+	ALTER_REQUEST: 'columnalterrequest',
+	COLUMN_ALTERED: 'columnaltered'
 };
 
 ColumnModel.Flag = {
@@ -52,7 +58,8 @@ ForeignKeyModel.Flag = {
 };
 
 ForeignKey.Event = {
-	ALTER_FOREIGNKEY: 'foreignkeyalterforeignkey'
+	ALTER_REQUEST: 'foreignkeyalterforeignkey',
+	FOREIGNKEY_ALTERED: 'foreignkeyaltered'
 };
 
 ForeignKeyUI.TRIANGLE_SIZE = 7;

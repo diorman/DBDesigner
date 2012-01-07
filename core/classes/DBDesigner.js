@@ -51,6 +51,9 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
+		case DBDesigner.Action.SHOW_TABLE_DETAIL:
+			this.objectDetail.showTable(extra);
+			break;
 	}
 };
 

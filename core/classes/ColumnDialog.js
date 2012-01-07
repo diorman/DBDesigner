@@ -29,6 +29,9 @@ ColumnDialog.prototype.saveColumn = function(form){
 	
 	if(this.validateForm(form)){
 		var flags = 0;
+		
+		if(action == DBDesigner.Action.ALTER_COLUMN) columnModel.startEditing();
+		
 		if(form.isArray) flags |= ColumnModel.Flag.ARRAY;
 		if(form.isPrimaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
 		if(form.isUniqueKey) flags |= ColumnModel.Flag.UNIQUE_KEY;
@@ -48,6 +51,7 @@ ColumnDialog.prototype.saveColumn = function(form){
 			var column = new Column(columnModel);
 			columnModel.getParent().getColumnCollection().add(column);
 		}
+		else columnModel.stopEditing();
 		
 		this.getUI().close();
 	}

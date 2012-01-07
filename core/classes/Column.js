@@ -8,22 +8,22 @@ Column = function() {
 	this.setUI(new ColumnUI(this));
 };
 
-$.extend(Column.prototype, Component);
-
-Column.prototype.getName = function(){
-	return this.getModel().getName();
-};
+$.extend(Column.prototype, DBObject);
 
 Column.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
 		case 'parent':
 			this.getUI().updateParent();
 			break;
+		case 'stopEditing':
+			this.modelChanged();
+			break;
 		case 'type':
 		case 'length': 
 		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);
 		default:
-			this.getUI().updateView();
+			//this.getUI().updateView();
+			this.modelChanged(event.property, this.getUI().updateView);
 			break;
 	}
 };
@@ -89,6 +89,15 @@ ColumnModel.prototype.setType = function(type){
 ColumnModel.prototype.getType = function(){
 	if(typeof this._type == 'undefined') this._type = 'SERIAL';
 	return this._type;
+};
+
+ColumnModel.prototype.getFullType = function(){
+	var type = this.getType();
+	var isArray = this.isArray();
+	var length = this.getLength();
+	if(length != '') type += '(' + length + ')';
+	if(isArray) type += '[]';
+	return type;
 };
 
 ColumnModel.prototype.setLength = function(length){
@@ -183,13 +192,14 @@ ColumnUI = function(controller){
 $.extend(ColumnUI.prototype, ComponentUI);
 
 ColumnUI.prototype.updateView = function(){
+	console.log('updateView');
 	var model = this.getController().getModel();
 	var dom = this.getDom();
 	var $keys = dom.find('span.keys');
-	var def = model.getName() + ' : ' + model.getType();
-	var length = model.getLength();
-	if(length != '') def += '(' + length + ')';
-	if(model.isArray()) def += '[]';
+	var def = model.getName() + ' : ' + model.getFullType();
+	//var length = model.getLength();
+	//if(length != '') def += '(' + length + ')';
+	//if(model.isArray()) def += '[]';
 	
 	dom.find('span.definition').text(def);
 	if(model.isPrimaryKey() && model.isForeignKey()) $keys.attr('class', 'keys pk-fk');

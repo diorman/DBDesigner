@@ -45,7 +45,49 @@
 			<a href="#" class="button collapse-button ui-state-default ui-corner-all" title="<?php echo $this->_('strcollapse').'/'.$this->_('strexpand'); ?>" ><span class="ui-icon ui-icon-circle-triangle-s"><?php echo $this->_('strcollapse').'/'.$this->_('strexpand'); ?></span></a>
 		</div>
 		<div class="object-detail-tabs hide">
-			<ul></ul>
+			<ul>
+				<li><a href="#od-tab-properties"><?php echo $this->_('strproperties'); ?></a></li>
+				<li><a href="#od-tab-columns"><?php echo $this->_('strcolumns'); ?></a></li>
+				<li><a href="#od-tab-foreignkeys"><?php echo $this->_('strforeignkeys'); ?></a></li>	
+			</ul>
+			<div id="od-tab-properties">
+				<dl>
+					<dt><?php echo $this->_('strname'); ?></dt>
+					<dd class="table-name"></dd>
+					<dt><?php echo $this->_('stroptions'); ?></dt>
+					<dd class="table-options"></dd>
+					<dt><?php echo $this->_('strcomment'); ?></dt>
+					<dd class="table-comment"></dd>
+				</dl>
+				<div class="buttons-placeholder">
+					<input id="od-alter-table" type="button" value="<?php echo $this->_('stralter'); ?>" />
+					<input id="od-drop-table" type="button" value="<?php echo $this->_('strdrop'); ?>" />
+				</div>
+			</div>
+			<div id="od-tab-columns">
+				<div class="data-table-container">
+					<table class="data-mgr">
+						<thead>
+							<tr>
+								<th><?php echo $this->_('strname'); ?></th>
+								<th><?php echo $this->_('strtype'); ?></th>
+								<th class="check">PK</th>
+								<th class="check">FK</th>
+								<th class="check">UK</th>
+								<th class="check"><?php echo $this->_('strnotnull'); ?></th>
+								<th><?php echo $this->_('strdefault'); ?></th>
+							</tr>		
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+				<div class="right-container">
+					
+				</div>
+			</div>
+			<div id="od-tab-foreignkeys">
+				
+			</div>
 		</div>
 	</div>
 <?php $templateManager['ObjectDetail'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

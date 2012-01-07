@@ -196,6 +196,9 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
+		case DBDesigner.Action.SHOW_TABLE_DETAIL:
+			this.objectDetail.showTable(extra);
+			break;
 	}
 };
 
@@ -711,8 +714,32 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 			ui.updatePanelState();
 			this.trigger(ObjectDetail.Event.STATE_CHANGED, {isCollapsed: event.newValue});
 			break;
+		case 'table':
+			ui.updateView(event.newValue);
+			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+			if(event.oldValue != null){
+				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+			}
+			break;
 	}
 }
+
+ObjectDetail.prototype.onTablePropertyChanged = function(event){
+	if(event.property == 'name' || event.property == 'comment' || event.property == 'options' || event.property == 'stopEditing'){
+		console.log(event.property);
+		this.getUI().updateTableView(event.sender);
+	}
+};
+
+ObjectDetail.prototype.showTable = function(table){
+	var model = this.getModel();
+	model.setTable(table);
+	model.setCollapsed(false);
+};
+
+ObjectDetail.prototype.alterTable = function(){
+	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, this.getModel().getTable());
+};
 
 // *****************************************************************************
 
@@ -745,6 +772,18 @@ ObjectDetailModel.prototype.setCollapsed = function(b) {
 	}
 };
 
+ObjectDetailModel.prototype.getTable = function() {
+	if(typeof this._table == 'undefined') this._table = null;
+	return this._table;
+};
+
+ObjectDetailModel.prototype.setTable = function(table) {
+	var oldTable = this.getTable();
+	if(oldTable != table){
+		this._table = table;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'table', oldValue: oldTable, newValue: table});
+	}
+};
 
 
 // *****************************************************************************
@@ -759,7 +798,9 @@ ObjectDetailUI = function(controller) {
 	this.setTemplateID('ObjectDetail');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body');
+	var dom = this.getDom();
+	dom.find('div.object-detail-tabs').tabs();
+	dom.appendTo('body');
 };
 $.extend(ObjectDetailUI.prototype, ComponentUI);
 
@@ -767,9 +808,13 @@ $.extend(ObjectDetailUI.prototype, ComponentUI);
  * Attaches events to html objects 
  */
 ObjectDetailUI.prototype.bindEvents = function() {
-	this.find('a.collapse-button').bind({
+	var dom = this.getDom();
+	dom.find('a.collapse-button').bind({
 		click: $.proxy(this.panelStateChange, this)
 	});
+	dom.find('#od-alter-table').click($.proxy(this.onAlterTableClick, this));
+	dom.delegate('table.data-mgr tr', 'hover', this.onTrHover);
+	dom.delegate('table.data-mgr tr', 'click', $.proxy(this.onTrClick, this));
 };
 
 /**
@@ -802,6 +847,77 @@ ObjectDetailUI.prototype.updatePanelState = function() {
 	}
 };
 
+ObjectDetailUI.prototype.updateView = function(table){
+	this.updateTableView(table);
+	if(table != null){
+		this.updateColumnsView(table.getColumnCollection());
+		this.updateForeignKeyView(table.getForeignKeyCollection());
+	}
+};
+
+ObjectDetailUI.prototype.updateTableView = function(table){
+	var dom = this.getDom();
+	if(table != null){
+		var $tabProp = $('#od-tab-properties');
+		dom.find('span.title').text('.::::::::::  ' + table.getName() + '  ::::::::::.');
+		dom.find('div.object-detail-tabs').show();
+		$tabProp.find('dd.table-name').text(table.getName());
+		$tabProp.find('dd.table-comment').text(table.getComment());
+		if(table.getWithoutOIDS()) $tabProp.find('dd.table-options').text('WITHOUT OIDS');
+		else $tabProp.find('dd.table-options').empty();
+	} else {
+		dom.find('span.title').empty();
+		dom.find('div.object-detail-tabs').hide();
+	}
+};
+
+ObjectDetailUI.prototype.updateColumnsView = function(columnCollection){
+	var columns = columnCollection.getColumns();
+	var $tr;
+	var $rows = $();
+	var columnModel;
+	var comment;
+	var htmlChecked = '<span class="ui-icon ui-icon-check">'+ DBDesigner.lang.stryes +'</span>';
+	for(var i = 0; i < columns.length; i++){
+		columnModel = columns[i].getModel();
+		comment = columnModel.getComment();
+		$tr = $('<tr></tr>').data('oindex', 'c-' + i);
+		$('<td></td>').text(columnModel.getName()).appendTo($tr);
+		$('<td></td>').text(columnModel.getFullType()).appendTo($tr);
+		$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
+		$('<td></td>').html(columnModel.isForeignKey()?htmlChecked:'&nbsp;').appendTo($tr);
+		$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
+		$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
+		$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
+		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + columnModel.getComment())
+		$rows = $rows.add($tr);
+	}
+	$('#od-tab-columns').find('tbody').html($rows);
+};
+
+ObjectDetailUI.prototype.updateForeignKeyView = function(foreignKeyCollection){
+	
+};
+
+ObjectDetailUI.prototype.onAlterTableClick = function(event){
+	this.getController().alterTable();
+};
+
+ObjectDetailUI.prototype.onTrHover = function(event){
+	var $this = $(this);
+	if(event.type == 'mouseenter' && !$this.hasClass('ui-state-active')){
+		$this.addClass('ui-state-hover');
+	}else if(event.type == 'mouseleave'){
+		$this.removeClass('ui-state-hover');
+	}
+};
+
+ObjectDetailUI.prototype.onTrClick = function(event){
+	var $tr = $(event.currentTarget);
+	$tr.parent().find('tr.ui-state-active').removeClass('ui-state-active');
+	$tr.addClass('ui-state-active');
+	console.log($tr.data('oindex'));
+};
 DBObjectDialog = {
 	getDBObjectModel: function(){
 		return this.getModel().getDBObjectModel();
@@ -881,7 +997,7 @@ TableDialog.prototype.createTable = function(position){
 TableDialog.prototype.editTable = function(table){
 	var model = this.getModel();
 	model.setDBObjectModel(table.getModel());
-	model.setAction(DBDesigner.Action.EDIT_TABLE);
+	model.setAction(DBDesigner.Action.ALTER_TABLE);
 	this.getUI().open(DBDesigner.lang.straltertable);
 };
 
@@ -891,6 +1007,8 @@ TableDialog.prototype.saveTable = function(form){
 	var action = model.getAction();
 	
 	if(this.validateForm(form)){
+		if(action == DBDesigner.Action.ALTER_TABLE) tableModel.startEditing();
+		
 		tableModel.setName(form.name);
 		tableModel.setWithoutOIDS(form.withoutOIDS);
 		tableModel.setComment(form.comment);
@@ -900,6 +1018,7 @@ TableDialog.prototype.saveTable = function(form){
 			DBDesigner.app.tableCollection.emptySelection();
 			DBDesigner.app.tableCollection.add(new Table(tableModel));
 		}
+		else tableModel.stopEditing();
 		
 		this.getUI().close();
 	}
@@ -1003,6 +1122,9 @@ ColumnDialog.prototype.saveColumn = function(form){
 	
 	if(this.validateForm(form)){
 		var flags = 0;
+		
+		if(action == DBDesigner.Action.ALTER_COLUMN) columnModel.startEditing();
+		
 		if(form.isArray) flags |= ColumnModel.Flag.ARRAY;
 		if(form.isPrimaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
 		if(form.isUniqueKey) flags |= ColumnModel.Flag.UNIQUE_KEY;
@@ -1022,6 +1144,7 @@ ColumnDialog.prototype.saveColumn = function(form){
 			var column = new Column(columnModel);
 			columnModel.getParent().getColumnCollection().add(column);
 		}
+		else columnModel.stopEditing();
 		
 		this.getUI().close();
 	}
@@ -1157,7 +1280,64 @@ ColumnDialogUI.prototype.typeHasPredefinedSize = function(type){
 		}
 	}
 	return false;
-};DBObjectModel = {
+};DBObject = {
+	startEditing: function(){
+		this.getModel().startEditing();
+	},
+	stopEditing: function(){
+		this.getModel().stopEditing();
+	},
+	setName: function(name){
+		this.getModel().setName(name);
+	},
+	getName: function(){
+		return this.getModel().getName();
+	},
+	setComment: function(comment){
+		this.getModel().setComment(comment);
+	},
+	getComment: function(){
+		return this.getModel().getComment();
+	},
+	modelChanged: function(eventProperty, func, prmts){
+		var i, addFunc = true;
+		var isEditing = this.getModel().isEditing();
+		if(!$.isArray(this._uvf)) this._uvf = [];
+		if(typeof eventProperty == 'undefined') eventProperty = 'stopEditing';
+		if($.isFunction(func)){
+			for(i = 0; i < this._uvf.length; i++){
+				if(this._uvf[i].func == func) {
+					addFunc = false;
+					break;
+				}
+			}
+			if(addFunc === true) this._uvf.push({func: func, prmts: prmts});
+		}else if(func === true && isEditing) this._modelHasChanges = true;
+		if(!isEditing){
+			var ui = this.getUI();
+			for(i = 0; i < this._uvf.length; i++) this._uvf[i].func.apply(ui, this._uvf[i].prmts);
+			this._uvf = [];
+			if(this._modelHasChanges === true) {
+				this.trigger(DBObject.Event.DBOBJECT_ALTERED, {property: eventProperty});
+				this._modelHasChanges = false;
+			}
+		}
+	}
+};
+$.extend(DBObject, Component);
+
+DBObjectModel = {
+	isEditing: function(){
+		if(typeof this._editing == 'undefined') this._editing = false;
+		return this._editing;
+	},
+	startEditing: function(){
+		this._editing = true;
+	},
+	stopEditing: function(){
+		this._editing = false;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property:'stopEditing'});
+	},
 	setName: function(name){
 		var oldName = this.getName();
 		if(oldName != name){
@@ -1195,7 +1375,6 @@ ColumnDialogUI.prototype.typeHasPredefinedSize = function(type){
 			this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'flags', newValue: flags, oldValue: oldValue});
 		}
 	},
-
 	getFlags: function(){
 		if(typeof this._flags == 'undefined') this._flags = 0;
 		return this._flags;
@@ -1215,11 +1394,7 @@ Table = function() {
 	this.setUI(new TableUI(this));
 };
 
-$.extend(Table.prototype, Component);
-
-Table.prototype.getName = function(){
-	return this.getModel().getName();
-};
+$.extend(Table.prototype, DBObject);
 
 Table.prototype.isSelected = function(){
 	return this.getModel().isSelected();
@@ -1242,7 +1417,7 @@ Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
 		case 'name':
-			ui.updateName(event.newValue);
+			this.modelChanged(event.property, ui.updateName, [event.newValue]);
 			break;
 		case 'collapsed':
 			ui.updateCollapsed(event.newValue);
@@ -1250,12 +1425,17 @@ Table.prototype.modelPropertyChanged = function(event) {
 		case 'selected':
 			this.trigger(Table.Event.SELECTION_CHANGED, {tableIsSelected: event.newValue});
 			break;
-	}
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
+		case 'stopEditing':
+			this.modelChanged();
+			break;
+		default:
+			this.modelChanged(event.property, true);
+			break;
+	}	
 };
 
 Table.prototype.alterTable = function(){
-	this.trigger(Table.Event.ALTER_TABLE, {table: this});
+	this.trigger(Table.Event.ALTER_REQUEST);
 };
 
 Table.prototype.getColumnCollection = function(){
@@ -1275,8 +1455,16 @@ Table.prototype.triggerViewBoxChanged = function(data){
 	this.trigger(Table.Event.VIEW_BOX_CHANGED, data);
 };
 
+Table.prototype.triggerDetailRequest = function(){
+	this.trigger(Table.Event.DETAIL_REQUEST);
+};
+
 Table.prototype.getSize = function(){
 	return this.getUI().getSize();
+};
+
+Table.prototype.getWithoutOIDS = function(){
+	return this.getModel().getWithoutOIDS();
 };
 
 // *****************************************************************************
@@ -1301,7 +1489,11 @@ TableModel.prototype.getPosition = function(){
 };
 
 TableModel.prototype.setWithoutOIDS = function(b){
-	this._withoutOIDS = b;
+	var oldValue = this.getWithoutOIDS();
+	if(oldValue != b){
+		this._withoutOIDS = b;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'options', oldValue: oldValue, newValue: b});
+	}
 }
 
 TableModel.prototype.getWithoutOIDS = function(){
@@ -1421,7 +1613,7 @@ TableUI.prototype.onButtonPressed = function(event){
 		model.setCollapsed(!model.isCollapsed());
 	}
 	else if($button.is('a.properties-button')){
-		
+		this.getController().triggerDetailRequest();
 	}
 	event.preventDefault();
 };
@@ -1493,22 +1685,22 @@ Column = function() {
 	this.setUI(new ColumnUI(this));
 };
 
-$.extend(Column.prototype, Component);
-
-Column.prototype.getName = function(){
-	return this.getModel().getName();
-};
+$.extend(Column.prototype, DBObject);
 
 Column.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
 		case 'parent':
 			this.getUI().updateParent();
 			break;
+		case 'stopEditing':
+			this.modelChanged();
+			break;
 		case 'type':
 		case 'length': 
 		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);
 		default:
-			this.getUI().updateView();
+			//this.getUI().updateView();
+			this.modelChanged(event.property, this.getUI().updateView);
 			break;
 	}
 };
@@ -1574,6 +1766,15 @@ ColumnModel.prototype.setType = function(type){
 ColumnModel.prototype.getType = function(){
 	if(typeof this._type == 'undefined') this._type = 'SERIAL';
 	return this._type;
+};
+
+ColumnModel.prototype.getFullType = function(){
+	var type = this.getType();
+	var isArray = this.isArray();
+	var length = this.getLength();
+	if(length != '') type += '(' + length + ')';
+	if(isArray) type += '[]';
+	return type;
 };
 
 ColumnModel.prototype.setLength = function(length){
@@ -1668,13 +1869,14 @@ ColumnUI = function(controller){
 $.extend(ColumnUI.prototype, ComponentUI);
 
 ColumnUI.prototype.updateView = function(){
+	console.log('updateView');
 	var model = this.getController().getModel();
 	var dom = this.getDom();
 	var $keys = dom.find('span.keys');
-	var def = model.getName() + ' : ' + model.getType();
-	var length = model.getLength();
-	if(length != '') def += '(' + length + ')';
-	if(model.isArray()) def += '[]';
+	var def = model.getName() + ' : ' + model.getFullType();
+	//var length = model.getLength();
+	//if(length != '') def += '(' + length + ')';
+	//if(model.isArray()) def += '[]';
 	
 	dom.find('span.definition').text(def);
 	if(model.isPrimaryKey() && model.isForeignKey()) $keys.attr('class', 'keys pk-fk');
@@ -1727,7 +1929,8 @@ TableCollection.prototype.add = function(table){
 	if($.inArray(table, this._tables) == -1) this._tables.push(table);
 	
 	table.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
-	table.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
+	table.bind(Table.Event.ALTER_REQUEST, this.alterTable, this);
+	table.bind(Table.Event.DETAIL_REQUEST, this.detailRequest, this);
 };
 
 TableCollection.prototype.addToSelection = function(table){
@@ -1764,7 +1967,7 @@ TableCollection.prototype.count = function(){
 };
 
 TableCollection.prototype.alterTable = function(event){
-	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, event.table);
+	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, event.sender);
 };
 
 TableCollection.prototype.getSelectedTables = function(){
@@ -1782,6 +1985,10 @@ TableCollection.prototype.getTableNames = function(){
 	}
 	tNames.sort();
 	return tNames;
+};
+
+TableCollection.prototype.detailRequest = function(event){
+	DBDesigner.app.doAction(DBDesigner.Action.SHOW_TABLE_DETAIL, event.sender);
 };
 ColumnCollection = function(){
 	this._columns = [];
@@ -1851,7 +2058,7 @@ ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
-		foreignKey.bind(ForeignKey.Event.ALTER_FOREIGNKEY, this.alterForeignKey, this);
+		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		//column.bind(Column.Event.COLUMN_CHANGED, this.columnChanged, this);
 	}
 };
@@ -1888,11 +2095,7 @@ ForeignKeyCollection.prototype.columnChanged = function(event){
 	this.setUI(new ForeignKeyUI(this));
 };
 
-$.extend(ForeignKey.prototype, Component);
-
-ForeignKey.prototype.getName = function(){
-	return this.getModel().getName();
-};
+$.extend(ForeignKey.prototype, DBObject);
 
 ForeignKey.prototype.getParent = function(){
 	return this.getModel().getParent();
@@ -1933,7 +2136,7 @@ ForeignKey.prototype.onTableViewBoxChanged = function(event){
 };
 
 ForeignKey.prototype.alterForeignKey = function(){
-	this.trigger(ForeignKey.Event.ALTER_FOREIGNKEY);
+	this.trigger(ForeignKey.Event.ALTER_REQUEST);
 };
 
 // *****************************************************************************
@@ -1943,7 +2146,6 @@ ForeignKeyModel = function(){};
 
 ForeignKeyModel.prototype.setParent = function(table){
 	this._parent = table;
-	//this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'parent', table: table});
 };
 
 ForeignKeyModel.prototype.getParent = function(){
@@ -1953,7 +2155,6 @@ ForeignKeyModel.prototype.getParent = function(){
 
 ForeignKeyModel.prototype.setReferencedTable = function(table){
 	this._referencedTable = table;
-	//this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'referencedTable', table: table});
 };
 
 ForeignKeyModel.prototype.getReferencedTable = function(){
@@ -2023,9 +2224,11 @@ ForeignKeyModel.prototype.onForeignColumnTypeChanged = function(event){
 			var type = columns[i].foreignColumn.getType();
 			if(type == 'SERIAL') type = 'INTEGER';
 			else if(type == 'BIGSERIAL') type = 'BIGINT';
+			columns[i].localColumn.startEditing();
 			columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
 			columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
 			columns[i].localColumn.setType(type);
+			columns[i].localColumn.stopEditing();
 			break;
 		}
 	}
@@ -2769,17 +2972,22 @@ ForeignKeyDialogUI.prototype.removeSelectedColumns = function(event){
 	ADD_COLUMN: 'actionaddcolumn',
 	ALTER_COLUMN: 'actionaltercolumn',
 	DROP_TABLE: 'actiondroptable',
-	SAVE: 'save'
+	SAVE: 'actionsave',
+	SHOW_TABLE_DETAIL: 'actionshowtabledetail' 
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
 
 ToolBar.Event = {ACTION_CHANGED: 'toolbaractionchanged'};
 
+DBObject.Event = { DBOBJECT_ALTERED: 'dbobjectaltered' };
+
 Table.Event = {
 	SELECTION_CHANGED: 'tableselectionchanged', 
-	ALTER_TABLE: 'tablealtertable',
-	VIEW_BOX_CHANGED: 'tableviewboxchanged'
+	ALTER_REQUEST: 'tablealterrequest',
+	TABLE_ALTERED: 'tabletablealtered',
+	VIEW_BOX_CHANGED: 'tableviewboxchanged',
+	DETAIL_REQUEST: 'tabledetailrequest'
 };
 
 Canvas.Event = {PLACEMENT_CAPTURED: 'canvasplacementcaptured'};
@@ -2788,7 +2996,8 @@ ObjectDetail.Event = {STATE_CHANGED: 'objectdetailstatechanged'};
 
 Column.Event = {
 	COLUMN_TYPE_CHANGED: 'columntypechanged',
-	ALTER_REQUEST: 'columnalterrequest'
+	ALTER_REQUEST: 'columnalterrequest',
+	COLUMN_ALTERED: 'columnaltered'
 };
 
 ColumnModel.Flag = {
@@ -2814,7 +3023,8 @@ ForeignKeyModel.Flag = {
 };
 
 ForeignKey.Event = {
-	ALTER_FOREIGNKEY: 'foreignkeyalterforeignkey'
+	ALTER_REQUEST: 'foreignkeyalterforeignkey',
+	FOREIGNKEY_ALTERED: 'foreignkeyaltered'
 };
 
 ForeignKeyUI.TRIANGLE_SIZE = 7;

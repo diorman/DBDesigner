@@ -17,7 +17,8 @@ TableCollection.prototype.add = function(table){
 	if($.inArray(table, this._tables) == -1) this._tables.push(table);
 	
 	table.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
-	table.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
+	table.bind(Table.Event.ALTER_REQUEST, this.alterTable, this);
+	table.bind(Table.Event.DETAIL_REQUEST, this.detailRequest, this);
 };
 
 TableCollection.prototype.addToSelection = function(table){
@@ -54,7 +55,7 @@ TableCollection.prototype.count = function(){
 };
 
 TableCollection.prototype.alterTable = function(event){
-	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, event.table);
+	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, event.sender);
 };
 
 TableCollection.prototype.getSelectedTables = function(){
@@ -72,4 +73,8 @@ TableCollection.prototype.getTableNames = function(){
 	}
 	tNames.sort();
 	return tNames;
+};
+
+TableCollection.prototype.detailRequest = function(event){
+	DBDesigner.app.doAction(DBDesigner.Action.SHOW_TABLE_DETAIL, event.sender);
 };

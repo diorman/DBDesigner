@@ -18,11 +18,7 @@ ForeignKey = function() {
 	this.setUI(new ForeignKeyUI(this));
 };
 
-$.extend(ForeignKey.prototype, Component);
-
-ForeignKey.prototype.getName = function(){
-	return this.getModel().getName();
-};
+$.extend(ForeignKey.prototype, DBObject);
 
 ForeignKey.prototype.getParent = function(){
 	return this.getModel().getParent();
@@ -63,7 +59,7 @@ ForeignKey.prototype.onTableViewBoxChanged = function(event){
 };
 
 ForeignKey.prototype.alterForeignKey = function(){
-	this.trigger(ForeignKey.Event.ALTER_FOREIGNKEY);
+	this.trigger(ForeignKey.Event.ALTER_REQUEST);
 };
 
 // *****************************************************************************
@@ -73,7 +69,6 @@ ForeignKeyModel = function(){};
 
 ForeignKeyModel.prototype.setParent = function(table){
 	this._parent = table;
-	//this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'parent', table: table});
 };
 
 ForeignKeyModel.prototype.getParent = function(){
@@ -83,7 +78,6 @@ ForeignKeyModel.prototype.getParent = function(){
 
 ForeignKeyModel.prototype.setReferencedTable = function(table){
 	this._referencedTable = table;
-	//this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'referencedTable', table: table});
 };
 
 ForeignKeyModel.prototype.getReferencedTable = function(){
@@ -153,9 +147,11 @@ ForeignKeyModel.prototype.onForeignColumnTypeChanged = function(event){
 			var type = columns[i].foreignColumn.getType();
 			if(type == 'SERIAL') type = 'INTEGER';
 			else if(type == 'BIGSERIAL') type = 'BIGINT';
+			columns[i].localColumn.startEditing();
 			columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
 			columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
 			columns[i].localColumn.setType(type);
+			columns[i].localColumn.stopEditing();
 			break;
 		}
 	}

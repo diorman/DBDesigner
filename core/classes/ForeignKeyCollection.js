@@ -13,7 +13,7 @@ ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
-		foreignKey.bind(ForeignKey.Event.ALTER_FOREIGNKEY, this.alterForeignKey, this);
+		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		//column.bind(Column.Event.COLUMN_CHANGED, this.columnChanged, this);
 	}
 };

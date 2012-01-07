@@ -1,4 +1,61 @@
+DBObject = {
+	startEditing: function(){
+		this.getModel().startEditing();
+	},
+	stopEditing: function(){
+		this.getModel().stopEditing();
+	},
+	setName: function(name){
+		this.getModel().setName(name);
+	},
+	getName: function(){
+		return this.getModel().getName();
+	},
+	setComment: function(comment){
+		this.getModel().setComment(comment);
+	},
+	getComment: function(){
+		return this.getModel().getComment();
+	},
+	modelChanged: function(eventProperty, func, prmts){
+		var i, addFunc = true;
+		var isEditing = this.getModel().isEditing();
+		if(!$.isArray(this._uvf)) this._uvf = [];
+		if(typeof eventProperty == 'undefined') eventProperty = 'stopEditing';
+		if($.isFunction(func)){
+			for(i = 0; i < this._uvf.length; i++){
+				if(this._uvf[i].func == func) {
+					addFunc = false;
+					break;
+				}
+			}
+			if(addFunc === true) this._uvf.push({func: func, prmts: prmts});
+		}else if(func === true && isEditing) this._modelHasChanges = true;
+		if(!isEditing){
+			var ui = this.getUI();
+			for(i = 0; i < this._uvf.length; i++) this._uvf[i].func.apply(ui, this._uvf[i].prmts);
+			this._uvf = [];
+			if(this._modelHasChanges === true) {
+				this.trigger(DBObject.Event.DBOBJECT_ALTERED, {property: eventProperty});
+				this._modelHasChanges = false;
+			}
+		}
+	}
+};
+$.extend(DBObject, Component);
+
 DBObjectModel = {
+	isEditing: function(){
+		if(typeof this._editing == 'undefined') this._editing = false;
+		return this._editing;
+	},
+	startEditing: function(){
+		this._editing = true;
+	},
+	stopEditing: function(){
+		this._editing = false;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property:'stopEditing'});
+	},
 	setName: function(name){
 		var oldName = this.getName();
 		if(oldName != name){
@@ -36,7 +93,6 @@ DBObjectModel = {
 			this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'flags', newValue: flags, oldValue: oldValue});
 		}
 	},
-
 	getFlags: function(){
 		if(typeof this._flags == 'undefined') this._flags = 0;
 		return this._flags;

@@ -9,11 +9,7 @@ Table = function() {
 	this.setUI(new TableUI(this));
 };
 
-$.extend(Table.prototype, Component);
-
-Table.prototype.getName = function(){
-	return this.getModel().getName();
-};
+$.extend(Table.prototype, DBObject);
 
 Table.prototype.isSelected = function(){
 	return this.getModel().isSelected();
@@ -36,7 +32,7 @@ Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
 		case 'name':
-			ui.updateName(event.newValue);
+			this.modelChanged(event.property, ui.updateName, [event.newValue]);
 			break;
 		case 'collapsed':
 			ui.updateCollapsed(event.newValue);
@@ -44,12 +40,17 @@ Table.prototype.modelPropertyChanged = function(event) {
 		case 'selected':
 			this.trigger(Table.Event.SELECTION_CHANGED, {tableIsSelected: event.newValue});
 			break;
-	}
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, event);	
+		case 'stopEditing':
+			this.modelChanged();
+			break;
+		default:
+			this.modelChanged(event.property, true);
+			break;
+	}	
 };
 
 Table.prototype.alterTable = function(){
-	this.trigger(Table.Event.ALTER_TABLE, {table: this});
+	this.trigger(Table.Event.ALTER_REQUEST);
 };
 
 Table.prototype.getColumnCollection = function(){
@@ -69,8 +70,16 @@ Table.prototype.triggerViewBoxChanged = function(data){
 	this.trigger(Table.Event.VIEW_BOX_CHANGED, data);
 };
 
+Table.prototype.triggerDetailRequest = function(){
+	this.trigger(Table.Event.DETAIL_REQUEST);
+};
+
 Table.prototype.getSize = function(){
 	return this.getUI().getSize();
+};
+
+Table.prototype.getWithoutOIDS = function(){
+	return this.getModel().getWithoutOIDS();
 };
 
 // *****************************************************************************
@@ -95,7 +104,11 @@ TableModel.prototype.getPosition = function(){
 };
 
 TableModel.prototype.setWithoutOIDS = function(b){
-	this._withoutOIDS = b;
+	var oldValue = this.getWithoutOIDS();
+	if(oldValue != b){
+		this._withoutOIDS = b;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'options', oldValue: oldValue, newValue: b});
+	}
 }
 
 TableModel.prototype.getWithoutOIDS = function(){
@@ -215,7 +228,7 @@ TableUI.prototype.onButtonPressed = function(event){
 		model.setCollapsed(!model.isCollapsed());
 	}
 	else if($button.is('a.properties-button')){
-		
+		this.getController().triggerDetailRequest();
 	}
 	event.preventDefault();
 };

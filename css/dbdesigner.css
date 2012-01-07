@@ -112,7 +112,50 @@ div.object-detail div.title-bar a.collapse-button span {
 	margin-left: -8px;
 }
 div.object-detail div.title-bar a.collapse-button:active {top: 4px;}
-
+div.object-detail-tabs { height: 100%; }
+div.object-detail-tabs div.ui-tabs-panel{ height: 100%; padding: 2px 0 0 0; }
+#od-tab-properties dt {
+	font-weight: bold;
+	background-color: #E6E6CC;
+	width: 200px;
+	text-align: center;
+	float: left;
+	margin-right: 10px;
+}
+#od-tab-properties div.buttons-placeholder {
+	margin-left: 210px;
+	margin-top: 20px;
+}
+#od-tab-properties dd{ clear: right;}
+#od-tab-properties dt, #od-tab-properties dd{
+	height: 20px;
+	line-height: 20px;
+	margin-bottom: 2px;
+}
+div.object-detail div.right-container {
+	float:left;
+	background-color: #F3F3E9;
+	height: 100%;
+	width: 15%;
+}
+div.object-detail div.data-table-container {
+	float: left;
+	width: 85%;
+	overflow: auto;
+	height: 100%;
+}
+div.object-detail table {width: 100%; border-collapse: collapse;}
+div.object-detail tr {
+	height: 18px;
+	line-height: 18px;
+}
+div.object-detail table.data-mgr {cursor: pointer;}
+div.object-detail table.data-mgr tr.hover {background-color: #F3F3E9;}
+div.object-detail table.data-mgr tr.selected {background-color: #336699; color: #fff;}
+div.object-detail th { font-weight: bold; background-color: #E6E6CC}
+div.object-detail th.check {width: 60px;}
+div.object-detail td, div.object-detail th {border: 2px solid #E6E6CC; text-align: center;}
+div.object-detail td span.ui-icon { margin-left: 22px; }
 /* Database Table */
 div.canvas div.db-table {
 	border: 2px solid #E6E6CC;
@@ -195,7 +238,7 @@ div.canvas div.db-table div.column-container div.db-column-hover,
 div.canvas div.db-table div.column-container div.db-column-highlight {background-color: #EFEFEF;}
 div.canvas div.db-table div.column-container div.db-column-highlight span.definition {color: #E59700;}
 /* Dialog */
-div.ui-dialog-titlebar span.ui-dialog-title, div.ui-dialog-content {font-size: 0.82em;}
+/*div.ui-dialog-titlebar span.ui-dialog-title, div.ui-dialog-content {font-size: 0.82em;}*/
 
 div.ui-dialog-content .label {
 	display: block;
@@ -232,7 +275,7 @@ div.ui-dialog-content div.field-textarea .label {
 }
 
 div.ui-dialog-content div.buttons-placeholder { text-align: center; padding: 10px 0px;}
-div.ui-dialog-content div.buttons-placeholder input{
+div.buttons-placeholder input{
 	min-width: 80px;
 	margin-right: 5px;
 }

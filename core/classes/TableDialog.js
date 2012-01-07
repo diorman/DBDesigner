@@ -18,7 +18,7 @@ TableDialog.prototype.createTable = function(position){
 TableDialog.prototype.editTable = function(table){
 	var model = this.getModel();
 	model.setDBObjectModel(table.getModel());
-	model.setAction(DBDesigner.Action.EDIT_TABLE);
+	model.setAction(DBDesigner.Action.ALTER_TABLE);
 	this.getUI().open(DBDesigner.lang.straltertable);
 };
 
@@ -28,6 +28,8 @@ TableDialog.prototype.saveTable = function(form){
 	var action = model.getAction();
 	
 	if(this.validateForm(form)){
+		if(action == DBDesigner.Action.ALTER_TABLE) tableModel.startEditing();
+		
 		tableModel.setName(form.name);
 		tableModel.setWithoutOIDS(form.withoutOIDS);
 		tableModel.setComment(form.comment);
@@ -37,6 +39,7 @@ TableDialog.prototype.saveTable = function(form){
 			DBDesigner.app.tableCollection.emptySelection();
 			DBDesigner.app.tableCollection.add(new Table(tableModel));
 		}
+		else tableModel.stopEditing();
 		
 		this.getUI().close();
 	}
