@@ -38,6 +38,7 @@ div.tool-bar a.add-table span { background-image: url(../../../images/themes/def
 div.tool-bar a.align-tables span { background-image: url(../../../images/themes/default/Tables.png); }
 div.tool-bar a.add-column span { background-image: url(../../../images/themes/default/Column.png); }
 div.tool-bar a.add-foreignkey span { background-image: url(../../../images/themes/default/ForeignKey.png); }
+div.tool-bar a.add-uniquekey span { background-image: url(../../../images/themes/default/UniqueConstraint.png); }
 div.tool-bar a.save span { background-image: url(../../../images/themes/default/Save.png); }
 div.tool-bar a.drop-table span { background-image: url(../../../images/themes/default/Erase.png);}
 div.tool-bar a.forward-engineer span { background-image: url(../images/ForwardEngineer.png);}
@@ -113,7 +114,7 @@ div.object-detail div.title-bar a.collapse-button span {
 }
 div.object-detail div.title-bar a.collapse-button:active {top: 4px;}
 div.object-detail-tabs { height: 100%; }
-div.object-detail-tabs div.ui-tabs-panel{ height: 100%; padding: 2px 0 0 0; }
+div.object-detail-tabs div.ui-tabs-panel{ height: 190px; padding: 2px 0 0 0; }
 #od-tab-properties dt {
 	font-weight: bold;
 	background-color: #E6E6CC;
@@ -140,22 +141,26 @@ div.object-detail div.right-container {
 }
 div.object-detail div.data-table-container {
 	float: left;
-	width: 85%;
+	width: 100%;
 	overflow: auto;
-	height: 100%;
+	height: 167px;
 }
 div.object-detail table {width: 100%; border-collapse: collapse;}
 div.object-detail tr {
 	height: 18px;
 	line-height: 18px;
 }
-div.object-detail table.data-mgr {cursor: pointer;}
+div.object-detail table.data-mgr tbody tr{cursor: pointer;}
+div.object-detail table.data-mgr a.action-btn {float:left;}
+div.object-detail table.data-mgr a.action-btn span.ui-icon {margin-left: 5px}
+#od-tab-columns th.actions {width: 90px}
+#od-tab-uniquekeys th.actions {width: 47px}
 div.object-detail table.data-mgr tr.hover {background-color: #F3F3E9;}
 div.object-detail table.data-mgr tr.selected {background-color: #336699; color: #fff;}
 div.object-detail th { font-weight: bold; background-color: #E6E6CC}
-div.object-detail th.check {width: 60px;}
+div.object-detail th.check {width: 30px;}
 div.object-detail td, div.object-detail th {border: 2px solid #E6E6CC; text-align: center;}
-div.object-detail td span.ui-icon { margin-left: 22px; }
+div.object-detail td span.ui-icon { margin-left: 7px; }
 /* Database Table */
 div.canvas div.db-table {
 	border: 2px solid #E6E6CC;
@@ -273,7 +278,27 @@ div.ui-dialog-content div.field-textarea .label {
 	height: 45px;
 	line-height: 45px;
 }
-
+div.ui-dialog-content div.field-multiselection {margin-bottom: 2px; clear: both;}
+div.ui-dialog-content div.field-multiselection .label{
+	display: block;
+	background-color: #E6E6CC;
+	width: 100%;
+	text-align: center;
+	font-weight: bold;
+	line-height: 20px;
+	height: 20px;
+}
+div.ui-dialog-content div.field-multiselection select{width: 100%; border: 1px solid #E6E6CC;}
+div.ui-dialog-content div.field-multiselection div.layout-select{
+	float:left;
+	width: 165px;
+}
+div.ui-dialog-content div.field-multiselection div.layout-buttons{
+	float:left;
+	width: 80px;
+	text-align: center;
+	padding-top: 50px;
+}
 div.ui-dialog-content div.buttons-placeholder { text-align: center; padding: 10px 0px;}
 div.buttons-placeholder input{
 	min-width: 80px;

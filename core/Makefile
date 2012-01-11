@@ -22,6 +22,9 @@ FILES=	classes/EventDispatcher.js \
 	classes/ForeignKeyCollection.js \
 	classes/ForeignKey.js \
 	classes/ForeignKeyDialog.js \
+	classes/UniqueKeyCollection.js \
+	classes/UniqueKey.js \
+	classes/UniqueKeyDialog.js \
 	classes/Const.js \
 
 

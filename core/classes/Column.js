@@ -22,7 +22,6 @@ Column.prototype.modelPropertyChanged = function(event){
 		case 'length': 
 		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);
 		default:
-			//this.getUI().updateView();
 			this.modelChanged(event.property, this.getUI().updateView);
 			break;
 	}
@@ -52,6 +51,10 @@ Column.prototype.setForeignKey = function(b){
 	this.getModel().setForeignKey(b);
 };
 
+Column.prototype.setUniqueKey = function(b){
+	this.getModel().setUniqueKey(b);
+};
+
 Column.prototype.setLength = function(length){
 	this.getModel().setLength(length);
 };
@@ -70,6 +73,10 @@ Column.prototype.getType = function(){
 
 Column.prototype.getLength = function(){
 	return this.getModel().getLength();
+};
+
+Column.prototype.move = function(dir){
+	this.getUI().move(dir);
 };
 
 // *****************************************************************************
@@ -155,7 +162,11 @@ ColumnModel.prototype.isForeignKey = function(){
 };
 
 ColumnModel.prototype.setUniqueKey = function(b){
-	this.setFlagState(ColumnModel.Flag.UNIQUE_KEY, b);
+	if(typeof this._uniqueKeyCount == 'undefined') this._uniqueKeyCount = 0;
+	this._uniqueKeyCount += b? 1 : -1;
+	if(this._uniqueKeyCount == 0 || this._uniqueKeyCount == 1){
+		this.setFlagState(ColumnModel.Flag.UNIQUE_KEY, b);
+	}
 };
 
 ColumnModel.prototype.isUniqueKey = function(){
@@ -192,7 +203,6 @@ ColumnUI = function(controller){
 $.extend(ColumnUI.prototype, ComponentUI);
 
 ColumnUI.prototype.updateView = function(){
-	console.log('updateView');
 	var model = this.getController().getModel();
 	var dom = this.getDom();
 	var $keys = dom.find('span.keys');
@@ -232,4 +242,10 @@ ColumnUI.prototype.setHighLight = function(b){
 	var dom = this.getDom();
 	if(b) dom.addClass('db-column-highlight');
 	else dom.removeClass('db-column-highlight');
+};
+
+ColumnUI.prototype.move = function(dir){
+	var dom = this.getDom();
+	if(dir == 'up') dom.insertBefore(dom.prev());
+	else dom.insertAfter(dom.next());
 };

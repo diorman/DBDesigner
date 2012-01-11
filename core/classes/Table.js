@@ -61,6 +61,10 @@ Table.prototype.getForeignKeyCollection = function(){
 	return this.getModel().getForeignKeyCollection();
 };
 
+Table.prototype.getUniqueKeyCollection = function(){
+	return this.getModel().getUniqueKeyCollection();
+};
+
 Table.prototype.refresh = function(){
 	this.getUI().updateWidth();
 };
@@ -163,6 +167,11 @@ TableModel.prototype.getColumnCollection = function(){
 TableModel.prototype.getForeignKeyCollection = function(){
 	if(typeof this._foreignKeyCollection == 'undefined') this._foreignKeyCollection = new ForeignKeyCollection();
 	return this._foreignKeyCollection;
+};
+
+TableModel.prototype.getUniqueKeyCollection = function(){
+	if(typeof this._uniqueKeyCollection == 'undefined') this._uniqueKeyCollection = new UniqueKeyCollection();
+	return this._uniqueKeyCollection;
 };
 
 // *****************************************************************************

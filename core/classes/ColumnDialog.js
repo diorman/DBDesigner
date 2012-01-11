@@ -34,7 +34,7 @@ ColumnDialog.prototype.saveColumn = function(form){
 		
 		if(form.isArray) flags |= ColumnModel.Flag.ARRAY;
 		if(form.isPrimaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
-		if(form.isUniqueKey) flags |= ColumnModel.Flag.UNIQUE_KEY;
+		if(columnModel.isUniqueKey()) flags |= ColumnModel.Flag.UNIQUE_KEY;
 		if(form.isNotnull) flags |= ColumnModel.Flag.NOTNULL;
 		if(columnModel.isForeignKey()) flags |= ColumnModel.Flag.FOREIGN_KEY;
 		
@@ -141,7 +141,6 @@ ColumnDialogUI.prototype.open = function(title){
 		$('#column-dialog_column-comment').val(columnModel.getComment());
 		$('#column-dialog_column-array').prop({checked: columnModel.isArray(), disabled: false});
 		$('#column-dialog_column-primarykey').prop('checked', columnModel.isPrimaryKey());
-		$('#column-dialog_column-uniquekey').prop('checked', columnModel.isUniqueKey());
 		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotnull());
 		$('#column-dialog_column-default').val(columnModel.getDefault());
 		
@@ -165,7 +164,6 @@ ColumnDialogUI.prototype.save = function(){
 		type: $.trim($('#column-dialog_column-type').val()),
 		isArray: $('#column-dialog_column-array').prop('checked'),
 		isPrimaryKey: $('#column-dialog_column-primarykey').prop('checked'),
-		isUniqueKey: $('#column-dialog_column-uniquekey').prop('checked'),
 		isNotnull: $('#column-dialog_column-notnull').prop('checked'),
 		def: $.trim($('#column-dialog_column-default').val()),
 		comment: $.trim($('#column-dialog_column-comment').val())

@@ -798,7 +798,12 @@ class DBDesigner extends Plugin {
 			'strconstraintneedsname',
 			'strbadinteger',
 			'strbadnumericlength',
-			'strnographics'
+			'strnographics',
+			'strmoveup',
+			'strmovedown',
+			'struniqneedscols',
+			'stralteruniq',
+			'strempty'
 		);
 		
 		$js_lang = array();

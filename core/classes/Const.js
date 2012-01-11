@@ -4,6 +4,8 @@ DBDesigner.Action = {
 	ALTER_TABLE: 'actionedittable',
 	ADD_FOREIGNKEY: 'actionaddfk',
 	ALTER_FOREIGNKEY: 'actionalterfk',
+	ADD_UNIQUEKEY: 'actionadduniq',
+	ALTER_UNIQUEKEY: 'actionalteruniq',
 	ADD_COLUMN: 'actionaddcolumn',
 	ALTER_COLUMN: 'actionaltercolumn',
 	DROP_TABLE: 'actiondroptable',
@@ -43,6 +45,8 @@ ColumnModel.Flag = {
 	NOTNULL: 16
 };
 
+Collection = { Event: {COLLECTION_CHANGED: 'collectionchanged'}};
+
 ForeignKeyModel.Action = {
 	NO_ACTION: 'a',
 	RESTRICT: 'r',
@@ -60,6 +64,11 @@ ForeignKeyModel.Flag = {
 ForeignKey.Event = {
 	ALTER_REQUEST: 'foreignkeyalterforeignkey',
 	FOREIGNKEY_ALTERED: 'foreignkeyaltered'
+};
+
+UniqueKey.Event = {
+	ALTER_REQUEST: 'uniquekeyalterforeignkey',
+	FOREIGNKEY_ALTERED: 'uniquekeyaltered'
 };
 
 ForeignKeyUI.TRIANGLE_SIZE = 7;

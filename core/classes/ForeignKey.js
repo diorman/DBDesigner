@@ -1,5 +1,5 @@
 ForeignKey = function() {
-	//If the constructor gets a ColumnModel object as first parameter, it is set as the model
+	//If the constructor gets a ForeignKeyModel object as first parameter, it is set as the model
 	//otherwise a new model is created
 	
 	if(arguments.length > 0 && arguments[0] instanceof ForeignKeyModel) {

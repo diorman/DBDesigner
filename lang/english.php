@@ -62,6 +62,10 @@
 	$lang['strbadinteger'] = 'Invalid input syntax for integer';
 	$lang['strbadnumericlength'] = 'Scale %d must be between 0 and precision %d';
 	$lang['strnographics'] = 'Your brownser do not support graphics';
+	$lang['strmoveup'] = 'Move up';
+	$lang['strmovedown'] = 'Move down';
+	$lang['stralteruniq'] = 'Alter unique key';
+	$lang['struniquekeys'] = 'Unique Keys';
 	/*
 		'strname',
 		'strok',

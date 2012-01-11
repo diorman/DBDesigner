@@ -30,9 +30,10 @@ DBObject = {
 				}
 			}
 			if(addFunc === true) this._uvf.push({func: func, prmts: prmts});
-		}else if(func === true && isEditing) this._modelHasChanges = true;
+		}else if(func === true) this._modelHasChanges = true;
 		if(!isEditing){
 			var ui = this.getUI();
+			this._modelHasChanges = this._modelHasChanges || (this._uvf.length > 0);
 			for(i = 0; i < this._uvf.length; i++) this._uvf[i].func.apply(ui, this._uvf[i].prmts);
 			this._uvf = [];
 			if(this._modelHasChanges === true) {

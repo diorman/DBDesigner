@@ -39,16 +39,51 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 		case 'table':
 			ui.updateView(event.newValue);
 			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+			event.newValue.getColumnCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
+			event.newValue.getUniqueKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
 			if(event.oldValue != null){
 				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+				event.oldValue.getColumnCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
+				event.oldValue.getUniqueKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
 			}
 			break;
 	}
 }
 
+ObjectDetail.prototype.onColumnCollectionChanged = function(event){
+	var column;
+	var action;
+	if(event.columnAdded){
+		column = event.columnAdded;
+		action = 'add';
+	} else if(event.columnDropped){
+		column = event.columnDropped;
+		action = 'drop';
+	} else if(event.columnAltered){
+		column = event.columnAltered;
+		action = 'alter';
+	}
+	this.getUI().updateSingleColumnView(column, action);
+};
+
+ObjectDetail.prototype.onUniqueKeyCollectionChanged = function(event){
+	var uniqueKey;
+	var action;
+	if(event.uniqueKeyAdded){
+		uniqueKey = event.uniqueKeyAdded;
+		action = 'add';
+	} else if(event.uniqueKeyDropped){
+		uniqueKey= event.uniqueKeyDropped
+		action = 'drop';
+	} else if(event.uniqueKeyAltered){
+		uniqueKey = event.uniqueKeyAltered;
+		action = 'alter';
+	}
+	this.getUI().updateSingleUniqueKeyView(uniqueKey, action);
+};
+
 ObjectDetail.prototype.onTablePropertyChanged = function(event){
 	if(event.property == 'name' || event.property == 'comment' || event.property == 'options' || event.property == 'stopEditing'){
-		console.log(event.property);
 		this.getUI().updateTableView(event.sender);
 	}
 };
@@ -59,8 +94,30 @@ ObjectDetail.prototype.showTable = function(table){
 	model.setCollapsed(false);
 };
 
-ObjectDetail.prototype.alterTable = function(){
-	DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, this.getModel().getTable());
+ObjectDetail.prototype.addDBObject = function(type){
+	switch(type){
+		case 'column':
+			DBDesigner.app.doAction(DBDesigner.Action.ADD_COLUMN, this.getModel().getTable());
+			break;
+		case 'fk':
+			DBDesigner.app.doAction(DBDesigner.Action.ADD_FOREIGNKEY, this.getModel().getTable());
+			break;
+		case 'uk':
+			DBDesigner.app.doAction(DBDesigner.Action.ADD_UNIQUEKEY, this.getModel().getTable());
+			break;
+	}
+};
+
+ObjectDetail.prototype.alterDBObject = function(dbobject){
+	if(typeof dbobject == 'undefined') dbobject = this.getModel().getTable();
+	if(dbobject instanceof Table) DBDesigner.app.doAction(DBDesigner.Action.ALTER_TABLE, dbobject);
+	else if(dbobject instanceof Column) DBDesigner.app.doAction(DBDesigner.Action.ALTER_COLUMN, dbobject);
+	else if(dbobject instanceof ForeignKey) DBDesigner.app.doAction(DBDesigner.Action.ALTER_FOREIGNKEY, dbobject);
+	else if(dbobject instanceof UniqueKey) DBDesigner.app.doAction(DBDesigner.Action.ALTER_UNIQUEKEY, dbobject);
+};
+
+ObjectDetail.prototype.moveColumn = function(column, dir){
+	return this.getModel().getTable().getColumnCollection().moveColumn(column, dir);
 };
 
 // *****************************************************************************
@@ -134,9 +191,9 @@ ObjectDetailUI.prototype.bindEvents = function() {
 	dom.find('a.collapse-button').bind({
 		click: $.proxy(this.panelStateChange, this)
 	});
-	dom.find('#od-alter-table').click($.proxy(this.onAlterTableClick, this));
-	dom.delegate('table.data-mgr tr', 'hover', this.onTrHover);
-	dom.delegate('table.data-mgr tr', 'click', $.proxy(this.onTrClick, this));
+	dom.find('input[type="button"]').click($.proxy(this.onInputButtonClick, this));
+	dom.delegate('table.data-mgr tbody tr', 'hover', this.onTrHover);
+	dom.delegate('a.action-btn', 'click', $.proxy(this.onActionButtonClick, this));
 };
 
 /**
@@ -174,6 +231,7 @@ ObjectDetailUI.prototype.updateView = function(table){
 	if(table != null){
 		this.updateColumnsView(table.getColumnCollection());
 		this.updateForeignKeyView(table.getForeignKeyCollection());
+		this.updateUniqueKeyView(table.getUniqueKeyCollection());
 	}
 };
 
@@ -194,16 +252,64 @@ ObjectDetailUI.prototype.updateTableView = function(table){
 };
 
 ObjectDetailUI.prototype.updateColumnsView = function(columnCollection){
-	var columns = columnCollection.getColumns();
-	var $tr;
-	var $rows = $();
+	$('#od-tab-columns').find('tbody').html(this.populateColumnHtmlData(columnCollection));
+};
+
+ObjectDetailUI.prototype.updateSingleColumnView = function(column, action){
+	switch(action){
+		case 'add':
+			$('#od-tab-columns').find('tbody').append(this.populateColumnHtmlData(column));
+			break;
+		case 'drop':
+			break;
+		case 'alter':
+			this.populateColumnHtmlData(column, this.findColumnRow(column));
+			break;
+	}
+};
+
+ObjectDetailUI.prototype.findColumnRow = function(column){
+	var $tds = $('#od-tab-columns').find('tbody').find('td.data');
+	var $td;
+	for(var i = 0; i < $tds.length; i++){
+		$td = $tds.eq(i);
+		if($td.data('dbobject') == column){
+			return $td.parent();
+		}
+	}
+	return null;
+};
+
+ObjectDetailUI.prototype.populateColumnHtmlData = function(columnData, $tr){
 	var columnModel;
 	var comment;
 	var htmlChecked = '<span class="ui-icon ui-icon-check">'+ DBDesigner.lang.stryes +'</span>';
-	for(var i = 0; i < columns.length; i++){
-		columnModel = columns[i].getModel();
-		comment = columnModel.getComment();
-		$tr = $('<tr></tr>').data('oindex', 'c-' + i);
+	var htmlActions = '<a href="#" class="action-btn" title="'+ DBDesigner.lang.stralter +'"><span class="ui-icon ui-icon-pencil">'+ DBDesigner.lang.stralter +'</span></a>'+
+		'<a href="#" class="action-btn" title="'+ DBDesigner.lang.strdrop +'"><span class="ui-icon ui-icon-trash">'+ DBDesigner.lang.strdrop +'</span></a>'+
+		'<a href="#" class="action-btn" title="'+ DBDesigner.lang.strmoveup +'"><span class="ui-icon ui-icon-circle-arrow-n">'+ DBDesigner.lang.strmoveup +'</span></a>'+
+		'<a href="#" class="action-btn" title="'+ DBDesigner.lang.strmovedown +'"><span class="ui-icon ui-icon-circle-arrow-s">'+ DBDesigner.lang.strmovedown +'</span></a>';
+	if(columnData instanceof ColumnCollection) {
+		var $rows = $();
+		var columns = columnData.getColumns();
+		for(var i = 0; i < columns.length; i++){
+			columnModel = columns[i].getModel();
+			comment = columnModel.getComment();
+			$tr = $('<tr></tr>');
+			$('<td></td>').text(columnModel.getName()).appendTo($tr);
+			$('<td></td>').text(columnModel.getFullType()).appendTo($tr);
+			$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isForeignKey()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
+			$('<td class="data"></td>').data('dbobject', columns[i]).html(htmlActions).appendTo($tr);
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+			$rows = $rows.add($tr);
+		}
+		return $rows;
+	}else if(columnData instanceof Column && typeof $tr == 'undefined'){
+		columnModel = columnData.getModel();
+		$tr = $('<tr></tr>');
 		$('<td></td>').text(columnModel.getName()).appendTo($tr);
 		$('<td></td>').text(columnModel.getFullType()).appendTo($tr);
 		$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
@@ -211,32 +317,163 @@ ObjectDetailUI.prototype.updateColumnsView = function(columnCollection){
 		$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
 		$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
 		$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
-		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + columnModel.getComment())
-		$rows = $rows.add($tr);
+		$('<td class="data"></td>').data('dbobject', columnData).html(htmlActions).appendTo($tr);
+		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+	}else if(columnData instanceof Column && typeof $tr != 'undefined'){
+		var $tds = $tr.find('td');
+		columnModel = columnData.getModel();
+		comment = columnModel.getComment();
+		$tds.eq(0).text(columnModel.getName());
+		$tds.eq(1).text(columnModel.getFullType());
+		$tds.eq(2).html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;');
+		$tds.eq(3).html(columnModel.isForeignKey()?htmlChecked:'&nbsp;');
+		$tds.eq(4).html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;');
+		$tds.eq(5).html(columnModel.isNotnull()?htmlChecked:'&nbsp;');
+		$tds.eq(6).text(columnModel.getDefault());
+		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+		else $tr.removeAttr('title');
 	}
-	$('#od-tab-columns').find('tbody').html($rows);
+	return $tr;
 };
 
-ObjectDetailUI.prototype.updateForeignKeyView = function(foreignKeyCollection){
-	
+ObjectDetailUI.prototype.updateUniqueKeyView = function(uniqueKeyCollection){
+	$('#od-tab-uniquekeys').find('tbody').html(this.populateUniqueKeyHtmlData(uniqueKeyCollection));
 };
 
-ObjectDetailUI.prototype.onAlterTableClick = function(event){
-	this.getController().alterTable();
+ObjectDetailUI.prototype.updateSingleUniqueKeyView = function(uniqueKey, action){
+	switch(action){
+		case 'add':
+			$('#od-tab-uniquekeys').find('tbody').append(this.populateUniqueKeyHtmlData(uniqueKey));
+			break;
+		case 'drop':
+			break;
+		case 'alter':
+			this.populateUniqueKeyHtmlData(uniqueKey, this.findUniqueKeyRow(uniqueKey));
+			break;
+	}
+};
+
+ObjectDetailUI.prototype.findUniqueKeyRow = function(uniqueKey){
+	var $tds = $('#od-tab-uniquekeys').find('tbody').find('td.data');
+	var $td;
+	for(var i = 0; i < $tds.length; i++){
+		$td = $tds.eq(i);
+		if($td.data('dbobject') == uniqueKey){
+			return $td.parent();
+		}
+	}
+	return null;
+};
+
+ObjectDetailUI.prototype.populateUniqueKeyHtmlData = function(uniqueKeyData, $tr){
+	var j;
+	var uniqueKeyModel;
+	var comment;
+	var name;
+	var columns;
+	var columnNames;
+	var emptyName = '<span style="color:red;font-weight: bold">'+ DBDesigner.lang.strempty +'</span>';
+	var htmlActions = '<a href="#" class="action-btn" title="'+ DBDesigner.lang.stralter +'"><span class="ui-icon ui-icon-pencil">'+ DBDesigner.lang.stralter +'</span></a>'+
+		'<a href="#" class="action-btn" title="'+ DBDesigner.lang.strdrop +'"><span class="ui-icon ui-icon-trash">'+ DBDesigner.lang.strdrop +'</span></a>';
+	if(uniqueKeyData instanceof UniqueKeyCollection) {
+		var $rows = $();
+		var uniqueKeys = uniqueKeyData.getUniqueKeys();
+		for(var i = 0; i < uniqueKeys.length; i++){
+			uniqueKeyModel = uniqueKeys[i].getModel();
+			comment = uniqueKeyModel.getComment();
+			name = uniqueKeyModel.getName();
+			columnNames = [];
+			columns = uniqueKeyModel.getColumns();
+			for(j = 0; j < columns.length; j++) columnNames.push(columns[j].getName());
+			$tr = $('<tr></tr>');
+			if(name != '') $('<td></td>').text(name).appendTo($tr);
+			else $('<td></td>').html(emptyName).appendTo($tr);
+			$('<td></td>').text(columnNames.join(', ')).appendTo($tr);
+			$('<td class="data"></td>').data('dbobject', uniqueKeys[i]).html(htmlActions).appendTo($tr);
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+			$rows = $rows.add($tr);
+		}
+		return $rows;
+	}else if(uniqueKeyData instanceof UniqueKey && typeof $tr == 'undefined'){
+		uniqueKeyModel = uniqueKeyData.getModel();
+		comment = uniqueKeyModel.getComment();
+		name = uniqueKeyModel.getName();
+		columnNames = [];
+		columns = uniqueKeyModel.getColumns();
+		for(j = 0; j < columns.length; j++) columnNames.push(columns[j].getName());
+		$tr = $('<tr></tr>');
+		if(name != '') $('<td></td>').text(name).appendTo($tr);
+		else $('<td></td>').html(emptyName).appendTo($tr);
+		$('<td></td>').text(columnNames.join(', ')).appendTo($tr);
+		$('<td class="data"></td>').data('dbobject', uniqueKeyData).html(htmlActions).appendTo($tr);
+		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+	}else if(uniqueKeyData instanceof UniqueKey && typeof $tr != 'undefined'){
+		var $tds = $tr.find('td');
+		uniqueKeyModel = uniqueKeyData.getModel();
+		comment = uniqueKeyModel.getComment();
+		name = uniqueKeyModel.getName();
+		columnNames = [];
+		columns = uniqueKeyModel.getColumns();
+		for(j = 0; j < columns.length; j++) columnNames.push(columns[j].getName());
+		if(name != '') $tds.eq(0).text(name);
+		else $tds.eq(0).html(emptyName);
+		$tds.eq(1).text(columnNames.join(', '));
+		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+		else $tr.removeAttr('title');
+	}
+	return $tr;
+};
+
+
+ObjectDetailUI.prototype.updateForeignKeyView = function(foreignKeyCollection){};
+
+ObjectDetailUI.prototype.onInputButtonClick = function(event){
+	switch(event.target.id){
+		case 'od-alter-table':
+			this.getController().alterDBObject();
+			break;
+		case 'od-add-column':
+			this.getController().addDBObject('column');
+			break;
+		case 'od-add-fk':
+			this.getController().addDBObject('fk');
+			break;
+		case 'od-add-uniq':
+			this.getController().addDBObject('uk');
+			break;
+	}
 };
 
 ObjectDetailUI.prototype.onTrHover = function(event){
 	var $this = $(this);
-	if(event.type == 'mouseenter' && !$this.hasClass('ui-state-active')){
+	if(event.type == 'mouseenter'){
 		$this.addClass('ui-state-hover');
 	}else if(event.type == 'mouseleave'){
 		$this.removeClass('ui-state-hover');
 	}
 };
 
-ObjectDetailUI.prototype.onTrClick = function(event){
-	var $tr = $(event.currentTarget);
-	$tr.parent().find('tr.ui-state-active').removeClass('ui-state-active');
-	$tr.addClass('ui-state-active');
-	console.log($tr.data('oindex'));
+ObjectDetailUI.prototype.onActionButtonClick = function(event){
+	event.preventDefault();
+	var $button = $(event.currentTarget);
+	var cssClass = $button.find('span').attr('class');
+	var dbobject = $button.parent().data('dbobject');
+	var $tr;
+	switch(cssClass){
+		case 'ui-icon ui-icon-pencil':
+			this.getController().alterDBObject(dbobject);
+			break;
+		case 'ui-icon ui-icon-circle-arrow-n':
+			if(this.getController().moveColumn(dbobject, 'up')){
+				$tr = $button.parents('tr:first');
+				$tr.insertBefore($tr.prev());
+			}
+			break;
+		case 'ui-icon ui-icon-circle-arrow-s':
+			if(this.getController().moveColumn(dbobject, 'down')){
+				$tr = $button.parents('tr:first');
+				$tr.insertAfter($tr.next());
+			}
+			break;
+	}
 };

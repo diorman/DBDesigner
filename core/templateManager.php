@@ -15,6 +15,9 @@
 				<a href="#" class="button add-foreignkey ui-state-default ui-corner-all" title="<?php echo $this->_('straddfk'); ?>"><span><?php echo $this->_('straddfk'); ?></span></a>
 			</li>
 			<li>
+				<a href="#" class="button add-uniquekey ui-state-default ui-corner-all" title="<?php echo $this->_('stradduniq'); ?>"><span><?php echo $this->_('stradduniq'); ?></span></a>
+			</li>
+			<li>
 				<a href="#" class="button save ui-state-default ui-corner-all" title="<?php echo $this->_('strsave'); ?>"><span><?php echo $this->_('strsave'); ?></span></a>
 			</li>
 			<li>	
@@ -48,7 +51,8 @@
 			<ul>
 				<li><a href="#od-tab-properties"><?php echo $this->_('strproperties'); ?></a></li>
 				<li><a href="#od-tab-columns"><?php echo $this->_('strcolumns'); ?></a></li>
-				<li><a href="#od-tab-foreignkeys"><?php echo $this->_('strforeignkeys'); ?></a></li>	
+				<li><a href="#od-tab-foreignkeys"><?php echo $this->_('strforeignkeys'); ?></a></li>
+				<li><a href="#od-tab-uniquekeys"><?php echo $this->_('struniquekeys'); ?></a></li>
 			</ul>
 			<div id="od-tab-properties">
 				<dl>
@@ -65,6 +69,9 @@
 				</div>
 			</div>
 			<div id="od-tab-columns">
+				<div class="buttons-placeholder">
+					<input id="od-add-column" type="button" value="<?php echo $this->_('straddcolumn'); ?>" />
+				</div>
 				<div class="data-table-container">
 					<table class="data-mgr">
 						<thead>
@@ -74,19 +81,37 @@
 								<th class="check">PK</th>
 								<th class="check">FK</th>
 								<th class="check">UK</th>
-								<th class="check"><?php echo $this->_('strnotnull'); ?></th>
+								<th class="check">NN</th>
 								<th><?php echo $this->_('strdefault'); ?></th>
+								<th class="actions">&nbsp;</th>
 							</tr>		
 						</thead>
 						<tbody></tbody>
 					</table>
 				</div>
-				<div class="right-container">
-					
-				</div>
 			</div>
 			<div id="od-tab-foreignkeys">
-				
+				<div class="buttons-placeholder">
+					<input id="od-add-fk" type="button" value="<?php echo $this->_('straddfk'); ?>" />
+				</div>
+				<div class="data-table-container"></div>
+			</div>
+			<div id="od-tab-uniquekeys">
+				<div class="buttons-placeholder">
+					<input id="od-add-uniq" type="button" value="<?php echo $this->_('stradduniq'); ?>" />
+				</div>
+				<div class="data-table-container">
+					<table class="data-mgr">
+						<thead>
+							<tr>
+								<th><?php echo $this->_('strname'); ?></th>
+								<th><?php echo $this->_('strcolumns'); ?></th>
+								<th class="actions">&nbsp;</th>
+							</tr>		
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -165,12 +190,6 @@
 		<div class="field-check">
 			<label class="label" for="column-dialog_column-primarykey"><?php echo $this->_('strprimarykey'); ?></label>
 			<input type="checkbox" id="column-dialog_column-primarykey" />
-			<div class="clear"></div>
-		</div>
-		
-		<div class="field-check">
-			<label class="label" for="column-dialog_column-uniquekey"><?php echo $this->_('struniquekey'); ?></label>
-			<input type="checkbox" id="column-dialog_column-uniquekey" />
 			<div class="clear"></div>
 		</div>
 		
@@ -303,3 +322,38 @@
 		</div>
 	</div>
 <?php $templateManager['ForeignKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php /******************** UniqueKey Dialog Template **/ ?>
+<?php ob_start(); ?>
+	<div class="uniquekey-dialog">
+		<ul class="error-list hide"></ul>
+		<div class="field-text">
+			<label class="label" for="uniquekey-dialog_uniquekey-name"><?php echo $this->_('strname'); ?></label>
+			<input class="focusable" type="text" id="uniquekey-dialog_table-name" maxlength="<?php echo $data->_maxNameLen; ?>" />
+			<div class="clear"></div>
+		</div>
+		<div class="field-multiselection">
+			<div class="layout-select">
+				<label for="uniquekey-dialog_available-columns" class="label"><?php echo $this->_('strtablecolumnlist') ?></label>
+				<select id="uniquekey-dialog_available-columns" multiple="multiple" size="10"></select>
+			</div>
+			<div class="layout-buttons">
+				<input type="button" id="uniquekey-dialog_remove-columns" class="update-columns" value="<<" />
+				<input type="button" id="uniquekey-dialog_add-columns" class="update-columns" value=">>" />
+			</div>
+			<div class="layout-select">
+				<label for="uniquekey-dialog_selected-columns" class="label"><?php echo $this->_('strindexcolumnlist') ?></label>
+				<select id="uniquekey-dialog_selected-columns" multiple="multiple" size="10"></select>
+			</div>
+			<div class="clear"></div>
+		</div>
+		<div class="field-textarea">
+			<label class="label" for="uniquekey-dialog_uniquekey-comment"><?php echo $this->_('strcomment'); ?></label>
+			<textarea id="uniquekey-dialog_uniquekey-comment"></textarea>
+			<div class="clear"></div>
+		</div>
+		<div class="buttons-placeholder">
+			<input type="button" id="uniquekey-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="uniquekey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
+		</div>
+	</div>
+<?php $templateManager['UniqueKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

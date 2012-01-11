@@ -13,6 +13,7 @@ DBDesigner = function(data){
 	this.setTableDialog();
 	this.setColumnDialog();
 	this.setForeignKeyDialog();
+	this.setUniqueKeyDialog();
 	//this.toolBar.setAction(globals.Action.ADD_TABLE);
 	
 };
@@ -23,7 +24,6 @@ DBDesigner.init = function(){
 
 
 DBDesigner.prototype.doAction = function(action, extra) {
-		
 	switch(action){	
 		case DBDesigner.Action.ADD_TABLE:
 			DBDesigner.app.canvas.setCapturingPlacement(true);
@@ -49,6 +49,14 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			break;
 		case DBDesigner.Action.ALTER_FOREIGNKEY:
 			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.ADD_UNIQUEKEY:
+			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.tableCollection.getSelectedTables()[0]);
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.ALTER_UNIQUEKEY:
+			DBDesigner.app.uniqueKeyDialog.editUniqueKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
@@ -112,6 +120,10 @@ DBDesigner.prototype.setForeignKeyDialog = function() {
 	this.foreignKeyDialog = new ForeignKeyDialog();
 };
 
+DBDesigner.prototype.setUniqueKeyDialog = function() {
+	this.uniqueKeyDialog = new UniqueKeyDialog();
+};
+
 DBDesigner.prototype.setTableCollection = function() {
 	this.tableCollection = new TableCollection();
 	this.tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
@@ -124,16 +136,19 @@ DBDesigner.prototype.tableSelectionChanged = function(event){
 		case 0:
 			actionState[DBDesigner.Action.ADD_COLUMN] = false;
 			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+			actionState[DBDesigner.Action.ADD_UNIQUEKEY] = false;
 			actionState[DBDesigner.Action.DROP_TABLE] = false;
 			break;
 		case 1:
 			actionState[DBDesigner.Action.ADD_COLUMN] = true;
 			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = true;
+			actionState[DBDesigner.Action.ADD_UNIQUEKEY] = true;
 			actionState[DBDesigner.Action.DROP_TABLE] = true;
 			break;
 		default:
 			actionState[DBDesigner.Action.ADD_COLUMN] = false;
 			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+			actionState[DBDesigner.Action.ADD_UNIQUEKEY] = false;
 			actionState[DBDesigner.Action.DROP_TABLE] = true;
 			break;
 	}

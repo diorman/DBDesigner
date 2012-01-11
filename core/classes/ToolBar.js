@@ -77,6 +77,7 @@ ToolBarModel.prototype.getActionState = function() {
 		this._actionState[DBDesigner.Action.ADD_TABLE] = true;
 		this._actionState[DBDesigner.Action.ADD_COLUMN] = false;
 		this._actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
+		this._actionState[DBDesigner.Action.ADD_UNIQUEKEY] = false;
 		this._actionState[DBDesigner.Action.SAVE] = true;
 		this._actionState[DBDesigner.Action.DROP_TABLE] = false;
 	}
@@ -119,6 +120,7 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('add-table')) action = DBDesigner.Action.ADD_TABLE;
 	if($target.hasClass('add-column')) action = DBDesigner.Action.ADD_COLUMN;
 	if($target.hasClass('add-foreignkey')) action = DBDesigner.Action.ADD_FOREIGNKEY;
+	if($target.hasClass('add-uniquekey')) action = DBDesigner.Action.ADD_UNIQUEKEY;
 	if($target.hasClass('drop-table')) action = DBDesigner.Action.DROP_TABLE;
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
 	this.getController().setAction(action);
@@ -155,6 +157,8 @@ ToolBarUI.prototype.getCssClass = function(action) {
 			return 'add-column';
 		case DBDesigner.Action.ADD_FOREIGNKEY:
 			return 'add-foreignkey';
+		case DBDesigner.Action.ADD_UNIQUEKEY:
+			return 'add-uniquekey';
 		case DBDesigner.Action.DROP_TABLE:
 			return 'drop-table';
 		case DBDesigner.Action.SAVE:
