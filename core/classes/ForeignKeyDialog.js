@@ -44,6 +44,7 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 	
 	if(this.validateForm(form)){
 		var flags = 0;
+		if(action == DBDesigner.Action.ALTER_FOREIGNKEY) foreignKeyModel.startEditing();
 		if(form.isDeferrable) flags |= ForeignKeyModel.Flag.DEFERRABLE;
 		if(form.isDeferred) flags |= ForeignKeyModel.Flag.DEFERRED;
 		if(form.isMatchFull) flags |= ForeignKeyModel.Flag.MATCH_FULL;
@@ -51,13 +52,15 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 		foreignKeyModel.setName(form.name);
 		foreignKeyModel.setComment(form.comment);
 		foreignKeyModel.setFlags(flags);
+		foreignKeyModel.setDeleteAction(form.onDelete);
+		foreignKeyModel.setUpdateAction(form.onUpdate);
 		foreignKeyModel.setColumns(form.columns);
 		foreignKeyModel.setReferencedTable(form.referencedTable);
 		
 		if(action == DBDesigner.Action.ADD_FOREIGNKEY){
 			var foreignKey = new ForeignKey(foreignKeyModel);
 			foreignKeyModel.getParent().getForeignKeyCollection().add(foreignKey);
-		}
+		} else foreignKeyModel.stopEditing();
 		
 		this.getUI().close();
 	}
@@ -241,8 +244,8 @@ ForeignKeyDialogUI.prototype.open = function(title){
 	
 	if(foreignKeyModel != null){
 		$('#foreignkey-dialog_foreignkey-name').val(foreignKeyModel.getName());
-		$('#foreignkey-dialog_foreignkey-updateaction').prop('checked', foreignKeyModel.getUpdateAction());
-		$('#foreignkey-dialog_foreignkey-deleteaction').prop('checked', foreignKeyModel.getDeleteAction());
+		$('#foreignkey-dialog_foreignkey-updateaction').val(foreignKeyModel.getUpdateAction());
+		$('#foreignkey-dialog_foreignkey-deleteaction').val(foreignKeyModel.getDeleteAction());
 		$('#foreignkey-dialog_foreignkey-matchfull').prop('checked', foreignKeyModel.isMatchFull());
 		$('#foreignkey-dialog_foreignkey-deferrable').prop('checked', foreignKeyModel.isDeferrable());
 		$('#foreignkey-dialog_foreignkey-comment').val(foreignKeyModel.getComment());
@@ -255,7 +258,6 @@ ForeignKeyDialogUI.prototype.open = function(title){
 		var $options = $();
 		var $option;
 		var i = 0;
-		var tName = '';
 		var $referencedTable = $('#foreignkey-dialog_foreignkey-references');
 		for (i = 0; i < tNames.length; i++){
 			$option = $('<option></option>').attr('value', tNames[i]).text(tNames[i]);
@@ -269,32 +271,9 @@ ForeignKeyDialogUI.prototype.open = function(title){
 		}else {
 			$referencedTable.prop('disabled', false);
 		}
-		
 		$referencedTable.trigger('change');
-		
 		controller.setSelectedColumns(foreignKeyModel.getColumns());
-		
-		/** Update local columns **/
 		this.updateLocalColumns();
-		/*
-		$options = $();
-		var cNames = foreignKeyModel.getParent().getColumnCollection().getColumnNames();
-		for (i = 0; i < cNames.length; i++){
-			$option = $('<option></option>').attr('value', cNames[i]).text(cNames[i]);
-			$options = $options.add($option);
-		}
-		if($options.length > 0) $('#foreignkey-dialog_foreignkey-localcolumn').html($options);
-		else $('#foreignkey-dialog_foreignkey-localcolumn').empty();*/
-		
-		/*$('#column-dialog_column-type').val(columnModel.getType()).trigger('change');
-		$('#column-dialog_column-name').val(columnModel.getName());
-		$('#column-dialog_column-length').val(columnModel.getLength());
-		$('#column-dialog_column-comment').val(columnModel.getComment());
-		$('#column-dialog_column-array').prop('checked', columnModel.isArray());
-		$('#column-dialog_column-primarykey').prop('checked', columnModel.isPrimaryKey());
-		$('#column-dialog_column-uniquekey').prop('checked', columnModel.isUniqueKey());
-		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotnull());
-		$('#column-dialog_column-default').val(columnModel.getDefault());*/
 		dom.find('div.tabs').tabs('select', 0);
 		dom.dialog('open').dialog('option', 'title', title);
 		this.focus();

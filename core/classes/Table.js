@@ -95,11 +95,7 @@ TableModel = function() {
 $.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.prototype.setPosition = function(position){
-	var oldPosition = this.getPosition();
-	if(oldPosition.top != position.top || oldPosition.left != position.left){
-		$.extend(this._position, position);
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'position', oldValue: oldPosition, newValue: position});
-	}
+	this._position = $.extend(this.getPosition(), position);
 };
 
 TableModel.prototype.getPosition = function(){

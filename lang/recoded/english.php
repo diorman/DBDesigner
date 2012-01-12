@@ -45,6 +45,8 @@
 	$lang['strreferenced'] = 'Referenced';
 	$lang['strreferencing'] = 'Referencing';
 	$lang['strlocalcolumn'] = 'Local column';
+	$lang['strlocalcolumns'] = 'Local columns';
+	$lang['strforeigncolumns'] = 'Foreign columns';
 	$lang['strconfdroptables'] = 'Are you sure you want to drop the %d selected tables?';
 	$lang['strconfdropforeignkey'] = 'Are you sure you want to drop foreign key &quot;%s&quot; from table &quot;%s&quot;?';
 	$lang['strdropobject'] = 'Drop object';

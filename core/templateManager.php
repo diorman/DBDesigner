@@ -94,7 +94,24 @@
 				<div class="buttons-placeholder">
 					<input id="od-add-fk" type="button" value="<?php echo $this->_('straddfk'); ?>" />
 				</div>
-				<div class="data-table-container"></div>
+				<div class="data-table-container">
+					<table class="data-mgr">
+						<thead>
+							<tr>
+								<th><?php echo $this->_('strname'); ?></th>
+								<th><?php echo $this->_('strreferences'); ?></th>
+								<th><?php echo $this->_('strlocalcolumns'); ?></th>
+								<th><?php echo $this->_('strreferencing'); ?></th>
+								<th class="fixed-prop">ON UPDATE</th>
+								<th class="fixed-prop">ON DELETE</th>
+								<th class="fixed-prop">MATCH TYPE</th>
+								<th><?php echo $this->_('stroptions'); ?></th>
+								<th class="actions">&nbsp;</th>
+							</tr>		
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
 			</div>
 			<div id="od-tab-uniquekeys">
 				<div class="buttons-placeholder">
@@ -221,7 +238,7 @@
 <?php /******************** Column Template **/ ?>
 <?php $templateManager['Column'] = '<div class="db-column"><span class="keys"></span><span class="definition"></span></div>'; ?>
 
-<?php /******************** Column Dialog Template **/ ?>
+<?php /******************** Foreign Key Dialog Template **/ ?>
 <?php ob_start(); ?>
 	<div class="foreignkey-dialog">
 		<ul class="error-list hide"></ul>

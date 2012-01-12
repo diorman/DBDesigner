@@ -154,7 +154,8 @@ div.object-detail table.data-mgr tbody tr{cursor: pointer;}
 div.object-detail table.data-mgr a.action-btn {float:left;}
 div.object-detail table.data-mgr a.action-btn span.ui-icon {margin-left: 5px}
 #od-tab-columns th.actions {width: 90px}
-#od-tab-uniquekeys th.actions {width: 47px}
+#od-tab-uniquekeys th.actions, #od-tab-foreignkeys th.actions {width: 47px}
+#od-tab-foreignkeys th.fixed-prop {width: 95px}
 div.object-detail table.data-mgr tr.hover {background-color: #F3F3E9;}
 div.object-detail table.data-mgr tr.selected {background-color: #336699; color: #fff;}
 div.object-detail th { font-weight: bold; background-color: #E6E6CC}

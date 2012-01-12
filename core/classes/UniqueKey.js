@@ -37,24 +37,27 @@ UniqueKeyModel.prototype.getColumns = function(){
 UniqueKeyModel.prototype.setColumns = function(columns){
 	var oldColumns = this.getColumns();
 	var i;
+	var throwEvent = false;
 	for(i = 0; i < oldColumns.length; i++){
 		if($.inArray(oldColumns[i], columns) == -1){
 			oldColumns[i].setUniqueKey(false);
 			oldColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			throwEvent = true;
 		}
 	}
 	for(i = 0; i < columns.length; i++){
 		if($.inArray(columns[i], oldColumns) == -1){
 			columns[i].setUniqueKey(true);
 			columns[i].bind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			throwEvent = true;
 		}
 	}
 	this._columns = columns;
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columns', oldValue: oldColumns, newValue: columns});
+	if(throwEvent)this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columns', oldValue: oldColumns, newValue: columns});
 };
 
 UniqueKeyModel.prototype.onColumnChanged = function(event){
-	if(event.property == 'name' || event.property == 'stopEditing'){
+	if($.inArray('name', event.properties) != -1){
 		// this is just to notify the object detail view in case the parent table is selected
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}

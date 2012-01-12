@@ -21,7 +21,9 @@ DBObject = {
 		var i, addFunc = true;
 		var isEditing = this.getModel().isEditing();
 		if(!$.isArray(this._uvf)) this._uvf = [];
+		if(!$.isArray(this._props)) this._props = [];
 		if(typeof eventProperty == 'undefined') eventProperty = 'stopEditing';
+		else this._props.push(eventProperty);
 		if($.isFunction(func)){
 			for(i = 0; i < this._uvf.length; i++){
 				if(this._uvf[i].func == func) {
@@ -33,11 +35,13 @@ DBObject = {
 		}else if(func === true) this._modelHasChanges = true;
 		if(!isEditing){
 			var ui = this.getUI();
+			var properties = [].concat(this._props);
 			this._modelHasChanges = this._modelHasChanges || (this._uvf.length > 0);
 			for(i = 0; i < this._uvf.length; i++) this._uvf[i].func.apply(ui, this._uvf[i].prmts);
 			this._uvf = [];
+			this._props = [];
 			if(this._modelHasChanges === true) {
-				this.trigger(DBObject.Event.DBOBJECT_ALTERED, {property: eventProperty});
+				this.trigger(DBObject.Event.DBOBJECT_ALTERED, {properties: properties});
 				this._modelHasChanges = false;
 			}
 		}

@@ -18,9 +18,9 @@ Column.prototype.modelPropertyChanged = function(event){
 		case 'stopEditing':
 			this.modelChanged();
 			break;
-		case 'type':
+		/*case 'type':
 		case 'length': 
-		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);
+		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);*/
 		default:
 			this.modelChanged(event.property, this.getUI().updateView);
 			break;

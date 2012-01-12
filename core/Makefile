@@ -26,6 +26,7 @@ FILES=	classes/EventDispatcher.js \
 	classes/UniqueKey.js \
 	classes/UniqueKeyDialog.js \
 	classes/Const.js \
+	classes/Helper.js \
 
 
 default:    ${FILES}

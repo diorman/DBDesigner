@@ -738,10 +738,12 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
 			event.newValue.getColumnCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
 			event.newValue.getUniqueKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
+			event.newValue.getForeignKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
 			if(event.oldValue != null){
 				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
 				event.oldValue.getColumnCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
 				event.oldValue.getUniqueKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
+				event.oldValue.getForeignKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
 			}
 			break;
 	}
@@ -779,8 +781,24 @@ ObjectDetail.prototype.onUniqueKeyCollectionChanged = function(event){
 	this.getUI().updateSingleUniqueKeyView(uniqueKey, action);
 };
 
+ObjectDetail.prototype.onForeignKeyCollectionChanged = function(event){
+	var foreignKey;
+	var action;
+	if(event.foreignKeyAdded){
+		foreignKey = event.foreignKeyAdded;
+		action = 'add';
+	} else if(event.foreignKeyDropped){
+		foreignKey = event.foreignKeyDropped
+		action = 'drop';
+	} else if(event.foreignKeyAltered){
+		foreignKey = event.foreignKeyAltered;
+		action = 'alter';
+	}
+	this.getUI().updateSingleForeignKeyView(foreignKey, action);
+};
+
 ObjectDetail.prototype.onTablePropertyChanged = function(event){
-	if(event.property == 'name' || event.property == 'comment' || event.property == 'options' || event.property == 'stopEditing'){
+	if($.partOf(event.properties, ['name', 'comment', 'options'])){
 		this.getUI().updateTableView(event.sender);
 	}
 };
@@ -1004,31 +1022,32 @@ ObjectDetailUI.prototype.populateColumnHtmlData = function(columnData, $tr){
 			$rows = $rows.add($tr);
 		}
 		return $rows;
-	}else if(columnData instanceof Column && typeof $tr == 'undefined'){
-		columnModel = columnData.getModel();
-		$tr = $('<tr></tr>');
-		$('<td></td>').text(columnModel.getName()).appendTo($tr);
-		$('<td></td>').text(columnModel.getFullType()).appendTo($tr);
-		$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
-		$('<td></td>').html(columnModel.isForeignKey()?htmlChecked:'&nbsp;').appendTo($tr);
-		$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
-		$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
-		$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
-		$('<td class="data"></td>').data('dbobject', columnData).html(htmlActions).appendTo($tr);
-		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
-	}else if(columnData instanceof Column && typeof $tr != 'undefined'){
-		var $tds = $tr.find('td');
+	}else {
 		columnModel = columnData.getModel();
 		comment = columnModel.getComment();
-		$tds.eq(0).text(columnModel.getName());
-		$tds.eq(1).text(columnModel.getFullType());
-		$tds.eq(2).html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;');
-		$tds.eq(3).html(columnModel.isForeignKey()?htmlChecked:'&nbsp;');
-		$tds.eq(4).html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;');
-		$tds.eq(5).html(columnModel.isNotnull()?htmlChecked:'&nbsp;');
-		$tds.eq(6).text(columnModel.getDefault());
-		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
-		else $tr.removeAttr('title');
+		if(columnData instanceof Column && typeof $tr == 'undefined'){
+			$tr = $('<tr></tr>');
+			$('<td></td>').text(columnModel.getName()).appendTo($tr);
+			$('<td></td>').text(columnModel.getFullType()).appendTo($tr);
+			$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isForeignKey()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
+			$('<td class="data"></td>').data('dbobject', columnData).html(htmlActions).appendTo($tr);
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+		}else if(columnData instanceof Column && typeof $tr != 'undefined'){
+			var $tds = $tr.find('td');
+			$tds.eq(0).text(columnModel.getName());
+			$tds.eq(1).text(columnModel.getFullType());
+			$tds.eq(2).html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;');
+			$tds.eq(3).html(columnModel.isForeignKey()?htmlChecked:'&nbsp;');
+			$tds.eq(4).html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;');
+			$tds.eq(5).html(columnModel.isNotnull()?htmlChecked:'&nbsp;');
+			$tds.eq(6).text(columnModel.getDefault());
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+			else $tr.removeAttr('title');
+		}
 	}
 	return $tr;
 };
@@ -1091,38 +1110,157 @@ ObjectDetailUI.prototype.populateUniqueKeyHtmlData = function(uniqueKeyData, $tr
 			$rows = $rows.add($tr);
 		}
 		return $rows;
-	}else if(uniqueKeyData instanceof UniqueKey && typeof $tr == 'undefined'){
+	}else { 
 		uniqueKeyModel = uniqueKeyData.getModel();
 		comment = uniqueKeyModel.getComment();
 		name = uniqueKeyModel.getName();
 		columnNames = [];
 		columns = uniqueKeyModel.getColumns();
 		for(j = 0; j < columns.length; j++) columnNames.push(columns[j].getName());
-		$tr = $('<tr></tr>');
-		if(name != '') $('<td></td>').text(name).appendTo($tr);
-		else $('<td></td>').html(emptyName).appendTo($tr);
-		$('<td></td>').text(columnNames.join(', ')).appendTo($tr);
-		$('<td class="data"></td>').data('dbobject', uniqueKeyData).html(htmlActions).appendTo($tr);
-		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
-	}else if(uniqueKeyData instanceof UniqueKey && typeof $tr != 'undefined'){
-		var $tds = $tr.find('td');
-		uniqueKeyModel = uniqueKeyData.getModel();
-		comment = uniqueKeyModel.getComment();
-		name = uniqueKeyModel.getName();
-		columnNames = [];
-		columns = uniqueKeyModel.getColumns();
-		for(j = 0; j < columns.length; j++) columnNames.push(columns[j].getName());
-		if(name != '') $tds.eq(0).text(name);
-		else $tds.eq(0).html(emptyName);
-		$tds.eq(1).text(columnNames.join(', '));
-		if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
-		else $tr.removeAttr('title');
+		if(uniqueKeyData instanceof UniqueKey && typeof $tr == 'undefined'){
+			$tr = $('<tr></tr>');
+			if(name != '') $('<td></td>').text(name).appendTo($tr);
+			else $('<td></td>').html(emptyName).appendTo($tr);
+			$('<td></td>').text(columnNames.join(', ')).appendTo($tr);
+			$('<td class="data"></td>').data('dbobject', uniqueKeyData).html(htmlActions).appendTo($tr);
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+		}else if(uniqueKeyData instanceof UniqueKey && typeof $tr != 'undefined'){
+			var $tds = $tr.find('td');
+			if(name != '') $tds.eq(0).text(name);
+			else $tds.eq(0).html(emptyName);
+			$tds.eq(1).text(columnNames.join(', '));
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+			else $tr.removeAttr('title');
+		}
 	}
 	return $tr;
 };
 
 
-ObjectDetailUI.prototype.updateForeignKeyView = function(foreignKeyCollection){};
+ObjectDetailUI.prototype.updateForeignKeyView = function(foreignKeyCollection){
+	$('#od-tab-foreignkeys').find('tbody').html(this.populateForeignKeyHtmlData(foreignKeyCollection));
+};
+
+ObjectDetailUI.prototype.updateSingleForeignKeyView = function(foreignKey, action){
+	switch(action){
+		case 'add':
+			$('#od-tab-foreignkeys').find('tbody').append(this.populateForeignKeyHtmlData(foreignKey));
+			break;
+		case 'drop':
+			break;
+		case 'alter':
+			this.populateForeignKeyHtmlData(foreignKey, this.findForeignKeyRow(foreignKey));
+			break;
+	}
+};
+
+ObjectDetailUI.prototype.findForeignKeyRow = function(foreignKey){
+	var $tds = $('#od-tab-foreignkeys').find('tbody').find('td.data');
+	var $td;
+	for(var i = 0; i < $tds.length; i++){
+		$td = $tds.eq(i);
+		if($td.data('dbobject') == foreignKey){
+			return $td.parent();
+		}
+	}
+	return null;
+};
+
+ObjectDetailUI.prototype.populateForeignKeyHtmlData = function(foreignKeyData, $tr){
+	var j;
+	var foreignKeyModel;
+	var comment;
+	var name;
+	var columns;
+	var localColumnNames;
+	var foreignColumnNames;
+	var emptyName = '<span style="color:red;font-weight: bold">'+ DBDesigner.lang.strempty +'</span>';
+	var htmlActions = '<a href="#" class="action-btn" title="'+ DBDesigner.lang.stralter +'"><span class="ui-icon ui-icon-pencil">'+ DBDesigner.lang.stralter +'</span></a>'+
+		'<a href="#" class="action-btn" title="'+ DBDesigner.lang.strdrop +'"><span class="ui-icon ui-icon-trash">'+ DBDesigner.lang.strdrop +'</span></a>';
+	if(foreignKeyData instanceof ForeignKeyCollection) {
+		var $rows = $();
+		var foreignKeys = foreignKeyData.getForeignKeys();
+		for(var i = 0; i < foreignKeys.length; i++){
+			foreignKeyModel = foreignKeys[i].getModel();
+			comment = foreignKeyModel.getComment();
+			name = foreignKeyModel.getName();
+			localColumnNames = [];
+			foreignColumnNames = [];
+			columns = foreignKeyModel.getColumns();
+			for(j = 0; j < columns.length; j++) {
+				localColumnNames.push(columns[j].localColumn.getName());
+				foreignColumnNames.push(columns[j].foreignColumn.getName());
+			}
+			$tr = $('<tr></tr>');
+			if(name != '') $('<td></td>').text(name).appendTo($tr);
+			else $('<td></td>').html(emptyName).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getReferencedTable().getName()).appendTo($tr);
+			$('<td></td>').text(localColumnNames.join(', ')).appendTo($tr);
+			$('<td></td>').text(foreignColumnNames.join(', ')).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getActionString('update')).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getActionString('delete')).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getMatchType()).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getConstraintOptions()).appendTo($tr);
+			$('<td class="data"></td>').data('dbobject', foreignKeys[i]).html(htmlActions).appendTo($tr);
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+			$rows = $rows.add($tr);
+		}
+		return $rows;
+	}
+	else {
+		foreignKeyModel = foreignKeyData.getModel();
+		comment = foreignKeyModel.getComment();
+		name = foreignKeyModel.getName();
+		localColumnNames = [];
+		foreignColumnNames = [];
+		columns = foreignKeyModel.getColumns();
+		for(j = 0; j < columns.length; j++) {
+			localColumnNames.push(columns[j].localColumn.getName());
+			foreignColumnNames.push(columns[j].foreignColumn.getName());
+		}
+		if(foreignKeyData instanceof ForeignKey && typeof $tr == 'undefined'){
+			$tr = $('<tr></tr>');
+			if(name != '') $('<td></td>').text(name).appendTo($tr);
+			else $('<td></td>').html(emptyName).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getReferencedTable().getName()).appendTo($tr);
+			$('<td></td>').text(localColumnNames.join(', ')).appendTo($tr);
+			$('<td></td>').text(foreignColumnNames.join(', ')).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getActionString('update')).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getActionString('delete')).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getMatchType()).appendTo($tr);
+			$('<td></td>').text(foreignKeyModel.getConstraintOptions()).appendTo($tr);
+			$('<td class="data"></td>').data('dbobject', foreignKeyData).html(htmlActions).appendTo($tr);
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+		}else if(foreignKeyData instanceof ForeignKey && typeof $tr != 'undefined'){
+			var $tds = $tr.find('td');
+			if(name != '') $tds.eq(0).text(name);
+			else $tds.eq(0).html(emptyName);
+			$tds.eq(1).text(foreignKeyModel.getReferencedTable().getName());
+			$tds.eq(2).text(localColumnNames.join(', '));
+			$tds.eq(3).text(foreignColumnNames.join(', '));
+			$tds.eq(4).text(foreignKeyModel.getActionString('update'));
+			$tds.eq(5).text(foreignKeyModel.getActionString('delete'));
+			$tds.eq(6).text(foreignKeyModel.getMatchType());
+			$tds.eq(7).text(foreignKeyModel.getConstraintOptions());
+			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
+			else $tr.removeAttr('title');
+		}
+	}
+	return $tr;
+};
+
+ObjectDetailUI.prototype.findForeignKeyRow = function(foreignKey){
+	var $tds = $('#od-tab-foreignkeys').find('tbody').find('td.data');
+	var $td;
+	for(var i = 0; i < $tds.length; i++){
+		$td = $tds.eq(i);
+		if($td.data('dbobject') == foreignKey){
+			return $td.parent();
+		}
+	}
+	return null;
+};
+
 
 ObjectDetailUI.prototype.onInputButtonClick = function(event){
 	switch(event.target.id){
@@ -1557,7 +1695,9 @@ ColumnDialogUI.prototype.typeHasPredefinedSize = function(type){
 		var i, addFunc = true;
 		var isEditing = this.getModel().isEditing();
 		if(!$.isArray(this._uvf)) this._uvf = [];
+		if(!$.isArray(this._props)) this._props = [];
 		if(typeof eventProperty == 'undefined') eventProperty = 'stopEditing';
+		else this._props.push(eventProperty);
 		if($.isFunction(func)){
 			for(i = 0; i < this._uvf.length; i++){
 				if(this._uvf[i].func == func) {
@@ -1569,11 +1709,13 @@ ColumnDialogUI.prototype.typeHasPredefinedSize = function(type){
 		}else if(func === true) this._modelHasChanges = true;
 		if(!isEditing){
 			var ui = this.getUI();
+			var properties = [].concat(this._props);
 			this._modelHasChanges = this._modelHasChanges || (this._uvf.length > 0);
 			for(i = 0; i < this._uvf.length; i++) this._uvf[i].func.apply(ui, this._uvf[i].prmts);
 			this._uvf = [];
+			this._props = [];
 			if(this._modelHasChanges === true) {
-				this.trigger(DBObject.Event.DBOBJECT_ALTERED, {property: eventProperty});
+				this.trigger(DBObject.Event.DBOBJECT_ALTERED, {properties: properties});
 				this._modelHasChanges = false;
 			}
 		}
@@ -1735,11 +1877,7 @@ TableModel = function() {
 $.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.prototype.setPosition = function(position){
-	var oldPosition = this.getPosition();
-	if(oldPosition.top != position.top || oldPosition.left != position.left){
-		$.extend(this._position, position);
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'position', oldValue: oldPosition, newValue: position});
-	}
+	this._position = $.extend(this.getPosition(), position);
 };
 
 TableModel.prototype.getPosition = function(){
@@ -1959,9 +2097,9 @@ Column.prototype.modelPropertyChanged = function(event){
 		case 'stopEditing':
 			this.modelChanged();
 			break;
-		case 'type':
+		/*case 'type':
 		case 'length': 
-		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);
+		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);*/
 		default:
 			this.modelChanged(event.property, this.getUI().updateView);
 			break;
@@ -2358,6 +2496,8 @@ ForeignKeyCollection = function(){
 	this._foreignKeys = [];
 };
 
+$.extend(ForeignKeyCollection.prototype, EventDispatcher);
+
 ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 	for(var i = 0, n = this._foreignKeys.length; i < n; i++){
 		if(this._foreignKeys[i].getName() == name) return this._foreignKeys[i];
@@ -2369,23 +2509,22 @@ ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
 		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
-		//column.bind(Column.Event.COLUMN_CHANGED, this.columnChanged, this);
+		foreignKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
+		this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyAdded: foreignKey});
 	}
 };
 
 ForeignKeyCollection.prototype.alterForeignKey = function(event){
 	DBDesigner.app.doAction(DBDesigner.Action.ALTER_FOREIGNKEY, event.sender);
 };
-/*
-ForeignKeyCollection.prototype.alterColumn = function(event){
-	DBDesigner.app.doAction(DBDesigner.Action.ALTER_COLUMN, event.column);
+
+ForeignKeyCollection.prototype.getForeignKeys = function(){
+	return [].concat(this._foreignKeys);
 };
-*/
-/*
-ForeignKeyCollection.prototype.columnChanged = function(event){
-	event.column.getParent().refresh();
-};
-*/ForeignKey = function() {
+
+ForeignKeyCollection.prototype.onForeignKeyAltered = function(event){
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyAltered: event.sender});
+};ForeignKey = function() {
 	//If the constructor gets a ForeignKeyModel object as first parameter, it is set as the model
 	//otherwise a new model is created
 	
@@ -2396,6 +2535,7 @@ ForeignKeyCollection.prototype.columnChanged = function(event){
 		this.setModel(model);
 		
 		parent.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+		referencedTable.bind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
 		if(parent != referencedTable){
 			referencedTable.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
 		}
@@ -2422,26 +2562,29 @@ ForeignKey.prototype.setHighLight = function(b){
 		columns[i].foreignColumn.setHighLight(b);
 	}
 };
-/*
 ForeignKey.prototype.modelPropertyChanged = function(event){
-	console.log(event);
 	switch(event.property){
-		case 'parent':
-		case 'referencedTable':
-			if(this.getParent() != this.getReferencedTable()){
-				event.table.bind(Table.Event.VIEW_BOX_CHANGED, $.proxy(this.onTableViewBoxChanged, this));
-			}
-			//this.getUI().updateParent();
+		case 'stopEditing':
+			this.modelChanged();
+			break;
+		default:
+			this.modelChanged(event.property, true);
 			break;
 	}
 };
-*/
 ForeignKey.prototype.onTableViewBoxChanged = function(event){
 	var ui = this.getUI();
 	if(event.dragging){
 		ui.hide();
 	}else{
 		ui.updateView();
+	}
+};
+
+ForeignKey.prototype.onReferencedTableAltered = function(event){
+	if($.inArray('name', event.properties) != -1){
+		//Notify the collection that something has changed if referenced table's name has changed
+		this.trigger(DBObject.Event.DBOBJECT_ALTERED);
 	}
 };
 
@@ -2452,7 +2595,7 @@ ForeignKey.prototype.alterForeignKey = function(){
 // *****************************************************************************
 
 ForeignKeyModel = function(){};
-
+$.extend(ForeignKeyModel.prototype, DBObjectModel);
 
 ForeignKeyModel.prototype.setParent = function(table){
 	this._parent = table;
@@ -2477,14 +2620,35 @@ ForeignKeyModel.prototype.getUpdateAction = function(){
 	return this._updateAction;
 };
 ForeignKeyModel.prototype.setUpdateAction = function(action){
-	this._updateAction = action;
+	var oldValue = this.getUpdateAction();
+	if(oldValue != action){
+		this._updateAction = action;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'updateAction', oldValue: oldValue, newValue: action});
+	}
 };
 ForeignKeyModel.prototype.getDeleteAction = function(){
 	if(typeof this._deleteAction == 'undefined') this._deleteAction = ForeignKeyModel.Action.NO_ACTION;
 	return this._deleteAction;
 };
 ForeignKeyModel.prototype.setDeleteAction = function(action){
-	this._updateAction = action;
+	var oldValue = this.getDeleteAction();
+	if(oldValue != action){
+		this._deleteAction = action;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'deleteAction', oldValue: oldValue, newValue: action});
+	}
+};
+
+ForeignKeyModel.prototype.getActionString = function(eventType){
+	var action;
+	if(eventType == 'update') action = this.getUpdateAction();
+	else if(eventType == 'delete') action = this.getDeleteAction();
+	switch(action){
+		case ForeignKeyModel.Action.RESTRICT:return 'RESTRICT';
+		case ForeignKeyModel.Action.CASCADE:return 'CASCADE';
+		case ForeignKeyModel.Action.SET_NULL:return 'SET NULL';
+		case ForeignKeyModel.Action.SET_DEFAULT:return 'SET DEFAULT';
+		case ForeignKeyModel.Action.NO_ACTION:return 'NO ACTION';
+	}
 };
 
 ForeignKeyModel.prototype.getColumns = function(){
@@ -2499,6 +2663,7 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 	var oldForeignColumns = [];
 	var newLocalColumns = [];
 	var newForeignColumns = [];
+	var throwEvent = false;
 	
 	this._columns = columns;
 	
@@ -2507,40 +2672,66 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 		oldForeignColumns.push(oldColumns[i].foreignColumn);
 	}
 	for(i = 0; i < columns.length; i++){
+		// [1] Manage local columns added
 		if($.inArray(columns[i].localColumn, oldLocalColumns) == -1){
 			columns[i].localColumn.setForeignKey(true);
+			columns[i].localColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			throwEvent = true;
 		}
+		// [2] Manage foreign columns added
 		if($.inArray(columns[i].foreignColumn, oldForeignColumns) == -1){
-			columns[i].foreignColumn.bind(Column.Event.COLUMN_TYPE_CHANGED, this.onForeignColumnTypeChanged, this);
-			columns[i].foreignColumn.trigger(Column.Event.COLUMN_TYPE_CHANGED);
+			columns[i].foreignColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			this.onForeignColumnAltered({properties: ['length'], sender: columns[i].foreignColumn});
+			throwEvent = true;
 		}
 		newLocalColumns.push(columns[i].localColumn);
 		newForeignColumns.push(columns[i].foreignColumn);
 	}
 	for(i = 0; i < oldColumns.length; i++){
+		//[3] Manage local columns removed
 		if($.inArray(oldLocalColumns[i], newLocalColumns) == -1){
 			oldLocalColumns[i].setForeignKey(false);
+			oldLocalColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			throwEvent = true;
 		}
+		//[4] Manage foreign columns removed
 		if($.inArray(oldForeignColumns[i], newForeignColumns) == -1){
-			oldForeignColumns[i].unbind(Column.Event.COLUMN_TYPE_CHANGED, this.onForeignColumnTypeChanged, this);
+			oldForeignColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			throwEvent = true;
+		}
+	}
+	if(throwEvent) this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columns', oldValue: oldColumns, newValue: columns});
+};
+
+ForeignKeyModel.prototype.onForeignColumnAltered = function(event){
+	if($.inArray('name', event.properties) != -1){
+		// If the name of the column could change, then notify the controller that something has changed
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
+	}
+	else if($.partOf(event.properties, ['length', 'type', 'flags'])){
+		var columns = this.getColumns();
+		for(var i = 0; i < columns.length; i++){
+			if(columns[i].foreignColumn == event.sender){
+				if(columns[i].foreignColumn != columns[i].localColumn){
+					var type = columns[i].foreignColumn.getType();
+					if(type == 'SERIAL') type = 'INTEGER';
+					else if(type == 'BIGSERIAL') type = 'BIGINT';
+					columns[i].localColumn.startEditing();
+					columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
+					columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
+					columns[i].localColumn.setType(type);
+					columns[i].localColumn.stopEditing();
+				}
+				break;
+			}
 		}
 	}
 };
 
-ForeignKeyModel.prototype.onForeignColumnTypeChanged = function(event){
-	var columns = this.getColumns();
-	for(var i = 0; i < columns.length; i++){
-		if(columns[i].foreignColumn == event.sender){
-			var type = columns[i].foreignColumn.getType();
-			if(type == 'SERIAL') type = 'INTEGER';
-			else if(type == 'BIGSERIAL') type = 'BIGINT';
-			columns[i].localColumn.startEditing();
-			columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
-			columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
-			columns[i].localColumn.setType(type);
-			columns[i].localColumn.stopEditing();
-			break;
-		}
+ForeignKeyModel.prototype.onLocalColumnAltered = function(event){
+	if($.inArray('name', event.properties) != -1){
+		// If the name of the column could change, then notify the controller that something has changed
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
 };
 
@@ -2568,7 +2759,17 @@ ForeignKeyModel.prototype.isMatchFull = function(){
 	return (this.getFlags() & ForeignKeyModel.Flag.MATCH_FULL) != 0;
 };
 
-$.extend(ForeignKeyModel.prototype, DBObjectModel);
+ForeignKeyModel.prototype.getMatchType = function(){
+	return this.isMatchFull()? 'FULL':'SIMPLE';
+};
+
+ForeignKeyModel.prototype.getConstraintOptions = function(){
+	if(!this.isDeferrable()) return 'NOT DEFERRABLE';
+	else {
+		if(this.isDeferred()) return 'DEFERRABLE INITIALLY DEFERRED';
+		else return 'DEFERRABLE INITIALLY IMMEDIATE';
+	}
+};
 
 // *****************************************************************************
 
@@ -2898,6 +3099,7 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 	
 	if(this.validateForm(form)){
 		var flags = 0;
+		if(action == DBDesigner.Action.ALTER_FOREIGNKEY) foreignKeyModel.startEditing();
 		if(form.isDeferrable) flags |= ForeignKeyModel.Flag.DEFERRABLE;
 		if(form.isDeferred) flags |= ForeignKeyModel.Flag.DEFERRED;
 		if(form.isMatchFull) flags |= ForeignKeyModel.Flag.MATCH_FULL;
@@ -2905,13 +3107,15 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 		foreignKeyModel.setName(form.name);
 		foreignKeyModel.setComment(form.comment);
 		foreignKeyModel.setFlags(flags);
+		foreignKeyModel.setDeleteAction(form.onDelete);
+		foreignKeyModel.setUpdateAction(form.onUpdate);
 		foreignKeyModel.setColumns(form.columns);
 		foreignKeyModel.setReferencedTable(form.referencedTable);
 		
 		if(action == DBDesigner.Action.ADD_FOREIGNKEY){
 			var foreignKey = new ForeignKey(foreignKeyModel);
 			foreignKeyModel.getParent().getForeignKeyCollection().add(foreignKey);
-		}
+		} else foreignKeyModel.stopEditing();
 		
 		this.getUI().close();
 	}
@@ -3095,8 +3299,8 @@ ForeignKeyDialogUI.prototype.open = function(title){
 	
 	if(foreignKeyModel != null){
 		$('#foreignkey-dialog_foreignkey-name').val(foreignKeyModel.getName());
-		$('#foreignkey-dialog_foreignkey-updateaction').prop('checked', foreignKeyModel.getUpdateAction());
-		$('#foreignkey-dialog_foreignkey-deleteaction').prop('checked', foreignKeyModel.getDeleteAction());
+		$('#foreignkey-dialog_foreignkey-updateaction').val(foreignKeyModel.getUpdateAction());
+		$('#foreignkey-dialog_foreignkey-deleteaction').val(foreignKeyModel.getDeleteAction());
 		$('#foreignkey-dialog_foreignkey-matchfull').prop('checked', foreignKeyModel.isMatchFull());
 		$('#foreignkey-dialog_foreignkey-deferrable').prop('checked', foreignKeyModel.isDeferrable());
 		$('#foreignkey-dialog_foreignkey-comment').val(foreignKeyModel.getComment());
@@ -3109,7 +3313,6 @@ ForeignKeyDialogUI.prototype.open = function(title){
 		var $options = $();
 		var $option;
 		var i = 0;
-		var tName = '';
 		var $referencedTable = $('#foreignkey-dialog_foreignkey-references');
 		for (i = 0; i < tNames.length; i++){
 			$option = $('<option></option>').attr('value', tNames[i]).text(tNames[i]);
@@ -3123,32 +3326,9 @@ ForeignKeyDialogUI.prototype.open = function(title){
 		}else {
 			$referencedTable.prop('disabled', false);
 		}
-		
 		$referencedTable.trigger('change');
-		
 		controller.setSelectedColumns(foreignKeyModel.getColumns());
-		
-		/** Update local columns **/
 		this.updateLocalColumns();
-		/*
-		$options = $();
-		var cNames = foreignKeyModel.getParent().getColumnCollection().getColumnNames();
-		for (i = 0; i < cNames.length; i++){
-			$option = $('<option></option>').attr('value', cNames[i]).text(cNames[i]);
-			$options = $options.add($option);
-		}
-		if($options.length > 0) $('#foreignkey-dialog_foreignkey-localcolumn').html($options);
-		else $('#foreignkey-dialog_foreignkey-localcolumn').empty();*/
-		
-		/*$('#column-dialog_column-type').val(columnModel.getType()).trigger('change');
-		$('#column-dialog_column-name').val(columnModel.getName());
-		$('#column-dialog_column-length').val(columnModel.getLength());
-		$('#column-dialog_column-comment').val(columnModel.getComment());
-		$('#column-dialog_column-array').prop('checked', columnModel.isArray());
-		$('#column-dialog_column-primarykey').prop('checked', columnModel.isPrimaryKey());
-		$('#column-dialog_column-uniquekey').prop('checked', columnModel.isUniqueKey());
-		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotnull());
-		$('#column-dialog_column-default').val(columnModel.getDefault());*/
 		dom.find('div.tabs').tabs('select', 0);
 		dom.dialog('open').dialog('option', 'title', title);
 		this.focus();
@@ -3344,24 +3524,27 @@ UniqueKeyModel.prototype.getColumns = function(){
 UniqueKeyModel.prototype.setColumns = function(columns){
 	var oldColumns = this.getColumns();
 	var i;
+	var throwEvent = false;
 	for(i = 0; i < oldColumns.length; i++){
 		if($.inArray(oldColumns[i], columns) == -1){
 			oldColumns[i].setUniqueKey(false);
 			oldColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			throwEvent = true;
 		}
 	}
 	for(i = 0; i < columns.length; i++){
 		if($.inArray(columns[i], oldColumns) == -1){
 			columns[i].setUniqueKey(true);
 			columns[i].bind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			throwEvent = true;
 		}
 	}
 	this._columns = columns;
-	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columns', oldValue: oldColumns, newValue: columns});
+	if(throwEvent)this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columns', oldValue: oldColumns, newValue: columns});
 };
 
 UniqueKeyModel.prototype.onColumnChanged = function(event){
-	if(event.property == 'name' || event.property == 'stopEditing'){
+	if($.inArray('name', event.properties) != -1){
 		// this is just to notify the object detail view in case the parent table is selected
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
@@ -3677,4 +3860,12 @@ UniqueKey.Event = {
 ForeignKeyUI.TRIANGLE_SIZE = 7;
 
 Vector.SVG = 'svg';
-Vector.VML = 'vml';
+Vector.VML = 'vml';(function($){	
+	$.partOf = function(array, subArray){
+		for(var i = 0, n = array.length; i < n; i++)
+			if($.inArray(array[i], subArray) != -1) return true;
+		return false;
+	};
+})(jQuery);
+
+

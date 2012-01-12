@@ -9,6 +9,7 @@ ForeignKey = function() {
 		this.setModel(model);
 		
 		parent.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+		referencedTable.bind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
 		if(parent != referencedTable){
 			referencedTable.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
 		}
@@ -35,26 +36,29 @@ ForeignKey.prototype.setHighLight = function(b){
 		columns[i].foreignColumn.setHighLight(b);
 	}
 };
-/*
 ForeignKey.prototype.modelPropertyChanged = function(event){
-	console.log(event);
 	switch(event.property){
-		case 'parent':
-		case 'referencedTable':
-			if(this.getParent() != this.getReferencedTable()){
-				event.table.bind(Table.Event.VIEW_BOX_CHANGED, $.proxy(this.onTableViewBoxChanged, this));
-			}
-			//this.getUI().updateParent();
+		case 'stopEditing':
+			this.modelChanged();
+			break;
+		default:
+			this.modelChanged(event.property, true);
 			break;
 	}
 };
-*/
 ForeignKey.prototype.onTableViewBoxChanged = function(event){
 	var ui = this.getUI();
 	if(event.dragging){
 		ui.hide();
 	}else{
 		ui.updateView();
+	}
+};
+
+ForeignKey.prototype.onReferencedTableAltered = function(event){
+	if($.inArray('name', event.properties) != -1){
+		//Notify the collection that something has changed if referenced table's name has changed
+		this.trigger(DBObject.Event.DBOBJECT_ALTERED);
 	}
 };
 
@@ -65,7 +69,7 @@ ForeignKey.prototype.alterForeignKey = function(){
 // *****************************************************************************
 
 ForeignKeyModel = function(){};
-
+$.extend(ForeignKeyModel.prototype, DBObjectModel);
 
 ForeignKeyModel.prototype.setParent = function(table){
 	this._parent = table;
@@ -90,14 +94,35 @@ ForeignKeyModel.prototype.getUpdateAction = function(){
 	return this._updateAction;
 };
 ForeignKeyModel.prototype.setUpdateAction = function(action){
-	this._updateAction = action;
+	var oldValue = this.getUpdateAction();
+	if(oldValue != action){
+		this._updateAction = action;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'updateAction', oldValue: oldValue, newValue: action});
+	}
 };
 ForeignKeyModel.prototype.getDeleteAction = function(){
 	if(typeof this._deleteAction == 'undefined') this._deleteAction = ForeignKeyModel.Action.NO_ACTION;
 	return this._deleteAction;
 };
 ForeignKeyModel.prototype.setDeleteAction = function(action){
-	this._updateAction = action;
+	var oldValue = this.getDeleteAction();
+	if(oldValue != action){
+		this._deleteAction = action;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'deleteAction', oldValue: oldValue, newValue: action});
+	}
+};
+
+ForeignKeyModel.prototype.getActionString = function(eventType){
+	var action;
+	if(eventType == 'update') action = this.getUpdateAction();
+	else if(eventType == 'delete') action = this.getDeleteAction();
+	switch(action){
+		case ForeignKeyModel.Action.RESTRICT:return 'RESTRICT';
+		case ForeignKeyModel.Action.CASCADE:return 'CASCADE';
+		case ForeignKeyModel.Action.SET_NULL:return 'SET NULL';
+		case ForeignKeyModel.Action.SET_DEFAULT:return 'SET DEFAULT';
+		case ForeignKeyModel.Action.NO_ACTION:return 'NO ACTION';
+	}
 };
 
 ForeignKeyModel.prototype.getColumns = function(){
@@ -112,6 +137,7 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 	var oldForeignColumns = [];
 	var newLocalColumns = [];
 	var newForeignColumns = [];
+	var throwEvent = false;
 	
 	this._columns = columns;
 	
@@ -120,40 +146,66 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 		oldForeignColumns.push(oldColumns[i].foreignColumn);
 	}
 	for(i = 0; i < columns.length; i++){
+		// [1] Manage local columns added
 		if($.inArray(columns[i].localColumn, oldLocalColumns) == -1){
 			columns[i].localColumn.setForeignKey(true);
+			columns[i].localColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			throwEvent = true;
 		}
+		// [2] Manage foreign columns added
 		if($.inArray(columns[i].foreignColumn, oldForeignColumns) == -1){
-			columns[i].foreignColumn.bind(Column.Event.COLUMN_TYPE_CHANGED, this.onForeignColumnTypeChanged, this);
-			columns[i].foreignColumn.trigger(Column.Event.COLUMN_TYPE_CHANGED);
+			columns[i].foreignColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			this.onForeignColumnAltered({properties: ['length'], sender: columns[i].foreignColumn});
+			throwEvent = true;
 		}
 		newLocalColumns.push(columns[i].localColumn);
 		newForeignColumns.push(columns[i].foreignColumn);
 	}
 	for(i = 0; i < oldColumns.length; i++){
+		//[3] Manage local columns removed
 		if($.inArray(oldLocalColumns[i], newLocalColumns) == -1){
 			oldLocalColumns[i].setForeignKey(false);
+			oldLocalColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			throwEvent = true;
 		}
+		//[4] Manage foreign columns removed
 		if($.inArray(oldForeignColumns[i], newForeignColumns) == -1){
-			oldForeignColumns[i].unbind(Column.Event.COLUMN_TYPE_CHANGED, this.onForeignColumnTypeChanged, this);
+			oldForeignColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			throwEvent = true;
+		}
+	}
+	if(throwEvent) this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columns', oldValue: oldColumns, newValue: columns});
+};
+
+ForeignKeyModel.prototype.onForeignColumnAltered = function(event){
+	if($.inArray('name', event.properties) != -1){
+		// If the name of the column could change, then notify the controller that something has changed
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
+	}
+	else if($.partOf(event.properties, ['length', 'type', 'flags'])){
+		var columns = this.getColumns();
+		for(var i = 0; i < columns.length; i++){
+			if(columns[i].foreignColumn == event.sender){
+				if(columns[i].foreignColumn != columns[i].localColumn){
+					var type = columns[i].foreignColumn.getType();
+					if(type == 'SERIAL') type = 'INTEGER';
+					else if(type == 'BIGSERIAL') type = 'BIGINT';
+					columns[i].localColumn.startEditing();
+					columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
+					columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
+					columns[i].localColumn.setType(type);
+					columns[i].localColumn.stopEditing();
+				}
+				break;
+			}
 		}
 	}
 };
 
-ForeignKeyModel.prototype.onForeignColumnTypeChanged = function(event){
-	var columns = this.getColumns();
-	for(var i = 0; i < columns.length; i++){
-		if(columns[i].foreignColumn == event.sender){
-			var type = columns[i].foreignColumn.getType();
-			if(type == 'SERIAL') type = 'INTEGER';
-			else if(type == 'BIGSERIAL') type = 'BIGINT';
-			columns[i].localColumn.startEditing();
-			columns[i].localColumn.setArray(columns[i].foreignColumn.isArray());
-			columns[i].localColumn.setLength(columns[i].foreignColumn.getLength());
-			columns[i].localColumn.setType(type);
-			columns[i].localColumn.stopEditing();
-			break;
-		}
+ForeignKeyModel.prototype.onLocalColumnAltered = function(event){
+	if($.inArray('name', event.properties) != -1){
+		// If the name of the column could change, then notify the controller that something has changed
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
 };
 
@@ -181,7 +233,17 @@ ForeignKeyModel.prototype.isMatchFull = function(){
 	return (this.getFlags() & ForeignKeyModel.Flag.MATCH_FULL) != 0;
 };
 
-$.extend(ForeignKeyModel.prototype, DBObjectModel);
+ForeignKeyModel.prototype.getMatchType = function(){
+	return this.isMatchFull()? 'FULL':'SIMPLE';
+};
+
+ForeignKeyModel.prototype.getConstraintOptions = function(){
+	if(!this.isDeferrable()) return 'NOT DEFERRABLE';
+	else {
+		if(this.isDeferred()) return 'DEFERRABLE INITIALLY DEFERRED';
+		else return 'DEFERRABLE INITIALLY IMMEDIATE';
+	}
+};
 
 // *****************************************************************************
 
