@@ -134,6 +134,14 @@ ObjectDetail.prototype.alterDBObject = function(dbobject){
 	else if(dbobject instanceof UniqueKey) DBDesigner.app.doAction(DBDesigner.Action.ALTER_UNIQUEKEY, dbobject);
 };
 
+ObjectDetail.prototype.dropDBObject = function(dbobject){
+	if(typeof dbobject == 'undefined') dbobject = this.getModel().getTable();
+	if(dbobject instanceof Table) DBDesigner.app.doAction(DBDesigner.Action.DROP_TABLE, dbobject);
+	else if(dbobject instanceof Column) DBDesigner.app.doAction(DBDesigner.Action.DROP_COLUMN, dbobject);
+	else if(dbobject instanceof ForeignKey) DBDesigner.app.doAction(DBDesigner.Action.DROP_FOREIGNKEY, dbobject);
+	else if(dbobject instanceof UniqueKey) DBDesigner.app.doAction(DBDesigner.Action.DROP_UNIQUEKEY, dbobject);
+};
+
 ObjectDetail.prototype.moveColumn = function(column, dir){
 	return this.getModel().getTable().getColumnCollection().moveColumn(column, dir);
 };
@@ -365,6 +373,7 @@ ObjectDetailUI.prototype.updateSingleUniqueKeyView = function(uniqueKey, action)
 			$('#od-tab-uniquekeys').find('tbody').append(this.populateUniqueKeyHtmlData(uniqueKey));
 			break;
 		case 'drop':
+			this.findUniqueKeyRow(uniqueKey).remove();
 			break;
 		case 'alter':
 			this.populateUniqueKeyHtmlData(uniqueKey, this.findUniqueKeyRow(uniqueKey));
@@ -450,6 +459,7 @@ ObjectDetailUI.prototype.updateSingleForeignKeyView = function(foreignKey, actio
 			$('#od-tab-foreignkeys').find('tbody').append(this.populateForeignKeyHtmlData(foreignKey));
 			break;
 		case 'drop':
+			this.findForeignKeyRow(foreignKey).remove();
 			break;
 		case 'alter':
 			this.populateForeignKeyHtmlData(foreignKey, this.findForeignKeyRow(foreignKey));
@@ -612,6 +622,9 @@ ObjectDetailUI.prototype.onActionButtonClick = function(event){
 				$tr = $button.parents('tr:first');
 				$tr.insertAfter($tr.next());
 			}
+			break;
+		case 'ui-icon ui-icon-trash':
+			this.getController().dropDBObject(dbobject);
 			break;
 	}
 };

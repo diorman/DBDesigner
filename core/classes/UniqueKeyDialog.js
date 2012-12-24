@@ -29,9 +29,10 @@ UniqueKeyDialog.prototype.saveUniqueKey = function(form){
 	
 	if(this.validateForm(form)){
 		if(action == DBDesigner.Action.ALTER_UNIQUEKEY) uniqueKeyModel.startEditing();
-		uniqueKeyModel.setName(form.name);
 		uniqueKeyModel.setColumns(form.columns);
 		uniqueKeyModel.setComment(form.comment);
+		if(form.name == '') uniqueKeyModel.chooseName();
+		else uniqueKeyModel.setName(form.name);
 		
 		if(action == DBDesigner.Action.ADD_UNIQUEKEY){
 			uniqueKeyModel.getParent().getUniqueKeyCollection().add(new UniqueKey(uniqueKeyModel));
@@ -46,10 +47,8 @@ UniqueKeyDialog.prototype.validateForm = function(form){
 	var isValid = true;
 	var ui = this.getUI();
 	var uniqueKeyModel = this.getDBObjectModel();
-	var uniqueKeyCollection = uniqueKeyModel.getParent().getUniqueKeyCollection();
-	var uniqueKeyWithSameName = (form.name != '')? uniqueKeyCollection.getUniqueKeyByName(form.name) : null;
-	
-	if(uniqueKeyWithSameName != null && uniqueKeyWithSameName.getModel() != uniqueKeyModel){
+
+	if(form.name != '' && ConstraintHelper.constraintNameExists(form.name, uniqueKeyModel)){
 		ui.showError(DBDesigner.lang.strconstraintexists, DBDesigner.lang.strname);
 		isValid = false;
 	}
@@ -90,6 +89,13 @@ UniqueKeyDialog.prototype.addColumns = function(columns){
 UniqueKeyDialog.prototype.removeColumns = function(columns){
 	this.getModel().removeColumns(columns);
 };
+
+UniqueKeyDialog.prototype.clearReferences = function(){
+	var model = this.getModel();
+	model.setSelectedColumns(null);
+	model.setDBObjectModel(null);
+};
+
 // *****************************************************************************
 
 UniqueKeyDialogModel = function() {
@@ -145,12 +151,15 @@ UniqueKeyDialogModel.prototype.removeColumns = function(columns){
 };
 
 UniqueKeyDialogModel.prototype.getTableColumns = function(){
-	var selectedColumns = this.getSelectedColumns();
-	var allColumns = this.getDBObjectModel().getParent().getColumnCollection().getColumns();
 	var retColumns = [];
-	for(var i = 0; i < allColumns.length; i++){
-		if($.inArray(allColumns[i], selectedColumns) == -1){
-			retColumns.push(allColumns[i]);
+	var dbobjectModel = this.getDBObjectModel();
+	if(dbobjectModel != null){
+		var selectedColumns = this.getSelectedColumns();
+		var allColumns = dbobjectModel.getParent().getColumnCollection().getColumns();
+		for(var i = 0; i < allColumns.length; i++){
+			if($.inArray(allColumns[i], selectedColumns) == -1){
+				retColumns.push(allColumns[i]);
+			}
 		}
 	}
 	return retColumns;
@@ -173,6 +182,7 @@ UniqueKeyDialogUI.prototype.bindEvents = function(){
 	dom.find('#uniquekey-dialog_cancel').click($.proxy(this.close, this));
 	dom.find('#uniquekey-dialog_save').click($.proxy(this.save, this));
 	dom.find('input.update-columns').click($.proxy(this.updateColumns, this));
+	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
 };
 
@@ -215,12 +225,14 @@ UniqueKeyDialogUI.prototype.updateSelect = function(columns, selectSelector){
 	var $options = $();
 	var $option;
 	var columnName;
-	for(var i = 0; i < columns.length; i++){
-		columnName = columns[i].getName();
-		$option = $('<option></option>').val(columnName).text(columnName);
-		$options = $options.add($option);
+	if($.isArray(columns) && columns.length > 0){
+		for(var i = 0; i < columns.length; i++){
+			columnName = columns[i].getName();
+			$option = $('<option></option>').val(columnName).text(columnName);
+			$options = $options.add($option);
+		}
+		$(selectSelector).html($options);
 	}
-	if(columns.length > 0) $(selectSelector).html($options);
 	else $(selectSelector).empty();
 };
 

@@ -14,6 +14,7 @@ UniqueKeyCollection.prototype.getUniqueKeyByName = function(name){
 UniqueKeyCollection.prototype.add = function(uniqueKey){
 	if($.inArray(uniqueKey, this._uniqueKeys) == -1){
 		this._uniqueKeys.push(uniqueKey);
+		DBDesigner.app.getConstraintList().push(uniqueKey);
 		uniqueKey.bind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 		uniqueKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
 		this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyAdded: uniqueKey});
@@ -30,4 +31,15 @@ UniqueKeyCollection.prototype.onUniqueKeyAltered = function(event){
 
 UniqueKeyCollection.prototype.alterUniqueKey = function(event){
 	DBDesigner.app.doAction(DBDesigner.Action.ALTER_UNIQUEKEY, event.sender);
+};
+
+UniqueKeyCollection.prototype.remove = function(uniqueKey){
+	var constraintList = DBDesigner.app.getConstraintList();
+	var index1 = $.inArray(uniqueKey, this._uniqueKeys);
+	var index2 = $.inArray(uniqueKey, constraintList);
+	this._uniqueKeys.splice(index1, 1);
+	constraintList.splice(index2, 1);
+	uniqueKey.unbind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
+	uniqueKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyDropped: uniqueKey});
 };

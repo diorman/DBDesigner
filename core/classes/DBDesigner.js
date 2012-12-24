@@ -6,7 +6,6 @@ DBDesigner = function(data){
     }
 	
 	this.setGlobalUIBehavior();
-	this.setTableCollection();
 	this.setToolBar();
 	this.setCanvas();
 	this.setObjectDetail();
@@ -14,6 +13,7 @@ DBDesigner = function(data){
 	this.setColumnDialog();
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
+	this.setConfirmDialog();
 	//this.toolBar.setAction(globals.Action.ADD_TABLE);
 	
 };
@@ -29,7 +29,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
-			DBDesigner.app.columnDialog.createColumn(this.tableCollection.getSelectedTables()[0]);
+			DBDesigner.app.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_COLUMN:
@@ -44,7 +44,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.canvas.setCapturingPlacement(false);
 			break;
 		case DBDesigner.Action.ADD_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.createForeignKey(this.tableCollection.getSelectedTables()[0]);
+			DBDesigner.app.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_FOREIGNKEY:
@@ -52,7 +52,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.tableCollection.getSelectedTables()[0]);
+			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_UNIQUEKEY:
@@ -61,6 +61,26 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
 			this.objectDetail.showTable(extra);
+			break;
+		case DBDesigner.Action.DROP_UNIQUEKEY:
+			var message = DBDesigner.lang.strconfdropconstraint
+				.replace(/&amp;quot;/g, '"')
+				.replace('%s', extra.getName())
+				.replace('%s', extra.getParent().getName());
+			this.confirmDialog.show(message, DBDesigner.lang.strdrop, {
+				scope: extra,
+				method: extra.drop
+			});
+			break;
+		case DBDesigner.Action.DROP_FOREIGNKEY:
+			var message = DBDesigner.lang.strconfdropconstraint
+				.replace(/&amp;quot;/g, '"')
+				.replace('%s', extra.getName())
+				.replace('%s', extra.getParent().getName());
+			this.confirmDialog.show(message, DBDesigner.lang.strdrop, {
+				scope: extra,
+				method: extra.drop
+			});
 			break;
 	}
 };
@@ -124,15 +144,22 @@ DBDesigner.prototype.setUniqueKeyDialog = function() {
 	this.uniqueKeyDialog = new UniqueKeyDialog();
 };
 
-DBDesigner.prototype.setTableCollection = function() {
-	this.tableCollection = new TableCollection();
-	this.tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
-	//this.tableCollection.bind(Table.Event.ALTER_TABLE, this.alterTable, this);
+DBDesigner.prototype.getTableCollection = function() {
+	if(typeof this._tableCollection == 'undefined'){
+		this._tableCollection = new TableCollection();
+		this._tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
+	}
+	return this._tableCollection;
+};
+
+DBDesigner.prototype.getConstraintList = function(){
+	if(typeof this._constraintList == 'undefined') this._constraintList = [];
+	return this._constraintList;
 };
 
 DBDesigner.prototype.tableSelectionChanged = function(event){
 	var actionState = {};
-	switch(this.tableCollection.count()){
+	switch(this.getTableCollection().count()){
 		case 0:
 			actionState[DBDesigner.Action.ADD_COLUMN] = false;
 			actionState[DBDesigner.Action.ADD_FOREIGNKEY] = false;
@@ -161,13 +188,13 @@ DBDesigner.prototype.alterTable = function(event){
 
 
 DBDesigner.prototype.setGlobalUIBehavior = function(){
-	$('a.button').live('hover', function(event){ 
-		var $this = $(this);
-		if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
-	});
-	
-	$('div.db-column').live('hover', function(event){ 
-		var $this = $(this);
-		$this.toggleClass('db-column-hover'); 
-	});
+	$('body')
+		.delegate('a.button', 'hover', function(event){ 
+			var $this = $(this);
+			if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
+		});
+};
+
+DBDesigner.prototype.setConfirmDialog = function(){
+	this.confirmDialog = new ConfirmDialog();
 };

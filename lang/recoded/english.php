@@ -46,9 +46,7 @@
 	$lang['strreferencing'] = 'Referencing';
 	$lang['strlocalcolumn'] = 'Local column';
 	$lang['strlocalcolumns'] = 'Local columns';
-	$lang['strforeigncolumns'] = 'Foreign columns';
 	$lang['strconfdroptables'] = 'Are you sure you want to drop the %d selected tables?';
-	$lang['strconfdropforeignkey'] = 'Are you sure you want to drop foreign key &quot;%s&quot; from table &quot;%s&quot;?';
 	$lang['strdropobject'] = 'Drop object';
 	$lang['strsavingchanges'] = 'Saving changes';
 	$lang['strloadingschema'] = 'Loading schema';
@@ -67,6 +65,7 @@
 	$lang['strmovedown'] = 'Move down';
 	$lang['stralteruniq'] = 'Alter unique key';
 	$lang['struniquekeys'] = 'Unique Keys';
+	$lang['strsaveandnew'] = 'Save &amp; New';
 	/*
 		'strname',
 		'strok',

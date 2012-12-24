@@ -36,13 +36,14 @@ TableDialog.prototype.saveTable = function(form){
 		tableModel.setSelected(true);
 		
 		if(action == DBDesigner.Action.ADD_TABLE){
-			DBDesigner.app.tableCollection.emptySelection();
-			DBDesigner.app.tableCollection.add(new Table(tableModel));
+			var tableCollection = DBDesigner.app.getTableCollection();
+			tableCollection.emptySelection();
+			tableCollection.add(new Table(tableModel));
 		}
 		else tableModel.stopEditing();
-		
-		this.getUI().close();
+		return true;
 	}
+	return false;
 };
 
 TableDialog.prototype.validateForm = function(form){
@@ -52,8 +53,7 @@ TableDialog.prototype.validateForm = function(form){
 		ui.showError(DBDesigner.lang.strtableneedsname, DBDesigner.lang.strname);
 		isValid = false;
 	}
-	var tableWithSameName = DBDesigner.app.tableCollection.getTableByName(form.name);
-	if(tableWithSameName != null && tableWithSameName.getModel() != this.getDBObjectModel()){
+	if(DBDesigner.app.getTableCollection().tableNameExists(form.name, this.getDBObjectModel())){
 		ui.showError(DBDesigner.lang.strtableexists);
 		isValid = false;
 	}
@@ -82,8 +82,9 @@ $.extend(TableDialogUI.prototype, DBObjectDialogUI);
 
 TableDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('#table-dialog_cancel').click($.proxy(this.close, this));
-	dom.find('#table-dialog_save').click($.proxy(this.save, this));
+	//dom.find('#table-dialog_cancel').click($.proxy(this.close, this));
+	//dom.find('input.save-button').click($.proxy(this.save, this));
+	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
 	this.setKeyPressEvent();
 };
 
@@ -103,13 +104,31 @@ TableDialogUI.prototype.open = function(title){
 	}
 };
 
-TableDialogUI.prototype.save = function(){
+TableDialogUI.prototype.submitButtonClicked = function(event){
+	if(event.target.id == 'table-dialog_cancel'){ this.close(); }
+	else {
+		var saveSuccess = this.save(false);
+		if(event.target.id == 'table-dialog_save' && saveSuccess){ this.close(); }
+		else if(event.target.id == 'table-dialog_save2' && saveSuccess){ 
+			var controller = this.getController();
+			var savedModel = controller.getModel().getDBObjectModel();
+			var position = savedModel.getPosition();
+			var size = savedModel.getSize();
+			position.left += 10 + size.width;
+			controller.createTable(position);
+		}
+	}
+};
+
+TableDialogUI.prototype.save = function(closeWindow){
+	closeWindow = (typeof closeWindow == 'undefined')? true : closeWindow;
 	this.cleanErrors();
-	
 	var form = {
 		name: $.trim($('#table-dialog_table-name').val()),
 		withoutOIDS: $('#table-dialog_withoutoids').prop('checked'),
 		comment: $.trim($('#table-dialog_table-comment').val())
 	};
-	this.getController().saveTable(form);
+	var saveSuccess = this.getController().saveTable(form);
+	if(saveSuccess && closeWindow) this.close(); 
+	return saveSuccess;
 };

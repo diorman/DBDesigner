@@ -66,6 +66,19 @@ ForeignKey.prototype.alterForeignKey = function(){
 	this.trigger(ForeignKey.Event.ALTER_REQUEST);
 };
 
+ForeignKey.prototype.drop = function(){
+	var parent = this.getParent();
+	var referencedTable = this.getReferencedTable();
+	parent.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+	referencedTable.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
+	if(parent != referencedTable){
+		referencedTable.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+	}
+	this.getModel().drop();
+	this.getUI().drop();
+	this.getParent().getForeignKeyCollection().remove(this);
+};
+
 // *****************************************************************************
 
 ForeignKeyModel = function(){};
@@ -242,6 +255,29 @@ ForeignKeyModel.prototype.getConstraintOptions = function(){
 	else {
 		if(this.isDeferred()) return 'DEFERRABLE INITIALLY DEFERRED';
 		else return 'DEFERRABLE INITIALLY IMMEDIATE';
+	}
+};
+
+ForeignKeyModel.prototype.chooseName = function(){
+	var label = 'fkey';
+	var name1 = this.getParent().getName();
+	var name2 = this.getColumns()[0].localColumn.getName();
+	var count = 0;
+	var name;
+	do{
+		if(count > 0) label = 'fkey' + count;
+		name = ConstraintHelper.buildConstraintName(name1, name2, label);
+		count++;
+	} while(ConstraintHelper.constraintNameExists(name, this));
+	this.setName(name);
+};
+
+ForeignKeyModel.prototype.drop = function(){
+	var columns = this.getColumns();
+	for(var i = 0; i < columns.length; i++){
+		columns[i].localColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+		columns[i].foreignColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+		columns[i].localColumn.setForeignKey(false);
 	}
 };
 
@@ -422,11 +458,7 @@ ForeignKeyUI.prototype.getConnector = function(){
 			this._connector.filled = false;
 			$('#canvas').append(this._connector);
 		}
-		$(this._connector).bind({
-			hover: $.proxy(this.onConnectorHover, this),
-			mousedown: this.onConnectorMouseDown,
-			dblclick: $.proxy(this.onConnectorDblclick, this)
-		});
+		$(this._connector).data('dbobject', this.getController());
 	}
 	return this._connector;
 };
@@ -527,4 +559,10 @@ ForeignKeyUI.prototype.onConnectorMouseDown = function(event){
 
 ForeignKeyUI.prototype.onConnectorDblclick = function(event){
 	this.getController().alterForeignKey();
+};
+
+ForeignKeyUI.prototype.drop = function(){
+	$(this.getConnector()).remove();
+	$(this.getDiamond()).remove();
+	if(Vector.type == Vector.SVG) $(this.getSvgHelper()).remove();
 };

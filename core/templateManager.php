@@ -1,5 +1,4 @@
-<?php /******************** Tool Bar Template **/ ?> 
-<?php ob_start(); ?>
+<?php /******************** Tool Bar Template **/ ob_start(); ?>
 	<div class="tool-bar">
 		<ul>
 			<li>
@@ -36,12 +35,9 @@
 		<div class="clear"></div>
 	</div>
 <?php $templateManager['ToolBar'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
-
-<?php /******************** Canvas Template **/ ?>
-<?php $templateManager['Canvas'] = '<div id="canvas" class="canvas"><div class="inner-canvas"></div></div>'; ?>
-
-<?php /******************** Object Detail Template **/ ?>
-<?php ob_start(); ?>
+<?php /******************** Canvas Template **/
+	$templateManager['Canvas'] = '<div id="canvas" class="canvas"><div class="inner-canvas"></div></div>'; ?>
+<?php /******************** Object Detail Template **/ ob_start(); ?>
 	<div class="object-detail">
 		<div class="title-bar">
 			<span class="title"></span>
@@ -133,9 +129,7 @@
 		</div>
 	</div>
 <?php $templateManager['ObjectDetail'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
-
-<?php /******************** Table Dialog Template **/ ?>
-<?php ob_start(); ?>
+<?php /******************** Table Dialog Template **/ ob_start(); ?>
 	<div class="table-dialog">
 		<ul class="error-list hide"></ul>
 		<div class="field-text required">
@@ -154,15 +148,14 @@
 			<textarea id="table-dialog_table-comment"></textarea>
 			<div class="clear"></div>
 		</div>
-		<div class="buttons-placeholder">
+		<div class="buttons-placeholder submit-buttons">
 			<input type="button" id="table-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="table-dialog_save2" value="<?php echo $this->_('strsaveandnew'); ?>" />
 			<input type="button" id="table-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['TableDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
-
-<?php /******************** Table Template **/ ?>
-<?php ob_start(); ?>
+<?php /******************** Table Template **/ ob_start(); ?>
 	<div class="db-table ui-corner-all">
 		<div class="header">
 			<span class="title"></span>
@@ -173,9 +166,7 @@
 		</div>
 	</div>
 <?php $templateManager['Table'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
-
-<?php /******************** Column Dialog Template **/ ?>
-<?php ob_start(); ?>
+<?php /******************** Column Dialog Template **/ ob_start(); ?>
 	<div class="column-dialog">
 		<ul class="error-list hide"></ul>
 		<div class="field-text required">
@@ -227,19 +218,16 @@
 			<textarea id="column-dialog_column-comment"></textarea>
 			<div class="clear"></div>
 		</div>
-		<div class="buttons-placeholder">
+		<div class="buttons-placeholder submit-buttons">
 			<input type="button" id="column-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="column-dialog_save2" value="<?php echo $this->_('strsaveandnew'); ?>" />
 			<input type="button" id="column-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['ColumnDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
-
-
 <?php /******************** Column Template **/ ?>
 <?php $templateManager['Column'] = '<div class="db-column"><span class="keys"></span><span class="definition"></span></div>'; ?>
-
-<?php /******************** Foreign Key Dialog Template **/ ?>
-<?php ob_start(); ?>
+<?php /******************** Foreign Key Dialog Template **/ ob_start(); ?>
 	<div class="foreignkey-dialog">
 		<ul class="error-list hide"></ul>
 		
@@ -333,14 +321,14 @@
 				</div>
 			</div>
 		</div>
-		<div class="buttons-placeholder">
+		<div class="buttons-placeholder submit-buttons">
 			<input type="button" id="foreignkey-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="foreignkey-dialog_save2" value="<?php echo $this->_('strsaveandnew'); ?>" />
 			<input type="button" id="foreignkey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['ForeignKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
-<?php /******************** UniqueKey Dialog Template **/ ?>
-<?php ob_start(); ?>
+<?php /******************** UniqueKey Dialog Template **/ ob_start(); ?>
 	<div class="uniquekey-dialog">
 		<ul class="error-list hide"></ul>
 		<div class="field-text">
@@ -368,9 +356,19 @@
 			<textarea id="uniquekey-dialog_uniquekey-comment"></textarea>
 			<div class="clear"></div>
 		</div>
-		<div class="buttons-placeholder">
+		<div class="buttons-placeholder submit-buttons">
 			<input type="button" id="uniquekey-dialog_save" value="<?php echo $this->_('strsave'); ?>" />
+			<input type="button" id="uniquekey-dialog_save2" value="<?php echo $this->_('strsaveandnew'); ?>" />
 			<input type="button" id="uniquekey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['UniqueKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php /******************** Confirm Dialog Template **/ ob_start(); ?>
+	<div class="confirm-dialog">
+		<div class="content"></div>
+		<div class="buttons-placeholder">
+			<input type="button" id="confirm-dialog_yes" value="<?php echo $this->_('stryes'); ?>" />
+			<input type="button" id="confirm-dialog_no" value="<?php echo $this->_('strno'); ?>" />
+		</div>
+	</div>
+<?php $templateManager['ConfirmDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

@@ -170,13 +170,22 @@ TableModel.prototype.getUniqueKeyCollection = function(){
 	return this._uniqueKeyCollection;
 };
 
+TableModel.prototype.getSize = function(){
+	if(typeof this._size == 'undefined') this._size = {width: 0, height: 0};
+	return $.extend({}, this._size);
+};
+
+TableModel.prototype.setSize = function(size){
+	this._size = $.extend(this.getSize(), size);
+};
+
 // *****************************************************************************
 
 TableUI = function(controller) {
 	this.setTemplateID('Table');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('#canvas').multiDraggable({containment: 'parent'});
+	this.getDom().appendTo('#canvas').data('dbobject', controller).multiDraggable({containment: 'parent'});
 	this.updateView();
 };
 
@@ -191,8 +200,11 @@ TableUI.prototype.bindEvents = function(){
 		selectableselected: selectionChanged,
 		selectableunselected: selectionChanged
 	});
+	
+	
+	/* EVENT ATTACHMENT MOVED TO CANVAS 
 	dom.find('a.button').click($.proxy(this.onButtonPressed, this));
-	dom.find('div.header').dblclick($.proxy(this.onHeaderDblClicked, this));
+	dom.find('div.header').dblclick($.proxy(this.onHeaderDblClicked, this));*/
 };
 
 TableUI.prototype.updateView = function(){
@@ -248,12 +260,14 @@ TableUI.prototype.updateWidth = function(){
 	var controller = this.getController();
 	var dom = this.getDom();
 	var w = dom.find('div.header > span.title').outerWidth() + 54/*(buttons)*/;
-	if(!controller.getModel().isCollapsed()){
+	var model = controller.getModel();
+	if(!model.isCollapsed()){
 		dom.find('span.definition').each(function(){
 			w = Math.max($(this).outerWidth() + 22, w);
 		});
 	}
 	dom.css({width: w, minWidth: w});
+	model.setSize(this.getSize());
 	controller.triggerViewBoxChanged();
 };
 

@@ -9,6 +9,9 @@ DBDesigner.Action = {
 	ADD_COLUMN: 'actionaddcolumn',
 	ALTER_COLUMN: 'actionaltercolumn',
 	DROP_TABLE: 'actiondroptable',
+	DROP_UNIQUEKEY: 'actiondropuniquekey',
+	DROP_FOREIGNKEY: 'actiondropforeignkey',
+	DROP_COLUMN: 'actiondropcolumn',
 	SAVE: 'actionsave',
 	SHOW_TABLE_DETAIL: 'actionshowtabledetail' 
 };

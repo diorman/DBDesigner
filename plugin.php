@@ -784,7 +784,7 @@ class DBDesigner extends Plugin {
 			'strreferencing',
 			'strlocalcolumn',
 			'strconfdroptables',
-			'strconfdropforeignkey',
+			'strconfdropconstraint',
 			'strdropobject',
 			'strsavingchanges',
 			'strloadingschema',

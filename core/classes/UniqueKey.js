@@ -18,6 +18,15 @@ UniqueKey.prototype.modelPropertyChanged = function(event) {
 	}	
 };
 
+UniqueKey.prototype.getParent = function(){
+	return this.getModel().getParent();
+};
+
+UniqueKey.prototype.drop = function(){
+	this.getModel().drop();
+	this.getParent().getUniqueKeyCollection().remove(this);
+};
+
 // *****************************************************************************
 
 UniqueKeyModel = function(){};
@@ -60,5 +69,31 @@ UniqueKeyModel.prototype.onColumnChanged = function(event){
 	if($.inArray('name', event.properties) != -1){
 		// this is just to notify the object detail view in case the parent table is selected
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
+	}
+};
+
+UniqueKeyModel.prototype.chooseName = function(){
+	var label = 'key';
+	var name1 = this.getParent().getName();
+	var name2 = '';
+	var count = 0;
+	var name;
+	var columns = this.getColumns();
+	for(var i = 0; i < columns.length; i++){
+		name2 = name2 == ''? columns[i].getName() : name2 + '_' + columns[i].getName();
+	}
+	do{
+		if(count > 0) label = 'key' + count;
+		name = ConstraintHelper.buildConstraintName(name1, name2, label);
+		count++;
+	} while(ConstraintHelper.constraintNameExists(name, this));
+	this.setName(name);
+};
+
+UniqueKeyModel.prototype.drop = function(){
+	var columns = this.getColumns();
+	for(var i = 0; i < columns.length; i++){
+		columns[i].setUniqueKey(false);
+		columns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
 	}
 };

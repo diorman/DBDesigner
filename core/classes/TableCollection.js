@@ -78,3 +78,9 @@ TableCollection.prototype.getTableNames = function(){
 TableCollection.prototype.detailRequest = function(event){
 	DBDesigner.app.doAction(DBDesigner.Action.SHOW_TABLE_DETAIL, event.sender);
 };
+
+TableCollection.prototype.tableNameExists = function(name, tableModel){
+	var tableWithSameName = this.getTableByName(name);
+	if(tableWithSameName != null && tableWithSameName.getModel() != tableModel) return true;
+	return false;
+};

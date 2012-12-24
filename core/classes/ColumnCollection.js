@@ -83,3 +83,9 @@ ColumnCollection.prototype.moveColumn = function(column, dir){
 	
 	return ret;
 };
+
+ColumnCollection.prototype.columnNameExists = function(name, columnModel){
+	var columnWithSameName = this.getColumnByName(name);
+	if(columnWithSameName != null && columnWithSameName.getModel() != columnModel) return true;
+	return false;
+};

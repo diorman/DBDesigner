@@ -147,7 +147,47 @@ $.extend(CanvasUI.prototype, ComponentUI);
  * Attaches events to html objects 
  */
 CanvasUI.prototype.bindEvents = function() {
-	this.getDom().mousedown($.proxy(this.mousePressed, this));
+	this.getDom()
+		.mousedown($.proxy(this.mousePressed, this))
+		
+		//db table
+		.delegate('div.db-table div.header', 'dblclick', function(event){ 
+			var table = $(this).parents('.db-table').data('dbobject');
+			if(table instanceof Table) TableUI.prototype.onHeaderDblClicked.call(table.getUI(), event);
+		})
+		
+		.delegate('div.db-table a.button', 'click', function(event){ 
+			var table = $(this).parents('.db-table').data('dbobject');
+			if(table instanceof Table) TableUI.prototype.onButtonPressed.call(table.getUI(), event);
+		})
+	
+		//db column
+		.delegate('div.db-column', 'dblclick', function(event){ 
+			var column = $(this).data('dbobject');
+			if(column instanceof Column) ColumnUI.prototype.onDblClick.call(column.getUI(), event);
+		})
+		
+		.delegate('div.db-column', 'hover', function(event){ 
+			var $this = $(this);
+			$this.toggleClass('db-column-hover'); 
+		})
+		
+		//db foreign keys
+		.delegate('polyline', 'hover', function(event){ 
+			var foreignKey = $(this).data('dbobject');
+			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorHover.call(foreignKey.getUI(), event);
+		})
+		
+		.delegate('polyline', 'mousedown', function(event){ 
+			var foreignKey = $(this).data('dbobject');
+			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorMouseDown.call(foreignKey.getUI(), event);
+		})
+		
+		.delegate('polyline', 'dblclick', function(event){ 
+			var foreignKey = $(this).data('dbobject');
+			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorDblclick.call(foreignKey.getUI(), event);
+		});
+		
 };
 
 /**

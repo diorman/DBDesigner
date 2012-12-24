@@ -18,9 +18,6 @@ Column.prototype.modelPropertyChanged = function(event){
 		case 'stopEditing':
 			this.modelChanged();
 			break;
-		/*case 'type':
-		case 'length': 
-		case 'flags':this.trigger(Column.Event.COLUMN_TYPE_CHANGED);*/
 		default:
 			this.modelChanged(event.property, this.getUI().updateView);
 			break;
@@ -152,7 +149,7 @@ ColumnModel.prototype.isPrimaryKey = function(){
 ColumnModel.prototype.setForeignKey = function(b){
 	if(typeof this._foreignKeyCount == 'undefined') this._foreignKeyCount = 0;
 	this._foreignKeyCount += b? 1 : -1;
-	if(this._foreignKeyCount == 0 || this._foreignKeyCount == 1){
+	if((this._foreignKeyCount == 0 && !b) || (this._foreignKeyCount == 1 && b)){
 		this.setFlagState(ColumnModel.Flag.FOREIGN_KEY, b);
 	}
 };
@@ -164,7 +161,7 @@ ColumnModel.prototype.isForeignKey = function(){
 ColumnModel.prototype.setUniqueKey = function(b){
 	if(typeof this._uniqueKeyCount == 'undefined') this._uniqueKeyCount = 0;
 	this._uniqueKeyCount += b? 1 : -1;
-	if(this._uniqueKeyCount == 0 || this._uniqueKeyCount == 1){
+	if((this._uniqueKeyCount == 0 && !b) || (this._uniqueKeyCount == 1 && b)){
 		this.setFlagState(ColumnModel.Flag.UNIQUE_KEY, b);
 	}
 };
@@ -197,6 +194,7 @@ ColumnUI = function(controller){
 	this.setTemplateID('Column');
 	this.setController(controller);
 	this.init();
+	this.getDom().data('dbobject', controller);
 	this.updateView();
 	this.updateParent();
 };
@@ -207,9 +205,6 @@ ColumnUI.prototype.updateView = function(){
 	var dom = this.getDom();
 	var $keys = dom.find('span.keys');
 	var def = model.getName() + ' : ' + model.getFullType();
-	//var length = model.getLength();
-	//if(length != '') def += '(' + length + ')';
-	//if(model.isArray()) def += '[]';
 	
 	dom.find('span.definition').text(def);
 	if(model.isPrimaryKey() && model.isForeignKey()) $keys.attr('class', 'keys pk-fk');
@@ -235,7 +230,7 @@ ColumnUI.prototype.onDblClick = function(){
 };
 
 ColumnUI.prototype.bindEvents = function(){
-	this.getDom().dblclick($.proxy(this.onDblClick, this));
+	//this.getDom().dblclick($.proxy(this.onDblClick, this));
 };
 
 ColumnUI.prototype.setHighLight = function(b){

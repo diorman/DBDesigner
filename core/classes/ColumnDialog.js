@@ -52,9 +52,9 @@ ColumnDialog.prototype.saveColumn = function(form){
 			columnModel.getParent().getColumnCollection().add(column);
 		}
 		else columnModel.stopEditing();
-		
-		this.getUI().close();
+		return true;
 	}
+	return false;
 };
 
 ColumnDialog.prototype.validateForm = function(form){
@@ -63,13 +63,12 @@ ColumnDialog.prototype.validateForm = function(form){
 	var lowType = form.type.toLowerCase();
 	var columnModel = this.getModel().getDBObjectModel();
 	var columnCollection = columnModel.getParent().getColumnCollection();
-	var columnWithSameName = columnCollection.getColumnByName(form.name);
 
 	if(form.name == ''){
 		ui.showError(DBDesigner.lang.strcolneedsname, DBDesigner.lang.strname);
 		isValid = false;
 	}
-	else if(columnWithSameName != null && columnWithSameName.getModel() != columnModel){
+	else if(columnCollection.columnNameExists(form.name, columnModel)){
 		ui.showError(DBDesigner.lang.strcolexists, DBDesigner.lang.strname);
 		isValid = false;
 	}
@@ -99,9 +98,7 @@ ColumnDialog.prototype.validateForm = function(form){
 
 // *****************************************************************************
 
-ColumnDialogModel = function() {
-	
-};
+ColumnDialogModel = function() {};
 
 $.extend(ColumnDialogModel.prototype, DBObjectDialogModel);
 
@@ -120,8 +117,9 @@ $.extend(ColumnDialogUI.prototype, DBObjectDialogUI);
 
 ColumnDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('#column-dialog_cancel').click($.proxy(this.close, this));
-	dom.find('#column-dialog_save').click($.proxy(this.save, this));
+	//dom.find('#column-dialog_cancel').click($.proxy(this.close, this));
+	//dom.find('#column-dialog_save').click($.proxy(this.save, this));
+	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
 	dom.find('#column-dialog_column-type').change($.proxy(this.dataTypeChanged, this));
 	this.setKeyPressEvent();
 };
@@ -156,9 +154,22 @@ ColumnDialogUI.prototype.open = function(title){
 	
 };
 
-ColumnDialogUI.prototype.save = function(){
+ColumnDialogUI.prototype.submitButtonClicked = function(event){
+	if(event.target.id == 'column-dialog_cancel') {this.close();}
+	else{
+		var saveSuccess = this.save(false);
+		if(event.target.id == 'column-dialog_save' && saveSuccess) {this.close();}
+		else if(event.target.id == 'column-dialog_save2' && saveSuccess) {
+			var controller = this.getController();
+			var table = controller.getModel().getDBObjectModel().getParent();
+			controller.createColumn(table);
+		}
+	}
+};
+
+ColumnDialogUI.prototype.save = function(closeWindow){
+	closeWindow = (typeof closeWindow == 'undefined')? true : closeWindow;
 	this.cleanErrors();
-	
 	var form = {
 		name: $.trim($('#column-dialog_column-name').val()),
 		type: $.trim($('#column-dialog_column-type').val()),
@@ -169,7 +180,9 @@ ColumnDialogUI.prototype.save = function(){
 		comment: $.trim($('#column-dialog_column-comment').val())
 	};
 	form.length = (this.typeHasPredefinedSize(form.type))? '': $.trim($('#column-dialog_column-length').val()).replace(/\s+/g, '');
-	this.getController().saveColumn(form);
+	var saveSuccess = this.getController().saveColumn(form);
+	if(saveSuccess && closeWindow) this.close();
+	return saveSuccess;
 };
 
 ColumnDialogUI.prototype.dataTypeChanged = function(event){

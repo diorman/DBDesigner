@@ -54,6 +54,14 @@ DBObjectDialogUI = {
 				_this.save();
 			}
 		});
+	},
+	setDialogCloseEvent: function(){
+		var controller = this.getController(); 
+		if(controller.clearReferences){
+			this.getDom().bind('dialogclose', function(event){
+				controller.clearReferences();
+			});
+		}
 	}
 };
 $.extend(DBObjectDialogUI, ComponentUI);

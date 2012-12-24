@@ -18,6 +18,7 @@ FILES=	classes/EventDispatcher.js \
 	classes/Table.js \
 	classes/Column.js \
 	classes/TableCollection.js \
+	classes/ConstraintHelper.js \
 	classes/ColumnCollection.js \
 	classes/ForeignKeyCollection.js \
 	classes/ForeignKey.js \
@@ -27,6 +28,7 @@ FILES=	classes/EventDispatcher.js \
 	classes/UniqueKeyDialog.js \
 	classes/Const.js \
 	classes/Helper.js \
+	classes/ConfirmDialog.js \
 
 
 default:    ${FILES}
