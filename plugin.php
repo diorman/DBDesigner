@@ -34,7 +34,8 @@ class DBDesigner extends Plugin {
 	function _($langkey){
 		global $lang;
 		if(isset($this->lang[$langkey])) return $this->lang[$langkey];
-		return $lang[$langkey];
+		elseif(isset($lang[$langkey])) return $lang[$langkey];
+		return 'String missing';
 	}
 	
 	function checkInstallation(){
@@ -702,7 +703,7 @@ class DBDesigner extends Plugin {
 	function getTemplateManager(){
 		global $data;
 		$templateManager = array();
-		require_once 'plugins/DBDesigner/core/templateManager.php';
+		require_once 'plugins/DBDesigner/core/templates/index.php';
 		return $this->jsonEncode($templateManager );
 	}
 	
