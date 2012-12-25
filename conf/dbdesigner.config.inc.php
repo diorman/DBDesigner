@@ -13,11 +13,11 @@
 		
 		const dbdesignerJS = 'plugins/DBDesigner/js/dbdesigner.js';
 
-		const jquery = 'plugins/DBDesigner/js/jquery-1.7.1.min.js';
+		const jquery = 'plugins/DBDesigner/js/jquery-1.8.3.min.js';
 
-		const jqueryUi = 'plugins/DBDesigner/js/jquery-ui-1.8.16.custom.min.js';
+		const jqueryUi = 'plugins/DBDesigner/js/jquery-ui-1.9.2.custom.min.js';
 
-		const jqueryUiTheme = 'plugins/DBDesigner/css/jqueryui/jquery-ui-1.8.16.custom.css';
+		const jqueryUiTheme = 'plugins/DBDesigner/css/jqueryui/jquery-ui-1.9.2.custom.min.css';
 
 		const theme = 'plugins/DBDesigner/css/dbdesigner.css';
 
