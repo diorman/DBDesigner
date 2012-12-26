@@ -38,6 +38,17 @@ ForeignKey.prototype.setHighLight = function(b){
 };
 ForeignKey.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
+		case 'dropped':
+			var parent = this.getParent();
+			var referencedTable = this.getReferencedTable();
+			parent.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+			referencedTable.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
+			if(parent != referencedTable){
+				referencedTable.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+			}
+			this.getUI().drop();
+			this.getParent().getForeignKeyCollection().remove(this);
+			break;
 		case 'stopEditing':
 			this.modelChanged();
 			break;
@@ -56,7 +67,7 @@ ForeignKey.prototype.onTableViewBoxChanged = function(event){
 };
 
 ForeignKey.prototype.onReferencedTableAltered = function(event){
-	if($.inArray('name', event.properties) != -1){
+	if(event.properties && $.inArray('name', event.properties) != -1){
 		//Notify the collection that something has changed if referenced table's name has changed
 		this.trigger(DBObject.Event.DBOBJECT_ALTERED);
 	}
@@ -67,16 +78,7 @@ ForeignKey.prototype.alterForeignKey = function(){
 };
 
 ForeignKey.prototype.drop = function(){
-	var parent = this.getParent();
-	var referencedTable = this.getReferencedTable();
-	parent.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
-	referencedTable.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
-	if(parent != referencedTable){
-		referencedTable.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
-	}
 	this.getModel().drop();
-	this.getUI().drop();
-	this.getParent().getForeignKeyCollection().remove(this);
 };
 
 // *****************************************************************************
@@ -191,11 +193,14 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 };
 
 ForeignKeyModel.prototype.onForeignColumnAltered = function(event){
-	if($.inArray('name', event.properties) != -1){
+	if(event.isDropRequest){
+		this.drop();
+	}
+	else if(event.properties && $.inArray('name', event.properties) != -1){
 		// If the name of the column could change, then notify the controller that something has changed
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
-	else if($.partOf(event.properties, ['length', 'type', 'flags'])){
+	else if(event.properties && $.partOf(event.properties, ['length', 'type', 'flags'])){
 		var columns = this.getColumns();
 		for(var i = 0; i < columns.length; i++){
 			if(columns[i].foreignColumn == event.sender){
@@ -216,8 +221,11 @@ ForeignKeyModel.prototype.onForeignColumnAltered = function(event){
 };
 
 ForeignKeyModel.prototype.onLocalColumnAltered = function(event){
-	if($.inArray('name', event.properties) != -1){
-		// If the name of the column could change, then notify the controller that something has changed
+	if(event.isDropRequest){
+		this.drop();
+	}
+	else if(event.properties && $.inArray('name', event.properties) != -1){
+		// If the name of the column changed, notify the controller that something has changed
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
 };
@@ -279,6 +287,7 @@ ForeignKeyModel.prototype.drop = function(){
 		columns[i].foreignColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
 		columns[i].localColumn.setForeignKey(false);
 	}
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };
 
 // *****************************************************************************

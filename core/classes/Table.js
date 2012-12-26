@@ -200,11 +200,6 @@ TableUI.prototype.bindEvents = function(){
 		selectableselected: selectionChanged,
 		selectableunselected: selectionChanged
 	});
-	
-	
-	/* EVENT ATTACHMENT MOVED TO CANVAS 
-	dom.find('a.button').click($.proxy(this.onButtonPressed, this));
-	dom.find('div.header').dblclick($.proxy(this.onHeaderDblClicked, this));*/
 };
 
 TableUI.prototype.updateView = function(){

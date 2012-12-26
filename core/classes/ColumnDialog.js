@@ -95,7 +95,6 @@ ColumnDialog.prototype.validateForm = function(form){
 	return isValid;
 }
 
-
 // *****************************************************************************
 
 ColumnDialogModel = function() {};
@@ -117,10 +116,9 @@ $.extend(ColumnDialogUI.prototype, DBObjectDialogUI);
 
 ColumnDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	//dom.find('#column-dialog_cancel').click($.proxy(this.close, this));
-	//dom.find('#column-dialog_save').click($.proxy(this.save, this));
 	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
 	dom.find('#column-dialog_column-type').change($.proxy(this.dataTypeChanged, this));
+	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
 };
 

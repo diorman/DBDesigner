@@ -62,6 +62,16 @@ DBDesigner.prototype.doAction = function(action, extra) {
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
 			this.objectDetail.showTable(extra);
 			break;
+		case DBDesigner.Action.DROP_COLUMN:
+			var message = DBDesigner.lang.strconfdropcolumn
+				.replace(/&amp;quot;/g, '"')
+				.replace('%s', extra.getName())
+				.replace('%s', extra.getParent().getName());
+			this.confirmDialog.show(message, DBDesigner.lang.strdrop, {
+				scope: extra,
+				method: extra.drop
+			});
+			break;
 		case DBDesigner.Action.DROP_UNIQUEKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
 				.replace(/&amp;quot;/g, '"')

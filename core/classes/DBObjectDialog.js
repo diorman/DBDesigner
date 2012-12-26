@@ -57,11 +57,12 @@ DBObjectDialogUI = {
 	},
 	setDialogCloseEvent: function(){
 		var controller = this.getController(); 
-		if(controller.clearReferences){
-			this.getDom().bind('dialogclose', function(event){
-				controller.clearReferences();
-			});
-		}
+		this.getDom().bind('dialogclose', function(event){
+			if(controller.clearReferences){ controller.clearReferences(); }
+			
+			// Clear any reference to any model previously edited/created
+			controller.getModel().setDBObjectModel(null);
+		});
 	}
 };
 $.extend(DBObjectDialogUI, ComponentUI);

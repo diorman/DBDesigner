@@ -93,7 +93,6 @@ UniqueKeyDialog.prototype.removeColumns = function(columns){
 UniqueKeyDialog.prototype.clearReferences = function(){
 	var model = this.getModel();
 	model.setSelectedColumns(null);
-	model.setDBObjectModel(null);
 };
 
 // *****************************************************************************

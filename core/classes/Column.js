@@ -12,6 +12,11 @@ $.extend(Column.prototype, DBObject);
 
 Column.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
+		case 'dropped':
+			this.trigger(DBObject.Event.DBOBJECT_ALTERED, { isDropRequest: true });
+			this.getUI().drop();
+			this.getParent().getColumnCollection().remove(this);
+			break;
 		case 'parent':
 			this.getUI().updateParent();
 			break;
@@ -74,6 +79,18 @@ Column.prototype.getLength = function(){
 
 Column.prototype.move = function(dir){
 	this.getUI().move(dir);
+};
+
+Column.prototype.drop = function(){
+	this.getModel().drop();
+};
+
+Column.prototype.getParent = function(){
+	return this.getModel().getParent();
+};
+
+Column.prototype.getName = function(){
+	return this.getModel().getName();
 };
 
 // *****************************************************************************
@@ -188,6 +205,10 @@ ColumnModel.prototype.getParent = function(){
 	return this._parent;
 };
 
+ColumnModel.prototype.drop = function(){
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
 // *****************************************************************************
 
 ColumnUI = function(controller){
@@ -229,9 +250,7 @@ ColumnUI.prototype.onDblClick = function(){
 	this.getController().alterColumn();
 };
 
-ColumnUI.prototype.bindEvents = function(){
-	//this.getDom().dblclick($.proxy(this.onDblClick, this));
-};
+ColumnUI.prototype.bindEvents = function(){};
 
 ColumnUI.prototype.setHighLight = function(b){
 	var dom = this.getDom();
@@ -243,4 +262,9 @@ ColumnUI.prototype.move = function(dir){
 	var dom = this.getDom();
 	if(dir == 'up') dom.insertBefore(dom.prev());
 	else dom.insertAfter(dom.next());
+};
+
+ColumnUI.prototype.drop = function() {
+	this.getDom().remove();
+	this.getController().getModel().getParent().refresh();
 };

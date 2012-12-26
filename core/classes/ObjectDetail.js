@@ -101,7 +101,7 @@ ObjectDetail.prototype.onForeignKeyCollectionChanged = function(event){
 };
 
 ObjectDetail.prototype.onTablePropertyChanged = function(event){
-	if($.partOf(event.properties, ['name', 'comment', 'options'])){
+	if(event.properties && $.partOf(event.properties, ['name', 'comment', 'options'])){
 		this.getUI().updateTableView(event.sender);
 	}
 };
@@ -287,6 +287,7 @@ ObjectDetailUI.prototype.updateSingleColumnView = function(column, action){
 			$('#od-tab-columns').find('tbody').append(this.populateColumnHtmlData(column));
 			break;
 		case 'drop':
+			this.findColumnRow(column).remove();
 			break;
 		case 'alter':
 			this.populateColumnHtmlData(column, this.findColumnRow(column));

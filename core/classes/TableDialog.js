@@ -82,9 +82,8 @@ $.extend(TableDialogUI.prototype, DBObjectDialogUI);
 
 TableDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	//dom.find('#table-dialog_cancel').click($.proxy(this.close, this));
-	//dom.find('input.save-button').click($.proxy(this.save, this));
 	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
+	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
 };
 

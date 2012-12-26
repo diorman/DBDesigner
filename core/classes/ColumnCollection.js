@@ -21,6 +21,14 @@ ColumnCollection.prototype.add = function(column){
 	}
 };
 
+ColumnCollection.prototype.remove = function(column){
+	var index = $.inArray(column, this._columns);
+	this._columns.splice(index, 1);
+	column.unbind(Column.Event.ALTER_REQUEST, this.alterColumn, this);
+	column.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnAltered, this);
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {columnDropped: column});
+};
+
 ColumnCollection.prototype.onColumnAltered = function(event){
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {columnAltered: event.sender});
 };

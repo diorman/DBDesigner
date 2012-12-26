@@ -121,7 +121,6 @@ ForeignKeyDialog.prototype.clearReferences = function(){
 	var model = this.getModel();
 	model.setSelectedColumns(null);
 	model.setReferencedTable(null);
-	model.setDBObjectModel(null);
 };
 
 // *****************************************************************************
