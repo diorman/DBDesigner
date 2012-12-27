@@ -38,12 +38,16 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 			break;
 		case 'table':
 			ui.updateView(event.newValue);
-			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
-			event.newValue.getColumnCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
-			event.newValue.getUniqueKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
-			event.newValue.getForeignKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
+			if(event.newValue != null){
+				event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+				event.newValue.bind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
+				event.newValue.getColumnCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
+				event.newValue.getUniqueKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
+				event.newValue.getForeignKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
+			}
 			if(event.oldValue != null){
 				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+				event.oldValue.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
 				event.oldValue.getColumnCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
 				event.oldValue.getUniqueKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
 				event.oldValue.getForeignKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
@@ -104,6 +108,12 @@ ObjectDetail.prototype.onTablePropertyChanged = function(event){
 	if(event.properties && $.partOf(event.properties, ['name', 'comment', 'options'])){
 		this.getUI().updateTableView(event.sender);
 	}
+};
+
+ObjectDetail.prototype.onTableDropped = function(event){
+	var model = this.getModel();
+	model.setTable(null);
+	model.setCollapsed(true);
 };
 
 ObjectDetail.prototype.showTable = function(table){
@@ -171,6 +181,7 @@ ObjectDetailModel.prototype.isCollapsed = function() {
  */
 ObjectDetailModel.prototype.setCollapsed = function(b) {
 	var oldState = this.isCollapsed();
+	if(!b && this.getTable() == null) return; //there's nothing to show, so it can't be uncollapsed 
 	if(oldState != b){
 		this._collapsed = b;
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'collapsed', oldValue: oldState, newValue: b});
@@ -258,6 +269,10 @@ ObjectDetailUI.prototype.updateView = function(table){
 		this.updateColumnsView(table.getColumnCollection());
 		this.updateForeignKeyView(table.getForeignKeyCollection());
 		this.updateUniqueKeyView(table.getUniqueKeyCollection());
+	} else {
+		$('#od-tab-columns').find('tbody').empty();
+		$('#od-tab-uniqueKeys').find('tbody').empty();
+		$('#od-tab-foreignKeys').find('tbody').empty();
 	}
 };
 
@@ -580,6 +595,9 @@ ObjectDetailUI.prototype.onInputButtonClick = function(event){
 	switch(event.target.id){
 		case 'od-alter-table':
 			this.getController().alterDBObject();
+			break;
+		case 'od-drop-table':
+			this.getController().dropDBObject();
 			break;
 		case 'od-add-column':
 			this.getController().addDBObject('column');

@@ -10,7 +10,7 @@ $.extend(UniqueKey.prototype, DBObject);
 UniqueKey.prototype.modelPropertyChanged = function(event) {
 	switch(event.property){
 		case 'dropped':
-			this.getParent().getUniqueKeyCollection().remove(this);
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
 			break;
 		case 'stopEditing':
 			this.modelChanged();
@@ -53,6 +53,7 @@ UniqueKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(oldColumns[i], columns) == -1){
 			oldColumns[i].setUniqueKey(false);
 			oldColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			oldColumns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 	}
@@ -60,6 +61,7 @@ UniqueKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(columns[i], oldColumns) == -1){
 			columns[i].setUniqueKey(true);
 			columns[i].bind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			columns[i].bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 	}
@@ -68,9 +70,7 @@ UniqueKeyModel.prototype.setColumns = function(columns){
 };
 
 UniqueKeyModel.prototype.onColumnChanged = function(event){
-	if(event.isDropRequest){
-		this.drop();
-	} else if(event.properties && $.inArray('name', event.properties) != -1){
+	if(event.properties && $.inArray('name', event.properties) != -1){
 		// this is just to notify the object detail view in case the parent table is selected
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
@@ -99,6 +99,7 @@ UniqueKeyModel.prototype.drop = function(){
 	for(var i = 0; i < columns.length; i++){
 		columns[i].setUniqueKey(false);
 		columns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+		columns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };

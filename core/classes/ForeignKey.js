@@ -5,14 +5,13 @@ ForeignKey = function() {
 	if(arguments.length > 0 && arguments[0] instanceof ForeignKeyModel) {
 		var model = arguments[0];
 		var parent = model.getParent();
-		var referencedTable = model.getReferencedTable();
 		this.setModel(model);
-		
 		parent.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
-		referencedTable.bind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
-		if(parent != referencedTable){
-			referencedTable.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
-		}
+		model.trigger(DBDesigner.Event.PROPERTY_CHANGED, {
+			property: 'referencedTable',
+			oldValue: null,
+			newValue: model.getReferencedTable()
+		});
 	}
 	else this.setModel(new ForeignKeyModel());
 	
@@ -47,10 +46,25 @@ ForeignKey.prototype.modelPropertyChanged = function(event){
 				referencedTable.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
 			}
 			this.getUI().drop();
-			this.getParent().getForeignKeyCollection().remove(this);
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
 			break;
 		case 'stopEditing':
 			this.modelChanged();
+			break;
+		
+		case 'referencedTable':
+			var parent = this.getParent();
+			if(event.oldValue != null) {
+				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
+				if(parent != event.oldValue) {
+					event.oldValue.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+				}
+				this.getUI().updateView();
+			}
+			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
+			if(parent != event.newValue){
+				event.newValue.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+			}
 			break;
 		default:
 			this.modelChanged(event.property, true);
@@ -96,7 +110,17 @@ ForeignKeyModel.prototype.getParent = function(){
 };
 
 ForeignKeyModel.prototype.setReferencedTable = function(table){
-	this._referencedTable = table;
+	var oldTable = this.getReferencedTable();
+	if(oldTable != table){
+		if(oldTable != null){
+			oldTable.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
+		}
+		if(table != null && table != this.getParent()){
+			table.bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
+		}
+		this._referencedTable = table;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'referencedTable', oldValue: oldTable, newValue: table});
+	}
 };
 
 ForeignKeyModel.prototype.getReferencedTable = function(){
@@ -165,11 +189,13 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(columns[i].localColumn, oldLocalColumns) == -1){
 			columns[i].localColumn.setForeignKey(true);
 			columns[i].localColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			columns[i].localColumn.bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 		// [2] Manage foreign columns added
 		if($.inArray(columns[i].foreignColumn, oldForeignColumns) == -1){
 			columns[i].foreignColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			columns[i].foreignColumn.bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			this.onForeignColumnAltered({properties: ['length'], sender: columns[i].foreignColumn});
 			throwEvent = true;
 		}
@@ -181,11 +207,13 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(oldLocalColumns[i], newLocalColumns) == -1){
 			oldLocalColumns[i].setForeignKey(false);
 			oldLocalColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			oldLocalColumns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 		//[4] Manage foreign columns removed
 		if($.inArray(oldForeignColumns[i], newForeignColumns) == -1){
 			oldForeignColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			oldForeignColumns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 	}
@@ -282,10 +310,17 @@ ForeignKeyModel.prototype.chooseName = function(){
 
 ForeignKeyModel.prototype.drop = function(){
 	var columns = this.getColumns();
+	var referencedTable = this.getReferencedTable();
+	var parent = this.getParent();
 	for(var i = 0; i < columns.length; i++){
 		columns[i].localColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+		columns[i].localColumn.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 		columns[i].foreignColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+		columns[i].foreignColumn.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 		columns[i].localColumn.setForeignKey(false);
+	}
+	if(parent != referencedTable){
+		referencedTable.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };

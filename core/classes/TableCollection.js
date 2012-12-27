@@ -19,6 +19,24 @@ TableCollection.prototype.add = function(table){
 	table.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
 	table.bind(Table.Event.ALTER_REQUEST, this.alterTable, this);
 	table.bind(Table.Event.DETAIL_REQUEST, this.detailRequest, this);
+	table.bind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {tableAdded: table});
+};
+
+TableCollection.prototype.onTableDropped = function(event){
+	this.remove(event.sender);
+};
+
+TableCollection.prototype.remove = function(table){
+	var index = $.inArray(table, this._tables);
+	this._tables.splice(index, 1);
+	this.removeFromSelection(table);
+	
+	table.unbind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
+	table.unbind(Table.Event.ALTER_REQUEST, this.alterTable, this);
+	table.unbind(Table.Event.DETAIL_REQUEST, this.detailRequest, this);
+	table.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {tableDropped: table});
 };
 
 TableCollection.prototype.addToSelection = function(table){
@@ -83,4 +101,11 @@ TableCollection.prototype.tableNameExists = function(name, tableModel){
 	var tableWithSameName = this.getTableByName(name);
 	if(tableWithSameName != null && tableWithSameName.getModel() != tableModel) return true;
 	return false;
+};
+
+TableCollection.prototype.dropSelectedTables = function(){
+	var tables = this.getSelectedTables();
+	for(var i = 0; i < tables.length; i++){
+		tables[i].drop();
+	}
 };

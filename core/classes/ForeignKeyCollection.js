@@ -18,6 +18,7 @@ ForeignKeyCollection.prototype.add = function(foreignKey){
 		DBDesigner.app.getConstraintList().push(foreignKey);
 		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
+		foreignKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
 		this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyAdded: foreignKey});
 	}
 };
@@ -34,6 +35,10 @@ ForeignKeyCollection.prototype.onForeignKeyAltered = function(event){
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyAltered: event.sender});
 };
 
+ForeignKeyCollection.prototype.onForeignKeyDropped = function(event){
+	this.remove(event.sender);
+};
+
 ForeignKeyCollection.prototype.remove = function(foreignKey){
 	var constraintList = DBDesigner.app.getConstraintList();
 	var index1 = $.inArray(foreignKey, this._foreignKeys);
@@ -42,5 +47,6 @@ ForeignKeyCollection.prototype.remove = function(foreignKey){
 	constraintList.splice(index2, 1);
 	foreignKey.unbind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
+	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyDropped: foreignKey});
 };

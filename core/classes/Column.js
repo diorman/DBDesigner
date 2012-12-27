@@ -13,9 +13,8 @@ $.extend(Column.prototype, DBObject);
 Column.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
 		case 'dropped':
-			this.trigger(DBObject.Event.DBOBJECT_ALTERED, { isDropRequest: true });
 			this.getUI().drop();
-			this.getParent().getColumnCollection().remove(this);
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
 			break;
 		case 'parent':
 			this.getUI().updateParent();

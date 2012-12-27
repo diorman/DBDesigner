@@ -17,6 +17,7 @@ ColumnCollection.prototype.add = function(column){
 		this._columns.push(column);
 		column.bind(Column.Event.ALTER_REQUEST, this.alterColumn, this);
 		column.bind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnAltered, this);
+		column.bind(DBObject.Event.DBOBJECT_DROPPED, this.onColumnDropped, this);
 		this.trigger(Collection.Event.COLLECTION_CHANGED, {columnAdded: column});
 	}
 };
@@ -26,11 +27,16 @@ ColumnCollection.prototype.remove = function(column){
 	this._columns.splice(index, 1);
 	column.unbind(Column.Event.ALTER_REQUEST, this.alterColumn, this);
 	column.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnAltered, this);
+	column.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onColumnDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {columnDropped: column});
 };
 
 ColumnCollection.prototype.onColumnAltered = function(event){
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {columnAltered: event.sender});
+};
+
+ColumnCollection.prototype.onColumnDropped = function(event){
+	this.remove(event.sender);
 };
 
 ColumnCollection.prototype.alterColumn = function(event){

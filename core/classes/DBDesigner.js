@@ -62,6 +62,32 @@ DBDesigner.prototype.doAction = function(action, extra) {
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
 			this.objectDetail.showTable(extra);
 			break;
+		case DBDesigner.Action.DROP_TABLE:
+			var message, scope, method, selection, count;
+			if(typeof extra == 'undefined') {
+				selection = DBDesigner.app.getTableCollection();
+				count = selection.count();
+				if(count == 1) {
+					extra = selection.getSelectedTables()[0];
+				} else {
+					scope = selection;
+					method = selection.dropSelectedTables;
+					message = DBDesigner.lang.strconfdroptables.replace('%d', count);
+				}
+			}
+			if(typeof extra != 'undefined') {
+				scope = extra;
+				method = extra.drop;
+				message = DBDesigner.lang.strconfdroptable
+					.replace(/&amp;quot;/g, '"')
+					.replace('%s', extra.getName());
+			}
+			this.confirmDialog.show(message, DBDesigner.lang.strdrop, {
+				scope: scope,
+				method: method
+			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.DROP_COLUMN:
 			var message = DBDesigner.lang.strconfdropcolumn
 				.replace(/&amp;quot;/g, '"')

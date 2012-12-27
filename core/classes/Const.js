@@ -20,7 +20,7 @@ DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
 
 ToolBar.Event = {ACTION_CHANGED: 'toolbaractionchanged'};
 
-DBObject.Event = { DBOBJECT_ALTERED: 'dbobjectaltered' };
+DBObject.Event = { DBOBJECT_ALTERED: 'dbobjectaltered', DBOBJECT_DROPPED: 'dbobjectdropped' };
 
 Table.Event = {
 	SELECTION_CHANGED: 'tableselectionchanged', 

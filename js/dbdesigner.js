@@ -1,38 +1,49 @@
 EventDispatcher = {
-    bind: function (eventName, eventListener, eventScope) {
-        if(!this._eventListeners) {this._eventListeners = [];this._eventScopes = [];}
-        if(!this._eventListeners[eventName]){this._eventListeners[eventName] = [];this._eventScopes[eventName] = [];}
-        for(var i = 0; i < this._eventListeners[eventName].length; i++){
-            if(this._eventScopes[eventName][i] == eventScope && this._eventListeners[eventName][i] == eventListener){
-                return;
-            }
-        }
-        this._eventListeners[eventName].push(eventListener);
-        this._eventScopes[eventName].push(eventScope);
-    },
-    unbind: function (eventName, eventListener, eventScope){
-        if(typeof this._eventScopes[eventName] == "undefined") return;
-        for(var i = 0; i < this._eventListeners[eventName].length; i++){
-            if(this._eventScopes[eventName][i] == eventScope && this._eventListeners[eventName][i] == eventListener){
-                this._eventListeners[eventName].splice(i, 1);
-                this._eventScopes[eventName].splice(i, 1);
-                return;
-            }
-        }
-    },
-    trigger: function (eventName) {
-        if(!this._eventListeners) return;
-        var i;
-		var event = {sender: this, type: eventName};
+	bind: function (eventName, eventListener, eventScope) {
+		if(!this._eventListeners) {
+			this._eventListeners = [];
+			this._eventScopes = [];
+		}
+		if(!this._eventListeners[eventName]){
+			this._eventListeners[eventName] = [];
+			this._eventScopes[eventName] = [];
+		}
+		for(var i = 0; i < this._eventListeners[eventName].length; i++){
+			if(this._eventScopes[eventName][i] === eventScope && this._eventListeners[eventName][i] === eventListener){
+				return;
+			}
+		}
+		this._eventListeners[eventName].push(eventListener);
+		this._eventScopes[eventName].push(eventScope);
+	},
+	unbind: function (eventName, eventListener, eventScope){
+		if(typeof this._eventScopes[eventName] == "undefined") return;
+		for(var i = 0; i < this._eventListeners[eventName].length; i++){
+			if(this._eventScopes[eventName][i] === eventScope && this._eventListeners[eventName][i] === eventListener){
+				this._eventListeners[eventName].splice(i, 1);
+				this._eventScopes[eventName].splice(i, 1);
+				return;
+			}
+		}
+	},
+	trigger: function (eventName) {
+		if(!this._eventListeners || !this._eventListeners[eventName]) return;
+		var i;
+		var event = {
+			sender: this, 
+			type: eventName
+		};
+		var listeners = [].concat(this._eventListeners[eventName]);
+		var scopes = [].concat(this._eventScopes[eventName]);
 		
 		if(arguments.length > 1 && typeof arguments[1] == 'object') $.extend(event, arguments[1]);
 		
-        for (i in this._eventListeners[eventName]){
-            this._eventListeners[eventName][i].apply(this._eventScopes[eventName][i], [event]);
-        }
-    }
+		for (i in listeners){
+			listeners[i].apply(scopes[i], [event]);
+		}
+	}
 };
-
+	
 
 Component = {
 	setModel: function(model){
@@ -206,6 +217,32 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
 			this.objectDetail.showTable(extra);
+			break;
+		case DBDesigner.Action.DROP_TABLE:
+			var message, scope, method, selection, count;
+			if(typeof extra == 'undefined') {
+				selection = DBDesigner.app.getTableCollection();
+				count = selection.count();
+				if(count == 1) {
+					extra = selection.getSelectedTables()[0];
+				} else {
+					scope = selection;
+					method = selection.dropSelectedTables;
+					message = DBDesigner.lang.strconfdroptables.replace('%d', count);
+				}
+			}
+			if(typeof extra != 'undefined') {
+				scope = extra;
+				method = extra.drop;
+				message = DBDesigner.lang.strconfdroptable
+					.replace(/&amp;quot;/g, '"')
+					.replace('%s', extra.getName());
+			}
+			this.confirmDialog.show(message, DBDesigner.lang.strdrop, {
+				scope: scope,
+				method: method
+			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_COLUMN:
 			var message = DBDesigner.lang.strconfdropcolumn
@@ -812,12 +849,16 @@ ObjectDetail.prototype.modelPropertyChanged = function(event) {
 			break;
 		case 'table':
 			ui.updateView(event.newValue);
-			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
-			event.newValue.getColumnCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
-			event.newValue.getUniqueKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
-			event.newValue.getForeignKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
+			if(event.newValue != null){
+				event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+				event.newValue.bind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
+				event.newValue.getColumnCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
+				event.newValue.getUniqueKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
+				event.newValue.getForeignKeyCollection().bind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
+			}
 			if(event.oldValue != null){
 				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onTablePropertyChanged, this);
+				event.oldValue.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
 				event.oldValue.getColumnCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onColumnCollectionChanged, this);
 				event.oldValue.getUniqueKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onUniqueKeyCollectionChanged, this);
 				event.oldValue.getForeignKeyCollection().unbind(Collection.Event.COLLECTION_CHANGED, this.onForeignKeyCollectionChanged, this);
@@ -878,6 +919,12 @@ ObjectDetail.prototype.onTablePropertyChanged = function(event){
 	if(event.properties && $.partOf(event.properties, ['name', 'comment', 'options'])){
 		this.getUI().updateTableView(event.sender);
 	}
+};
+
+ObjectDetail.prototype.onTableDropped = function(event){
+	var model = this.getModel();
+	model.setTable(null);
+	model.setCollapsed(true);
 };
 
 ObjectDetail.prototype.showTable = function(table){
@@ -945,6 +992,7 @@ ObjectDetailModel.prototype.isCollapsed = function() {
  */
 ObjectDetailModel.prototype.setCollapsed = function(b) {
 	var oldState = this.isCollapsed();
+	if(!b && this.getTable() == null) return; //there's nothing to show, so it can't be uncollapsed 
 	if(oldState != b){
 		this._collapsed = b;
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'collapsed', oldValue: oldState, newValue: b});
@@ -1032,6 +1080,10 @@ ObjectDetailUI.prototype.updateView = function(table){
 		this.updateColumnsView(table.getColumnCollection());
 		this.updateForeignKeyView(table.getForeignKeyCollection());
 		this.updateUniqueKeyView(table.getUniqueKeyCollection());
+	} else {
+		$('#od-tab-columns').find('tbody').empty();
+		$('#od-tab-uniqueKeys').find('tbody').empty();
+		$('#od-tab-foreignKeys').find('tbody').empty();
 	}
 };
 
@@ -1354,6 +1406,9 @@ ObjectDetailUI.prototype.onInputButtonClick = function(event){
 	switch(event.target.id){
 		case 'od-alter-table':
 			this.getController().alterDBObject();
+			break;
+		case 'od-drop-table':
+			this.getController().dropDBObject();
 			break;
 		case 'od-add-column':
 			this.getController().addDBObject('column');
@@ -1942,6 +1997,10 @@ Table.prototype.getPosition = function(){
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
+		case 'dropped':
+			this.getUI().drop();
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
+			break;
 		case 'name':
 			this.modelChanged(event.property, ui.updateName, [event.newValue]);
 			break;
@@ -1995,6 +2054,10 @@ Table.prototype.getSize = function(){
 
 Table.prototype.getWithoutOIDS = function(){
 	return this.getModel().getWithoutOIDS();
+};
+
+Table.prototype.drop = function(){
+	this.getModel().drop();
 };
 
 // *****************************************************************************
@@ -2088,6 +2151,16 @@ TableModel.prototype.getSize = function(){
 
 TableModel.prototype.setSize = function(size){
 	this._size = $.extend(this.getSize(), size);
+};
+
+TableModel.prototype.drop = function(){
+	var foreignKeys = this.getForeignKeyCollection().getForeignKeys();
+	var uniqueKeys = this.getUniqueKeyCollection().getUniqueKeys();
+	var i;
+	//Remove constraints to delete references from foreign tables and list of constraints
+	for(i = 0; i < foreignKeys.length; i++){ foreignKeys[i].drop(); }
+	for(i = 0; i < uniqueKeys.length; i++){ uniqueKeys[i].drop(); }
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };
 
 // *****************************************************************************
@@ -2215,6 +2288,10 @@ TableUI.prototype.getSize = function(){
 	}
 	return size;
 };
+
+TableUI.prototype.drop = function(){
+	this.getDom().remove();
+};
 Column = function() {
 	//If the constructor gets a ColumnModel object as first parameter, it is set as the model
 	//otherwise a new model is created
@@ -2230,9 +2307,8 @@ $.extend(Column.prototype, DBObject);
 Column.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
 		case 'dropped':
-			this.trigger(DBObject.Event.DBOBJECT_ALTERED, { isDropRequest: true });
 			this.getUI().drop();
-			this.getParent().getColumnCollection().remove(this);
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
 			break;
 		case 'parent':
 			this.getUI().updateParent();
@@ -2467,9 +2543,7 @@ ColumnUI.prototype.onDblClick = function(){
 	this.getController().alterColumn();
 };
 
-ColumnUI.prototype.bindEvents = function(){
-	//this.getDom().dblclick($.proxy(this.onDblClick, this));
-};
+ColumnUI.prototype.bindEvents = function(){};
 
 ColumnUI.prototype.setHighLight = function(b){
 	var dom = this.getDom();
@@ -2508,6 +2582,24 @@ TableCollection.prototype.add = function(table){
 	table.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
 	table.bind(Table.Event.ALTER_REQUEST, this.alterTable, this);
 	table.bind(Table.Event.DETAIL_REQUEST, this.detailRequest, this);
+	table.bind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {tableAdded: table});
+};
+
+TableCollection.prototype.onTableDropped = function(event){
+	this.remove(event.sender);
+};
+
+TableCollection.prototype.remove = function(table){
+	var index = $.inArray(table, this._tables);
+	this._tables.splice(index, 1);
+	this.removeFromSelection(table);
+	
+	table.unbind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
+	table.unbind(Table.Event.ALTER_REQUEST, this.alterTable, this);
+	table.unbind(Table.Event.DETAIL_REQUEST, this.detailRequest, this);
+	table.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onTableDropped, this);
+	this.trigger(Collection.Event.COLLECTION_CHANGED, {tableDropped: table});
 };
 
 TableCollection.prototype.addToSelection = function(table){
@@ -2572,6 +2664,13 @@ TableCollection.prototype.tableNameExists = function(name, tableModel){
 	var tableWithSameName = this.getTableByName(name);
 	if(tableWithSameName != null && tableWithSameName.getModel() != tableModel) return true;
 	return false;
+};
+
+TableCollection.prototype.dropSelectedTables = function(){
+	var tables = this.getSelectedTables();
+	for(var i = 0; i < tables.length; i++){
+		tables[i].drop();
+	}
 };ConstraintHelper = {
 	constraintNameExists: function (name, constraintModel){
 		var constraintList = DBDesigner.app.getConstraintList();
@@ -2632,6 +2731,7 @@ ColumnCollection.prototype.add = function(column){
 		this._columns.push(column);
 		column.bind(Column.Event.ALTER_REQUEST, this.alterColumn, this);
 		column.bind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnAltered, this);
+		column.bind(DBObject.Event.DBOBJECT_DROPPED, this.onColumnDropped, this);
 		this.trigger(Collection.Event.COLLECTION_CHANGED, {columnAdded: column});
 	}
 };
@@ -2641,11 +2741,16 @@ ColumnCollection.prototype.remove = function(column){
 	this._columns.splice(index, 1);
 	column.unbind(Column.Event.ALTER_REQUEST, this.alterColumn, this);
 	column.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnAltered, this);
+	column.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onColumnDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {columnDropped: column});
 };
 
 ColumnCollection.prototype.onColumnAltered = function(event){
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {columnAltered: event.sender});
+};
+
+ColumnCollection.prototype.onColumnDropped = function(event){
+	this.remove(event.sender);
 };
 
 ColumnCollection.prototype.alterColumn = function(event){
@@ -2731,6 +2836,7 @@ ForeignKeyCollection.prototype.add = function(foreignKey){
 		DBDesigner.app.getConstraintList().push(foreignKey);
 		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
+		foreignKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
 		this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyAdded: foreignKey});
 	}
 };
@@ -2747,6 +2853,10 @@ ForeignKeyCollection.prototype.onForeignKeyAltered = function(event){
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyAltered: event.sender});
 };
 
+ForeignKeyCollection.prototype.onForeignKeyDropped = function(event){
+	this.remove(event.sender);
+};
+
 ForeignKeyCollection.prototype.remove = function(foreignKey){
 	var constraintList = DBDesigner.app.getConstraintList();
 	var index1 = $.inArray(foreignKey, this._foreignKeys);
@@ -2755,6 +2865,7 @@ ForeignKeyCollection.prototype.remove = function(foreignKey){
 	constraintList.splice(index2, 1);
 	foreignKey.unbind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
+	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyDropped: foreignKey});
 };ForeignKey = function() {
 	//If the constructor gets a ForeignKeyModel object as first parameter, it is set as the model
@@ -2763,14 +2874,13 @@ ForeignKeyCollection.prototype.remove = function(foreignKey){
 	if(arguments.length > 0 && arguments[0] instanceof ForeignKeyModel) {
 		var model = arguments[0];
 		var parent = model.getParent();
-		var referencedTable = model.getReferencedTable();
 		this.setModel(model);
-		
 		parent.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
-		referencedTable.bind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
-		if(parent != referencedTable){
-			referencedTable.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
-		}
+		model.trigger(DBDesigner.Event.PROPERTY_CHANGED, {
+			property: 'referencedTable',
+			oldValue: null,
+			newValue: model.getReferencedTable()
+		});
 	}
 	else this.setModel(new ForeignKeyModel());
 	
@@ -2805,10 +2915,25 @@ ForeignKey.prototype.modelPropertyChanged = function(event){
 				referencedTable.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
 			}
 			this.getUI().drop();
-			this.getParent().getForeignKeyCollection().remove(this);
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
 			break;
 		case 'stopEditing':
 			this.modelChanged();
+			break;
+		
+		case 'referencedTable':
+			var parent = this.getParent();
+			if(event.oldValue != null) {
+				event.oldValue.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
+				if(parent != event.oldValue) {
+					event.oldValue.unbind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+				}
+				this.getUI().updateView();
+			}
+			event.newValue.bind(DBObject.Event.DBOBJECT_ALTERED, this.onReferencedTableAltered, this);
+			if(parent != event.newValue){
+				event.newValue.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
+			}
 			break;
 		default:
 			this.modelChanged(event.property, true);
@@ -2854,7 +2979,17 @@ ForeignKeyModel.prototype.getParent = function(){
 };
 
 ForeignKeyModel.prototype.setReferencedTable = function(table){
-	this._referencedTable = table;
+	var oldTable = this.getReferencedTable();
+	if(oldTable != table){
+		if(oldTable != null){
+			oldTable.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
+		}
+		if(table != null && table != this.getParent()){
+			table.bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
+		}
+		this._referencedTable = table;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'referencedTable', oldValue: oldTable, newValue: table});
+	}
 };
 
 ForeignKeyModel.prototype.getReferencedTable = function(){
@@ -2923,11 +3058,13 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(columns[i].localColumn, oldLocalColumns) == -1){
 			columns[i].localColumn.setForeignKey(true);
 			columns[i].localColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			columns[i].localColumn.bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 		// [2] Manage foreign columns added
 		if($.inArray(columns[i].foreignColumn, oldForeignColumns) == -1){
 			columns[i].foreignColumn.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			columns[i].foreignColumn.bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			this.onForeignColumnAltered({properties: ['length'], sender: columns[i].foreignColumn});
 			throwEvent = true;
 		}
@@ -2939,11 +3076,13 @@ ForeignKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(oldLocalColumns[i], newLocalColumns) == -1){
 			oldLocalColumns[i].setForeignKey(false);
 			oldLocalColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+			oldLocalColumns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 		//[4] Manage foreign columns removed
 		if($.inArray(oldForeignColumns[i], newForeignColumns) == -1){
 			oldForeignColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+			oldForeignColumns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 	}
@@ -3040,10 +3179,17 @@ ForeignKeyModel.prototype.chooseName = function(){
 
 ForeignKeyModel.prototype.drop = function(){
 	var columns = this.getColumns();
+	var referencedTable = this.getReferencedTable();
+	var parent = this.getParent();
 	for(var i = 0; i < columns.length; i++){
 		columns[i].localColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onLocalColumnAltered, this);
+		columns[i].localColumn.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 		columns[i].foreignColumn.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignColumnAltered, this);
+		columns[i].foreignColumn.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 		columns[i].localColumn.setForeignKey(false);
+	}
+	if(parent != referencedTable){
+		referencedTable.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };
@@ -3767,6 +3913,7 @@ UniqueKeyCollection.prototype.add = function(uniqueKey){
 		DBDesigner.app.getConstraintList().push(uniqueKey);
 		uniqueKey.bind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 		uniqueKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
+		uniqueKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
 		this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyAdded: uniqueKey});
 	}
 };
@@ -3777,6 +3924,10 @@ UniqueKeyCollection.prototype.getUniqueKeys = function(){
 
 UniqueKeyCollection.prototype.onUniqueKeyAltered = function(event){
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyAltered: event.sender});
+};
+
+UniqueKeyCollection.prototype.onUniqueKeyDropped = function(event){
+	this.remove(event.sender);
 };
 
 UniqueKeyCollection.prototype.alterUniqueKey = function(event){
@@ -3791,6 +3942,7 @@ UniqueKeyCollection.prototype.remove = function(uniqueKey){
 	constraintList.splice(index2, 1);
 	uniqueKey.unbind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
+	uniqueKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyDropped: uniqueKey});
 };UniqueKey = function(){
 	//If the constructor gets a UniqueKeyModel object as first parameter, it is set as the model
@@ -3804,7 +3956,7 @@ $.extend(UniqueKey.prototype, DBObject);
 UniqueKey.prototype.modelPropertyChanged = function(event) {
 	switch(event.property){
 		case 'dropped':
-			this.getParent().getUniqueKeyCollection().remove(this);
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
 			break;
 		case 'stopEditing':
 			this.modelChanged();
@@ -3847,6 +3999,7 @@ UniqueKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(oldColumns[i], columns) == -1){
 			oldColumns[i].setUniqueKey(false);
 			oldColumns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			oldColumns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 	}
@@ -3854,6 +4007,7 @@ UniqueKeyModel.prototype.setColumns = function(columns){
 		if($.inArray(columns[i], oldColumns) == -1){
 			columns[i].setUniqueKey(true);
 			columns[i].bind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+			columns[i].bind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 			throwEvent = true;
 		}
 	}
@@ -3862,9 +4016,7 @@ UniqueKeyModel.prototype.setColumns = function(columns){
 };
 
 UniqueKeyModel.prototype.onColumnChanged = function(event){
-	if(event.isDropRequest){
-		this.drop();
-	} else if(event.properties && $.inArray('name', event.properties) != -1){
+	if(event.properties && $.inArray('name', event.properties) != -1){
 		// this is just to notify the object detail view in case the parent table is selected
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'columnChanged'});
 	}
@@ -3893,6 +4045,7 @@ UniqueKeyModel.prototype.drop = function(){
 	for(var i = 0; i < columns.length; i++){
 		columns[i].setUniqueKey(false);
 		columns[i].unbind(DBObject.Event.DBOBJECT_ALTERED, this.onColumnChanged, this);
+		columns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };
@@ -4164,7 +4317,7 @@ DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
 
 ToolBar.Event = {ACTION_CHANGED: 'toolbaractionchanged'};
 
-DBObject.Event = { DBOBJECT_ALTERED: 'dbobjectaltered' };
+DBObject.Event = { DBOBJECT_ALTERED: 'dbobjectaltered', DBOBJECT_DROPPED: 'dbobjectdropped' };
 
 Table.Event = {
 	SELECTION_CHANGED: 'tableselectionchanged', 

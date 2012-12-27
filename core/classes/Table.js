@@ -31,6 +31,10 @@ Table.prototype.getPosition = function(){
 Table.prototype.modelPropertyChanged = function(event) {
 	var ui = this.getUI();
 	switch(event.property){
+		case 'dropped':
+			this.getUI().drop();
+			this.trigger(DBObject.Event.DBOBJECT_DROPPED);
+			break;
 		case 'name':
 			this.modelChanged(event.property, ui.updateName, [event.newValue]);
 			break;
@@ -84,6 +88,10 @@ Table.prototype.getSize = function(){
 
 Table.prototype.getWithoutOIDS = function(){
 	return this.getModel().getWithoutOIDS();
+};
+
+Table.prototype.drop = function(){
+	this.getModel().drop();
 };
 
 // *****************************************************************************
@@ -177,6 +185,16 @@ TableModel.prototype.getSize = function(){
 
 TableModel.prototype.setSize = function(size){
 	this._size = $.extend(this.getSize(), size);
+};
+
+TableModel.prototype.drop = function(){
+	var foreignKeys = this.getForeignKeyCollection().getForeignKeys();
+	var uniqueKeys = this.getUniqueKeyCollection().getUniqueKeys();
+	var i;
+	//Remove constraints to delete references from foreign tables and list of constraints
+	for(i = 0; i < foreignKeys.length; i++){ foreignKeys[i].drop(); }
+	for(i = 0; i < uniqueKeys.length; i++){ uniqueKeys[i].drop(); }
+	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
 };
 
 // *****************************************************************************
@@ -303,4 +321,8 @@ TableUI.prototype.getSize = function(){
 		height: dom.outerHeight()
 	}
 	return size;
+};
+
+TableUI.prototype.drop = function(){
+	this.getDom().remove();
 };
