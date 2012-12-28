@@ -229,8 +229,8 @@ ObjectDetailUI.prototype.bindEvents = function() {
 		click: $.proxy(this.panelStateChange, this)
 	});
 	dom.find('input[type="button"]').click($.proxy(this.onInputButtonClick, this));
-	dom.delegate('table.data-mgr tbody tr', 'hover', this.onTrHover);
-	dom.delegate('a.action-btn', 'click', $.proxy(this.onActionButtonClick, this));
+	dom.on('hover', 'table.data-mgr tbody tr', this.onTrHover);
+	dom.on('click', 'a.action-btn', $.proxy(this.onActionButtonClick, this));
 };
 
 /**

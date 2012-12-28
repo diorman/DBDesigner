@@ -381,7 +381,7 @@ DBDesigner.prototype.alterTable = function(event){
 
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('body')
-		.delegate('a.button', 'hover', function(event){ 
+		.on('hover', 'a.button', function(event){ 
 			var $this = $(this);
 			if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
 		});
@@ -714,39 +714,39 @@ CanvasUI.prototype.bindEvents = function() {
 		.mousedown($.proxy(this.mousePressed, this))
 		
 		//db table
-		.delegate('div.db-table div.header', 'dblclick', function(event){ 
+		.on('dblclick', 'div.db-table div.header', function(event){ 
 			var table = $(this).parents('.db-table').data('dbobject');
 			if(table instanceof Table) TableUI.prototype.onHeaderDblClicked.call(table.getUI(), event);
 		})
 		
-		.delegate('div.db-table a.button', 'click', function(event){ 
+		.on('click', 'div.db-table a.button', function(event){ 
 			var table = $(this).parents('.db-table').data('dbobject');
 			if(table instanceof Table) TableUI.prototype.onButtonPressed.call(table.getUI(), event);
 		})
 	
 		//db column
-		.delegate('div.db-column', 'dblclick', function(event){ 
+		.on('dblclick', 'div.db-column', function(event){ 
 			var column = $(this).data('dbobject');
 			if(column instanceof Column) ColumnUI.prototype.onDblClick.call(column.getUI(), event);
 		})
 		
-		.delegate('div.db-column', 'hover', function(event){ 
+		.on('hover', 'div.db-column', function(event){ 
 			var $this = $(this);
 			$this.toggleClass('db-column-hover'); 
 		})
 		
 		//db foreign keys
-		.delegate('polyline', 'hover', function(event){ 
+		.on('hover', 'polyline', function(event){ 
 			var foreignKey = $(this).data('dbobject');
 			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorHover.call(foreignKey.getUI(), event);
 		})
 		
-		.delegate('polyline', 'mousedown', function(event){ 
+		.on('mousedown', 'polyline', function(event){ 
 			var foreignKey = $(this).data('dbobject');
 			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorMouseDown.call(foreignKey.getUI(), event);
 		})
 		
-		.delegate('polyline', 'dblclick', function(event){ 
+		.on('dblclick', 'polyline', function(event){ 
 			var foreignKey = $(this).data('dbobject');
 			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorDblclick.call(foreignKey.getUI(), event);
 		});
@@ -1040,8 +1040,8 @@ ObjectDetailUI.prototype.bindEvents = function() {
 		click: $.proxy(this.panelStateChange, this)
 	});
 	dom.find('input[type="button"]').click($.proxy(this.onInputButtonClick, this));
-	dom.delegate('table.data-mgr tbody tr', 'hover', this.onTrHover);
-	dom.delegate('a.action-btn', 'click', $.proxy(this.onActionButtonClick, this));
+	dom.on('hover', 'table.data-mgr tbody tr', this.onTrHover);
+	dom.on('click', 'a.action-btn', $.proxy(this.onActionButtonClick, this));
 };
 
 /**
@@ -1610,7 +1610,7 @@ $.extend(TableDialogUI.prototype, DBObjectDialogUI);
 
 TableDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
 };
@@ -1776,7 +1776,7 @@ $.extend(ColumnDialogUI.prototype, DBObjectDialogUI);
 
 ColumnDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	dom.find('#column-dialog_column-type').change($.proxy(this.dataTypeChanged, this));
 	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
@@ -3721,7 +3721,7 @@ ForeignKeyDialogUI.prototype.bindEvents = function(){
 	dom.find('#foreignkey-dialog_foreignkey-references').change($.proxy(this.referencedTableChanged, this));
 	dom.find('#foreignkey-dialog_foreignkey-deferrable').click(this.deferrableChange);
 	dom.find('#foreignkey-dialog_addcolumns').click($.proxy(this.addSelectedColumns, this));
-	dom.find('#foreignkey-dialog_columns-tab').delegate('a.remove', 'click', $.proxy(this.removeSelectedColumns, this));
+	dom.find('#foreignkey-dialog_columns-tab').on('click', 'a.remove', $.proxy(this.removeSelectedColumns, this));
 	this.setKeyPressEvent();
 	this.setDialogCloseEvent();
 };

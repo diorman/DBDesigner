@@ -116,7 +116,7 @@ $.extend(ColumnDialogUI.prototype, DBObjectDialogUI);
 
 ColumnDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('div.submit-buttons').delegate('input', 'click', $.proxy(this.submitButtonClicked, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	dom.find('#column-dialog_column-type').change($.proxy(this.dataTypeChanged, this));
 	this.setDialogCloseEvent();
 	this.setKeyPressEvent();

@@ -241,7 +241,7 @@ ForeignKeyDialogUI.prototype.bindEvents = function(){
 	dom.find('#foreignkey-dialog_foreignkey-references').change($.proxy(this.referencedTableChanged, this));
 	dom.find('#foreignkey-dialog_foreignkey-deferrable').click(this.deferrableChange);
 	dom.find('#foreignkey-dialog_addcolumns').click($.proxy(this.addSelectedColumns, this));
-	dom.find('#foreignkey-dialog_columns-tab').delegate('a.remove', 'click', $.proxy(this.removeSelectedColumns, this));
+	dom.find('#foreignkey-dialog_columns-tab').on('click', 'a.remove', $.proxy(this.removeSelectedColumns, this));
 	this.setKeyPressEvent();
 	this.setDialogCloseEvent();
 };

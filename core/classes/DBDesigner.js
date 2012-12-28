@@ -225,7 +225,7 @@ DBDesigner.prototype.alterTable = function(event){
 
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('body')
-		.delegate('a.button', 'hover', function(event){ 
+		.on('hover', 'a.button', function(event){ 
 			var $this = $(this);
 			if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
 		});
