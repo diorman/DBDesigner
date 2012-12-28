@@ -29,6 +29,10 @@ UniqueKey.prototype.drop = function(){
 	this.getModel().drop();
 };
 
+UniqueKey.prototype.serialize = function(){
+	return this.getModel().serialize();
+};
+
 // *****************************************************************************
 
 UniqueKeyModel = function(){};
@@ -102,4 +106,17 @@ UniqueKeyModel.prototype.drop = function(){
 		columns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+UniqueKeyModel.prototype.serialize = function(){
+	var columns = this.getColumns();
+	var columnNames = [];
+	for(var i = 0; i < columns.length; i++) {
+		columnNames.push(columns[i].getName());
+	}
+	return {
+		name: this.getName(),
+		comment: this.getComment(),
+		columns: columnNames
+	};
 };

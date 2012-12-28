@@ -109,3 +109,12 @@ TableCollection.prototype.dropSelectedTables = function(){
 		tables[i].drop();
 	}
 };
+
+TableCollection.prototype.serialize = function() {
+	var tables = this.getTables();
+	var collection = [];
+	for(var i = 0; i < tables.length; i++) {
+		collection.push(tables[i].serialize());
+	}
+	return collection;
+};

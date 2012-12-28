@@ -94,6 +94,10 @@ Table.prototype.drop = function(){
 	this.getModel().drop();
 };
 
+Table.prototype.serialize = function(){
+	return this.getModel().serialize();
+};
+
 // *****************************************************************************
 
 TableModel = function() {
@@ -195,6 +199,19 @@ TableModel.prototype.drop = function(){
 	for(i = 0; i < foreignKeys.length; i++){ foreignKeys[i].drop(); }
 	for(i = 0; i < uniqueKeys.length; i++){ uniqueKeys[i].drop(); }
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+TableModel.prototype.serialize = function(){
+	return  {
+		name: this.getName(),
+		comment: this.getComment(),
+		withoutOIDS: this.getWithoutOIDS(),
+		collapsed: this.isCollapsed(),
+		position: this.getPosition(),
+		columns: this.getColumnCollection().serialize(),
+		foreignKeys: this.getForeignKeyCollection().serialize(),
+		uniqueKeys: this.getUniqueKeyCollection().serialize()
+	};
 };
 
 // *****************************************************************************

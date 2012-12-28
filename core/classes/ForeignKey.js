@@ -95,6 +95,10 @@ ForeignKey.prototype.drop = function(){
 	this.getModel().drop();
 };
 
+ForeignKey.prototype.serialize = function(){
+	return this.getModel().serialize();
+};
+
 // *****************************************************************************
 
 ForeignKeyModel = function(){};
@@ -323,6 +327,29 @@ ForeignKeyModel.prototype.drop = function(){
 		referencedTable.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+ForeignKeyModel.prototype.serialize = function(){
+	var columns = this.getColumns();
+	var columnNames = [];
+	for(var i = 0; i < columns.length; i++) {
+		columnNames.push({
+			localColumn: columns[i].localColumn.getName(),
+			foreignColumn: columns[i].foreignColumn.getName()
+		});
+	}
+	
+	return {
+		name: this.getName(),
+		comment: this.getComment(),
+		referencedTable: this.getReferencedTable(),
+		updateAction: this.getUpdateAction(),
+		deleteAction: this.getDeleteAction(),
+		matchFull: this.isMatchFull(),
+		deferrable: this.isDeferrable(),
+		deferred: this.isDeferred(),
+		columns: columnNames
+	};
 };
 
 // *****************************************************************************

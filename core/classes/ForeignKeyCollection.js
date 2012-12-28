@@ -50,3 +50,12 @@ ForeignKeyCollection.prototype.remove = function(foreignKey){
 	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyDropped: foreignKey});
 };
+
+ForeignKeyCollection.prototype.serialize = function() {
+	var foreignKeys = this.getForeignKeys();
+	var collection = [];
+	for(var i = 0; i < foreignKeys.length; i++) {
+		collection.push(foreignKeys[i].serialize());
+	}
+	return collection;
+};

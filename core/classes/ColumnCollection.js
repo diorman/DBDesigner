@@ -103,3 +103,12 @@ ColumnCollection.prototype.columnNameExists = function(name, columnModel){
 	if(columnWithSameName != null && columnWithSameName.getModel() != columnModel) return true;
 	return false;
 };
+
+ColumnCollection.prototype.serialize = function() {
+	var columns = this.getColumns();
+	var collection = [];
+	for(var i = 0; i < columns.length; i++) {
+		collection.push(columns[i].serialize());
+	}
+	return collection;
+};

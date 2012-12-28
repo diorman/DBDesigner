@@ -92,6 +92,10 @@ Column.prototype.getName = function(){
 	return this.getModel().getName();
 };
 
+Column.prototype.serialize = function(){
+	return this.getModel().serialize();
+};
+
 // *****************************************************************************
 
 
@@ -206,6 +210,18 @@ ColumnModel.prototype.getParent = function(){
 
 ColumnModel.prototype.drop = function(){
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+ColumnModel.prototype.serialize = function(){
+	return {
+		name: this.getName(),
+		comment: this.getName(),
+		type: this.getType(),
+		array: this.isArray(),
+		primaryKey: this.isPrimaryKey(),
+		notNull: this.isNotnull(),
+		defaultDef: this.getDefault()
+	};
 };
 
 // *****************************************************************************

@@ -49,3 +49,12 @@ UniqueKeyCollection.prototype.remove = function(uniqueKey){
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyDropped: uniqueKey});
 };
+
+UniqueKeyCollection.prototype.serialize = function() {
+	var uniqueKeys = this.getUniqueKeys();
+	var collection = [];
+	for(var i = 0; i < uniqueKeys.length; i++) {
+		collection.push(uniqueKeys[i].serialize());
+	}
+	return collection;
+};

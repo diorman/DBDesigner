@@ -2060,6 +2060,10 @@ Table.prototype.drop = function(){
 	this.getModel().drop();
 };
 
+Table.prototype.serialize = function(){
+	return this.getModel().serialize();
+};
+
 // *****************************************************************************
 
 TableModel = function() {
@@ -2161,6 +2165,19 @@ TableModel.prototype.drop = function(){
 	for(i = 0; i < foreignKeys.length; i++){ foreignKeys[i].drop(); }
 	for(i = 0; i < uniqueKeys.length; i++){ uniqueKeys[i].drop(); }
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+TableModel.prototype.serialize = function(){
+	return  {
+		name: this.getName(),
+		comment: this.getComment(),
+		withoutOIDS: this.getWithoutOIDS(),
+		collapsed: this.isCollapsed(),
+		position: this.getPosition(),
+		columns: this.getColumnCollection().serialize(),
+		foreignKeys: this.getForeignKeyCollection().serialize(),
+		uniqueKeys: this.getUniqueKeyCollection().serialize()
+	};
 };
 
 // *****************************************************************************
@@ -2386,6 +2403,10 @@ Column.prototype.getName = function(){
 	return this.getModel().getName();
 };
 
+Column.prototype.serialize = function(){
+	return this.getModel().serialize();
+};
+
 // *****************************************************************************
 
 
@@ -2500,6 +2521,18 @@ ColumnModel.prototype.getParent = function(){
 
 ColumnModel.prototype.drop = function(){
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+ColumnModel.prototype.serialize = function(){
+	return {
+		name: this.getName(),
+		comment: this.getName(),
+		type: this.getType(),
+		array: this.isArray(),
+		primaryKey: this.isPrimaryKey(),
+		notNull: this.isNotnull(),
+		defaultDef: this.getDefault()
+	};
 };
 
 // *****************************************************************************
@@ -2671,6 +2704,15 @@ TableCollection.prototype.dropSelectedTables = function(){
 	for(var i = 0; i < tables.length; i++){
 		tables[i].drop();
 	}
+};
+
+TableCollection.prototype.serialize = function() {
+	var tables = this.getTables();
+	var collection = [];
+	for(var i = 0; i < tables.length; i++) {
+		collection.push(tables[i].serialize());
+	}
+	return collection;
 };ConstraintHelper = {
 	constraintNameExists: function (name, constraintModel){
 		var constraintList = DBDesigner.app.getConstraintList();
@@ -2817,6 +2859,15 @@ ColumnCollection.prototype.columnNameExists = function(name, columnModel){
 	if(columnWithSameName != null && columnWithSameName.getModel() != columnModel) return true;
 	return false;
 };
+
+ColumnCollection.prototype.serialize = function() {
+	var columns = this.getColumns();
+	var collection = [];
+	for(var i = 0; i < columns.length; i++) {
+		collection.push(columns[i].serialize());
+	}
+	return collection;
+};
 ForeignKeyCollection = function(){
 	this._foreignKeys = [];
 };
@@ -2867,6 +2918,15 @@ ForeignKeyCollection.prototype.remove = function(foreignKey){
 	foreignKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {foreignKeyDropped: foreignKey});
+};
+
+ForeignKeyCollection.prototype.serialize = function() {
+	var foreignKeys = this.getForeignKeys();
+	var collection = [];
+	for(var i = 0; i < foreignKeys.length; i++) {
+		collection.push(foreignKeys[i].serialize());
+	}
+	return collection;
 };ForeignKey = function() {
 	//If the constructor gets a ForeignKeyModel object as first parameter, it is set as the model
 	//otherwise a new model is created
@@ -2962,6 +3022,10 @@ ForeignKey.prototype.alterForeignKey = function(){
 
 ForeignKey.prototype.drop = function(){
 	this.getModel().drop();
+};
+
+ForeignKey.prototype.serialize = function(){
+	return this.getModel().serialize();
 };
 
 // *****************************************************************************
@@ -3192,6 +3256,29 @@ ForeignKeyModel.prototype.drop = function(){
 		referencedTable.unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+ForeignKeyModel.prototype.serialize = function(){
+	var columns = this.getColumns();
+	var columnNames = [];
+	for(var i = 0; i < columns.length; i++) {
+		columnNames.push({
+			localColumn: columns[i].localColumn.getName(),
+			foreignColumn: columns[i].foreignColumn.getName()
+		});
+	}
+	
+	return {
+		name: this.getName(),
+		comment: this.getComment(),
+		referencedTable: this.getReferencedTable(),
+		updateAction: this.getUpdateAction(),
+		deleteAction: this.getDeleteAction(),
+		matchFull: this.isMatchFull(),
+		deferrable: this.isDeferrable(),
+		deferred: this.isDeferred(),
+		columns: columnNames
+	};
 };
 
 // *****************************************************************************
@@ -3959,6 +4046,15 @@ UniqueKeyCollection.prototype.remove = function(uniqueKey){
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
 	this.trigger(Collection.Event.COLLECTION_CHANGED, {uniqueKeyDropped: uniqueKey});
+};
+
+UniqueKeyCollection.prototype.serialize = function() {
+	var uniqueKeys = this.getUniqueKeys();
+	var collection = [];
+	for(var i = 0; i < uniqueKeys.length; i++) {
+		collection.push(uniqueKeys[i].serialize());
+	}
+	return collection;
 };UniqueKey = function(){
 	//If the constructor gets a UniqueKeyModel object as first parameter, it is set as the model
 	//otherwise a new model is created
@@ -3988,6 +4084,10 @@ UniqueKey.prototype.getParent = function(){
 
 UniqueKey.prototype.drop = function(){
 	this.getModel().drop();
+};
+
+UniqueKey.prototype.serialize = function(){
+	return this.getModel().serialize();
 };
 
 // *****************************************************************************
@@ -4063,6 +4163,19 @@ UniqueKeyModel.prototype.drop = function(){
 		columns[i].unbind(DBObject.Event.DBOBJECT_DROPPED, this.drop, this);
 	}
 	this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'dropped'});
+};
+
+UniqueKeyModel.prototype.serialize = function(){
+	var columns = this.getColumns();
+	var columnNames = [];
+	for(var i = 0; i < columns.length; i++) {
+		columnNames.push(columns[i].getName());
+	}
+	return {
+		name: this.getName(),
+		comment: this.getComment(),
+		columns: columnNames
+	};
 };
 UniqueKeyDialog = function() {	
 	this.setModel(new UniqueKeyDialogModel());
