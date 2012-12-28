@@ -217,6 +217,7 @@ div.canvas div.ui-selected, div.canvas div.ui-selecting{
 div.canvas div.ui-selected div.header a.button { visibility: visible;}
 div.canvas div.db-table-collapsed div.column-container {display: none;}
 
+div.canvas div.db-table div.column-container div.db-column { border-bottom: 1px solid #fff; }
 div.canvas div.db-table div.column-container div.db-column span.definition{
     color: #000000;
     line-height: 16px;
