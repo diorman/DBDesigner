@@ -63,9 +63,9 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 			foreignKeyModel.getParent().getForeignKeyCollection().add(foreignKey);
 		} else foreignKeyModel.stopEditing();
 		
-		this.getUI().close();
+		return true;
 	}
-	
+	return false;
 };
 
 ForeignKeyDialog.prototype.validateForm = function(form){
@@ -236,8 +236,7 @@ $.extend(ForeignKeyDialogUI.prototype, DBObjectDialogUI);
 
 ForeignKeyDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('#foreignkey-dialog_cancel').click($.proxy(this.close, this));
-	dom.find('#foreignkey-dialog_save').click($.proxy(this.save, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	dom.find('#foreignkey-dialog_foreignkey-references').change($.proxy(this.referencedTableChanged, this));
 	dom.find('#foreignkey-dialog_foreignkey-deferrable').click(this.deferrableChange);
 	dom.find('#foreignkey-dialog_addcolumns').click($.proxy(this.addSelectedColumns, this));
@@ -294,7 +293,8 @@ ForeignKeyDialogUI.prototype.open = function(title){
 	
 };
 
-ForeignKeyDialogUI.prototype.save = function(){
+ForeignKeyDialogUI.prototype.save = function(closeWindow){
+	closeWindow = (typeof closeWindow == 'undefined')? true : closeWindow;
 	this.cleanErrors();
 	var form = {
 		name: $.trim($('#foreignkey-dialog_foreignkey-name').val()),
@@ -307,7 +307,9 @@ ForeignKeyDialogUI.prototype.save = function(){
 		comment: $.trim($('#foreignkey-dialog_foreignkey-comment').val()),
 		columns: this.getController().getSelectedColumns()
 	};
-	this.getController().saveForeignKey(form);
+	var saveSuccess = this.getController().saveForeignKey(form);
+	if(saveSuccess && closeWindow) this.close();
+	return saveSuccess;
 };
 
 ForeignKeyDialogUI.prototype.referencedTableChanged = function(event){
@@ -414,4 +416,17 @@ ForeignKeyDialogUI.prototype.removeSelectedColumns = function(event){
 	var controller = this.getController();
 	controller.removeSelectedColumns($(event.target).data('index'));
 	if(controller.getSelectedColumns().length == 0) $('#foreignkey-dialog_foreignkey-references').prop('disabled', false);
+};
+
+ForeignKeyDialogUI.prototype.submitButtonClicked = function(event){
+	if(event.target.id == 'foreignkey-dialog_cancel') {this.close();}
+	else{
+		var saveSuccess = this.save(false);
+		if(event.target.id == 'foreignkey-dialog_save' && saveSuccess) {this.close();}
+		else if(event.target.id == 'foreignkey-dialog_save2' && saveSuccess) {
+			var controller = this.getController();
+			var table = controller.getModel().getDBObjectModel().getParent();
+			controller.createForeignKey(table);
+		}
+	}
 };

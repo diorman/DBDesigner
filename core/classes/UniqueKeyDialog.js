@@ -38,9 +38,9 @@ UniqueKeyDialog.prototype.saveUniqueKey = function(form){
 			uniqueKeyModel.getParent().getUniqueKeyCollection().add(new UniqueKey(uniqueKeyModel));
 		}
 		else uniqueKeyModel.stopEditing();
-		
-		this.getUI().close();
+		return true;
 	}
+	return false;
 };
 
 UniqueKeyDialog.prototype.validateForm = function(form){
@@ -178,9 +178,8 @@ $.extend(UniqueKeyDialogUI.prototype, DBObjectDialogUI);
 
 UniqueKeyDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('#uniquekey-dialog_cancel').click($.proxy(this.close, this));
-	dom.find('#uniquekey-dialog_save').click($.proxy(this.save, this));
 	dom.find('input.update-columns').click($.proxy(this.updateColumns, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
 };
@@ -201,7 +200,8 @@ UniqueKeyDialogUI.prototype.open = function(title){
 	}
 };
 
-UniqueKeyDialogUI.prototype.save = function(){
+UniqueKeyDialogUI.prototype.save = function(closeWindow){
+	closeWindow = (typeof closeWindow == 'undefined')? true : closeWindow;
 	this.cleanErrors();
 	
 	var form = {
@@ -209,7 +209,9 @@ UniqueKeyDialogUI.prototype.save = function(){
 		comment: $.trim($('#uniquekey-dialog_uniquekey-comment').val()),
 		columns: this.getController().getSelectedColumns()
 	};
-	this.getController().saveUniqueKey(form);
+	var saveSuccess = this.getController().saveUniqueKey(form);
+	if(saveSuccess && closeWindow) this.close();
+	return saveSuccess;
 };
 
 UniqueKeyDialogUI.prototype.updateSelectedColumns = function(){
@@ -243,5 +245,18 @@ UniqueKeyDialogUI.prototype.updateColumns = function(event){
 	} else if(event.target.id == 'uniquekey-dialog_remove-columns'){
 		columns = $('#uniquekey-dialog_selected-columns').val();
 		if($.isArray(columns)) this.getController().removeColumns(columns);
+	}
+};
+
+UniqueKeyDialogUI.prototype.submitButtonClicked = function(event){
+	if(event.target.id == 'uniquekey-dialog_cancel') {this.close();}
+	else{
+		var saveSuccess = this.save(false);
+		if(event.target.id == 'uniquekey-dialog_save' && saveSuccess) {this.close();}
+		else if(event.target.id == 'uniquekey-dialog_save2' && saveSuccess) {
+			var controller = this.getController();
+			var table = controller.getModel().getDBObjectModel().getParent();
+			controller.createUniqueKey(table);
+		}
 	}
 };

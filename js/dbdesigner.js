@@ -3543,9 +3543,9 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 			foreignKeyModel.getParent().getForeignKeyCollection().add(foreignKey);
 		} else foreignKeyModel.stopEditing();
 		
-		this.getUI().close();
+		return true;
 	}
-	
+	return false;
 };
 
 ForeignKeyDialog.prototype.validateForm = function(form){
@@ -3716,8 +3716,7 @@ $.extend(ForeignKeyDialogUI.prototype, DBObjectDialogUI);
 
 ForeignKeyDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('#foreignkey-dialog_cancel').click($.proxy(this.close, this));
-	dom.find('#foreignkey-dialog_save').click($.proxy(this.save, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	dom.find('#foreignkey-dialog_foreignkey-references').change($.proxy(this.referencedTableChanged, this));
 	dom.find('#foreignkey-dialog_foreignkey-deferrable').click(this.deferrableChange);
 	dom.find('#foreignkey-dialog_addcolumns').click($.proxy(this.addSelectedColumns, this));
@@ -3774,7 +3773,8 @@ ForeignKeyDialogUI.prototype.open = function(title){
 	
 };
 
-ForeignKeyDialogUI.prototype.save = function(){
+ForeignKeyDialogUI.prototype.save = function(closeWindow){
+	closeWindow = (typeof closeWindow == 'undefined')? true : closeWindow;
 	this.cleanErrors();
 	var form = {
 		name: $.trim($('#foreignkey-dialog_foreignkey-name').val()),
@@ -3787,7 +3787,9 @@ ForeignKeyDialogUI.prototype.save = function(){
 		comment: $.trim($('#foreignkey-dialog_foreignkey-comment').val()),
 		columns: this.getController().getSelectedColumns()
 	};
-	this.getController().saveForeignKey(form);
+	var saveSuccess = this.getController().saveForeignKey(form);
+	if(saveSuccess && closeWindow) this.close();
+	return saveSuccess;
 };
 
 ForeignKeyDialogUI.prototype.referencedTableChanged = function(event){
@@ -3894,6 +3896,19 @@ ForeignKeyDialogUI.prototype.removeSelectedColumns = function(event){
 	var controller = this.getController();
 	controller.removeSelectedColumns($(event.target).data('index'));
 	if(controller.getSelectedColumns().length == 0) $('#foreignkey-dialog_foreignkey-references').prop('disabled', false);
+};
+
+ForeignKeyDialogUI.prototype.submitButtonClicked = function(event){
+	if(event.target.id == 'foreignkey-dialog_cancel') {this.close();}
+	else{
+		var saveSuccess = this.save(false);
+		if(event.target.id == 'foreignkey-dialog_save' && saveSuccess) {this.close();}
+		else if(event.target.id == 'foreignkey-dialog_save2' && saveSuccess) {
+			var controller = this.getController();
+			var table = controller.getModel().getDBObjectModel().getParent();
+			controller.createForeignKey(table);
+		}
+	}
 };UniqueKeyCollection = function(){
 	this._uniqueKeys = [];
 };
@@ -4088,9 +4103,9 @@ UniqueKeyDialog.prototype.saveUniqueKey = function(form){
 			uniqueKeyModel.getParent().getUniqueKeyCollection().add(new UniqueKey(uniqueKeyModel));
 		}
 		else uniqueKeyModel.stopEditing();
-		
-		this.getUI().close();
+		return true;
 	}
+	return false;
 };
 
 UniqueKeyDialog.prototype.validateForm = function(form){
@@ -4228,9 +4243,8 @@ $.extend(UniqueKeyDialogUI.prototype, DBObjectDialogUI);
 
 UniqueKeyDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
-	dom.find('#uniquekey-dialog_cancel').click($.proxy(this.close, this));
-	dom.find('#uniquekey-dialog_save').click($.proxy(this.save, this));
 	dom.find('input.update-columns').click($.proxy(this.updateColumns, this));
+	dom.find('div.submit-buttons').on('click', 'input', $.proxy(this.submitButtonClicked, this));
 	this.setDialogCloseEvent();
 	this.setKeyPressEvent();
 };
@@ -4251,7 +4265,8 @@ UniqueKeyDialogUI.prototype.open = function(title){
 	}
 };
 
-UniqueKeyDialogUI.prototype.save = function(){
+UniqueKeyDialogUI.prototype.save = function(closeWindow){
+	closeWindow = (typeof closeWindow == 'undefined')? true : closeWindow;
 	this.cleanErrors();
 	
 	var form = {
@@ -4259,7 +4274,9 @@ UniqueKeyDialogUI.prototype.save = function(){
 		comment: $.trim($('#uniquekey-dialog_uniquekey-comment').val()),
 		columns: this.getController().getSelectedColumns()
 	};
-	this.getController().saveUniqueKey(form);
+	var saveSuccess = this.getController().saveUniqueKey(form);
+	if(saveSuccess && closeWindow) this.close();
+	return saveSuccess;
 };
 
 UniqueKeyDialogUI.prototype.updateSelectedColumns = function(){
@@ -4293,6 +4310,19 @@ UniqueKeyDialogUI.prototype.updateColumns = function(event){
 	} else if(event.target.id == 'uniquekey-dialog_remove-columns'){
 		columns = $('#uniquekey-dialog_selected-columns').val();
 		if($.isArray(columns)) this.getController().removeColumns(columns);
+	}
+};
+
+UniqueKeyDialogUI.prototype.submitButtonClicked = function(event){
+	if(event.target.id == 'uniquekey-dialog_cancel') {this.close();}
+	else{
+		var saveSuccess = this.save(false);
+		if(event.target.id == 'uniquekey-dialog_save' && saveSuccess) {this.close();}
+		else if(event.target.id == 'uniquekey-dialog_save2' && saveSuccess) {
+			var controller = this.getController();
+			var table = controller.getModel().getDBObjectModel().getParent();
+			controller.createUniqueKey(table);
+		}
 	}
 };
 DBDesigner.Action = {
