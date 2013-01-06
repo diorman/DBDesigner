@@ -1,9 +1,5 @@
 <?php
 
-	/**
-	 * English language file for phpPgAdmin.
-	 */
-
 	// Language and character set
 
 	
@@ -67,65 +63,5 @@
 	$lang['stralteruniq'] = 'Alter unique key';
 	$lang['struniquekeys'] = 'Unique Keys';
 	$lang['strsaveandnew'] = 'Save & New';
-	/*
-		'strname',
-		'strok',
-		'stroptions',
-		'strcomment',
-		'strcancel',
-		'strcreate',
-		'strcreatetable',
-		'strtableneedsname',
-		'straddcolumn',
-		'straddpk',
-		'straddfk',
-		'stradduniq',
-		'straddcheck',
-		'strsave',
-		'strdrop',
-		'strtype',
-		'strprimarykey',
-		'struniquekey',
-		'strnotnull',
-		'strlength',
-		'strdefault',
-		'stradd',
-		'strproperties',
-		'stralter',
-		'strcolneedsname',
-		'strcolumns',	
-		'strreferences',		
-		'strconfdroptable',	
-		'strconfdropcolumn',	
-		'strlogin',
-		'strfkneedscols',
-		'strdelete',
-			
-			'strarray',
-			'straltertable',
-			'straltercolumn',
-			'stralterforeignkey',
-			'strtableexists',
-			'strcolexists',
-			'strsort',
-			'strinvalididentifier',
-			'strforeignkeys',
-			'strlocal',
-			'strreferenced',
-			'strreferencing',
-			'strlocalcolumn',
-			'strconfdroptables',
-			'strconfdropforeignkey',
-			'strdropobject',
-			'strsavingchanges',
-			'strloadingschema',
-			'strloggingout',
-			'strajaxerrormsg',
-			'strreverseengineer',
-			'strforwardengineer',
-			'strconstraintexists',
-			'strswitchuser',
-			'straligntables',
-			'strconstraintneedsname',
-		 */
-
+	$lang['strsaving'] = 'Saving...';
+	$lang['strerdiagramsaved'] = 'E-R Diagram saved.';

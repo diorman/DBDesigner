@@ -35,6 +35,7 @@ function concatJS($c) {
 		'js/jquery.multidraggable.js',
 
 		//classes
+		'core/classes/Message.js',
 		'core/classes/Ajax.js',
 		'core/classes/JSONLoader.js',
 		'core/classes/EventDispatcher.js',

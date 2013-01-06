@@ -112,6 +112,10 @@ div.object-detail div.title-bar a.collapse-button span {
 	margin-top: -8px;
 	margin-left: -8px;
 }
+div.object-detail div.buttons-placeholder {
+	margin: 2px 0;
+	text-align: right;
+}
 div.object-detail div.title-bar a.collapse-button:active {top: 4px;}
 div.object-detail-tabs { height: 100%; }
 div.object-detail-tabs div.ui-tabs-panel{ height: 190px; padding: 2px 0 0 0; }
@@ -126,6 +130,7 @@ div.object-detail-tabs div.ui-tabs-panel{ height: 190px; padding: 2px 0 0 0; }
 #od-tab-properties div.buttons-placeholder {
 	margin-left: 210px;
 	margin-top: 20px;
+	text-align: left;
 }
 #od-tab-properties dd{ clear: right;}
 #od-tab-properties dt, #od-tab-properties dd{
@@ -162,6 +167,7 @@ div.object-detail th { font-weight: bold; background-color: #E6E6CC}
 div.object-detail th.check {width: 30px;}
 div.object-detail td, div.object-detail th {border: 2px solid #E6E6CC; text-align: center;}
 div.object-detail td span.ui-icon { margin-left: 7px; }
+
 /* Database Table */
 div.canvas div.db-table {
 	border: 2px solid #E6E6CC;
@@ -336,3 +342,21 @@ div.foreignkey-dialog table th{
 div.foreignkey-dialog table th, div.foreignkey-dialog table td { border: 1px solid #E6E6CC; }
 div.foreignkey-dialog table th.remove { width: 38px;}
 svg {position: absolute; top: 0; left: 0;}
+
+/* Overlay */
+div.ui-widget-overlay { z-index: 1000; }
+
+/* Tooltip */
+div.ui-tooltip { z-index: 100; }
+
+/* Message */
+div.message-box { 
+	z-index: 9999;
+	position: absolute;
+	top: 25px;
+	left: 50%;
+	padding: 5px 15px;
+	border: 1px solid #E59700 /*#E59700*/;
+	background-color: #FCEFA1;/*#FCEFA1*/;
+	cursor: default;
+}

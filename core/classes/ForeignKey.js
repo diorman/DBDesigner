@@ -70,6 +70,8 @@ ForeignKey.prototype.modelPropertyChanged = function(event){
 				event.newValue.bind(Table.Event.VIEW_BOX_CHANGED, this.onTableViewBoxChanged, this);
 			}
 			break;
+		case 'name':
+			this.getUI().updateName();
 		default:
 			this.modelChanged(event.property, true);
 			break;
@@ -398,6 +400,7 @@ ForeignKeyModel.prototype.serialize = function(){
 ForeignKeyUI = function(controller){
 	this.setController(controller);
 	this.updateView();
+	this.updateName();
 };
 $.extend(ForeignKeyUI.prototype, ComponentUI);
 
@@ -465,7 +468,7 @@ ForeignKeyUI.prototype.updateView = function(){
                 }
             }
             this.drawDiamond(i2);
-			this.drawSvgHelper(p1);
+			this.drawSvgHelper(p2);
         }
 	}
 	this.drawConnector(pointsX, pointsY);
@@ -677,4 +680,12 @@ ForeignKeyUI.prototype.drop = function(){
 	$(this.getConnector()).remove();
 	$(this.getDiamond()).remove();
 	if(Vector.type == Vector.SVG) $(this.getSvgHelper()).remove();
+};
+
+ForeignKeyUI.prototype.updateName = function(){
+	if(Vector.type == Vector.SVG){
+        this.getConnector().setAttribute('title', this.getController().getName());
+    }else{
+        this.getConnector().title = this.getController().getName();
+    }
 };

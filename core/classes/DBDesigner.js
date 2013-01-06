@@ -14,13 +14,12 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
-	//this.toolBar.setAction(globals.Action.ADD_TABLE);
-	
 };
 
 DBDesigner.init = function(){
 	DBDesigner.app = new DBDesigner();
 	JSONLoader.load(DBDesigner.erdiagramStructure);
+	DBDesigner.app.toolBar.setDisabled(false);
 };
 
 
@@ -30,7 +29,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 			DBDesigner.app.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.SAVE:
-			DBDesigner.app.save();
+			Ajax.sendRequest(Ajax.Action.SAVE);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
@@ -230,6 +229,7 @@ DBDesigner.prototype.alterTable = function(event){
 
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('body')
+		.tooltip({track: true})
 		.on('hover', 'a.button', function(event){ 
 			var $this = $(this);
 			if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
@@ -240,22 +240,10 @@ DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
 };
 
-DBDesigner.prototype.serializeForeignKeys = function(){
-	var foreignKeys = [];
-	var constraints = this.getConstraintList();
-	for(var i = 0; i < constraints.length; i++){
-		if(constraints[i] instanceof ForeignKey) {
-			foreignKeys.push(constraints[i].serialize());
-		}
-	}
-	return foreignKeys;
-};
-
-DBDesigner.prototype.save = function(){
-	var tables = DBDesigner.app.getTableCollection().serialize();
-	
-	Ajax.sendRequest(Ajax.Action.SAVE, $.toJSON({
-		version: '1.0',
-		tables: tables
-	}));
+DBDesigner.prototype.setDisabled = function(b){
+	if(b) {
+		if(!this._$overlay) { this._$overlay = $('<div class="ui-widget-overlay"></div>'); }
+		$('body').append(this._$overlay);
+	} else if(this._$overlay) { this._$overlay.detach(); }
+	this.toolBar.setDisabled(b);
 };

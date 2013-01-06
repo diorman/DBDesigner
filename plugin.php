@@ -807,7 +807,9 @@ class DBDesigner extends Plugin {
 			'strmovedown',
 			'struniqneedscols',
 			'stralteruniq',
-			'strempty'
+			'strempty',
+			'strsaving',
+			'strerdiagramsaved'
 		);
 		
 		$js_lang = array();

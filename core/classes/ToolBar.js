@@ -28,12 +28,29 @@ ToolBar.prototype.getActionState = function() {
 	return this.getModel().getActionState();
 };
 
+ToolBar.prototype.setDisabled = function(b) {
+	return this.getModel().setDisabled(b);
+};
+
+ToolBar.prototype.isDisabled = function() {
+	return this.getModel().isDisabled();
+};
+
 ToolBar.prototype.modelPropertyChanged = function(event) {
-	if(event.property == 'action') {
-		this.getUI().updateCurrentAction();
-		this.trigger(ToolBar.Event.ACTION_CHANGED, {action: event.newValue});
+	switch(event.property){
+		case 'action':
+			this.getUI().updateCurrentAction();
+			this.trigger(ToolBar.Event.ACTION_CHANGED, {action: event.newValue});
+			break;
+		case 'actionState':
+			if(!this.isDisabled()){
+				this.getUI().updateActionState();
+			}
+			break;
+		case 'disabled':
+			this.getUI().updateStatus();
+			break;
 	}
-	else if(event.property == 'actionState') this.getUI().updateActionState();	
 }
 
 
@@ -84,6 +101,19 @@ ToolBarModel.prototype.getActionState = function() {
 	return this._actionState;
 };
 
+ToolBarModel.prototype.isDisabled = function() {
+	if(typeof this._disabled == 'undefined'){ this._disabled = true; }
+	return this._disabled;
+};
+
+ToolBarModel.prototype.setDisabled = function(b) {
+	var old = this.isDisabled();
+	if(old != b){
+		this._disabled = b;
+		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'disabled', oldValue: old, newValue: b});	
+	}
+};
+
 
 // *****************************************************************************
 
@@ -100,6 +130,7 @@ ToolBarUI = function(controller){
 	this.init();
 	this.updateCurrentAction();
 	this.updateActionState();
+	this.updateStatus();
 	this.getDom().appendTo('body');
 };
 $.extend(ToolBarUI.prototype, ComponentUI);
@@ -165,6 +196,17 @@ ToolBarUI.prototype.getCssClass = function(action) {
 			return 'save';
 		default:
 			return 'select';
+	}
+};
+
+ToolBarUI.prototype.updateStatus = function() {
+	var disabled = this.getController().isDisabled();
+	var $links = this.getDom().find('a');
+	if(disabled){
+		$links.addClass('ui-state-disabled');
+	} else {
+		$links.removeClass('ui-state-disabled');
+		this.updateActionState();
 	}
 };
 
