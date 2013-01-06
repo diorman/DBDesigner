@@ -98,6 +98,7 @@ class DBDesigner extends Plugin {
 			'tree',
 			'drop',
 			'open',
+			'ajaxSave'
 		);
 		return $actions;
 	}
@@ -661,14 +662,15 @@ class DBDesigner extends Plugin {
 		
 		$templateManager = $this->getTemplateManager();
 		
-		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/reset.css" />';
-		$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::jqueryUiTheme.'" />';
-		$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::theme.'" />';
+		//$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/reset.css" />';
+		//$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::jqueryUiTheme.'" />';
+		//$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::theme.'" />';
 		
-		$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jquery.'"></script>';
-		$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jqueryUi.'"></script>';
-		$scripts .= '<script type="text/javascript" src="plugins/DBDesigner/js/jquery.multidraggable.js"></script>';
-		$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::dbdesignerJS.'"></script>';
+		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jquery.'"></script>';
+		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jqueryUi.'"></script>';
+		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/dbdesigner.css" />';
+		$scripts .= '<script type="text/javascript" src="plugins/DBDesigner/js/dbdesigner.js"></script>';
+		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::dbdesignerJS.'"></script>';
 		
 		ob_start(); ?>
 			<script type="text/javascript">
@@ -681,6 +683,7 @@ class DBDesigner extends Plugin {
 				DBDesigner.schema = "<?php echo $diagram->pgSchema; ?>";
 				DBDesigner.erdiagramId = "<?php echo $diagram->id; ?>";
 				DBDesigner.templateManager = <?php echo $templateManager; ?>;
+				DBDesigner.erdiagramStructure = <?php echo $diagram->getStructure(); ?>;
 				
 				//Disable the default stylesheet
 				$(function(){
@@ -830,5 +833,18 @@ class DBDesigner extends Plugin {
 			return $value->decode($data);
 		}
 		return json_decode($data);
+	}
+	
+	function ajaxSave(){
+		$diagramId = intval($_POST['erdiagram_id']);
+		$ret = ERDiagram::updateERDiagramStructure($diagramId, $_POST['data']);
+		$this->sendAjaxResponse($ret);
+	}
+	
+	function sendAjaxResponse($data = NULL){
+		$response = new stdClass();
+		$response->action = $_POST['action'];
+		if(!is_null($data)){ $response->data = $data; }
+		echo $this->jsonEncode($response);
 	}
 }

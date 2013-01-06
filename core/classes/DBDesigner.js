@@ -1,5 +1,5 @@
 
-DBDesigner = function(data){
+DBDesigner = function(){
 	if(!Vector.checkSupport()){
         $('<p></p>').text(DBDesigner.lang.strnographics).appendTo('body');
         return;
@@ -20,6 +20,7 @@ DBDesigner = function(data){
 
 DBDesigner.init = function(){
 	DBDesigner.app = new DBDesigner();
+	JSONLoader.load(DBDesigner.erdiagramStructure);
 };
 
 
@@ -27,6 +28,10 @@ DBDesigner.prototype.doAction = function(action, extra) {
 	switch(action){	
 		case DBDesigner.Action.ADD_TABLE:
 			DBDesigner.app.canvas.setCapturingPlacement(true);
+			break;
+		case DBDesigner.Action.SAVE:
+			DBDesigner.app.save();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
 			DBDesigner.app.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
@@ -233,4 +238,24 @@ DBDesigner.prototype.setGlobalUIBehavior = function(){
 
 DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
+};
+
+DBDesigner.prototype.serializeForeignKeys = function(){
+	var foreignKeys = [];
+	var constraints = this.getConstraintList();
+	for(var i = 0; i < constraints.length; i++){
+		if(constraints[i] instanceof ForeignKey) {
+			foreignKeys.push(constraints[i].serialize());
+		}
+	}
+	return foreignKeys;
+};
+
+DBDesigner.prototype.save = function(){
+	var tables = DBDesigner.app.getTableCollection().serialize();
+	
+	Ajax.sendRequest(Ajax.Action.SAVE, $.toJSON({
+		version: '1.0',
+		tables: tables
+	}));
 };

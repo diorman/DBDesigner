@@ -11,14 +11,14 @@
 		const table = 'erdiagrams';
 
 		
-		const dbdesignerJS = 'plugins/DBDesigner/js/dbdesigner.js';
+		//const dbdesignerJS = 'plugins/DBDesigner/js/dbdesigner.js';
 
-		const jquery = 'plugins/DBDesigner/js/jquery-1.8.3.min.js';
+		const jquery = 'jquery-1.8.3.min.js';
 
-		const jqueryUi = 'plugins/DBDesigner/js/jquery-ui-1.9.2.custom.min.js';
+		const jqueryUi = 'jquery-ui-1.9.2.custom.min.js';
 
-		const jqueryUiTheme = 'plugins/DBDesigner/css/jqueryui/jquery-ui-1.9.2.custom.min.css';
+		const jqueryUiTheme = 'jquery-ui-1.9.2.custom.min.css';
 
-		const theme = 'plugins/DBDesigner/css/dbdesigner.css';
+		const theme = '_dbdesigner.css';
 
 	}

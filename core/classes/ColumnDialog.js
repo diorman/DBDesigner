@@ -28,23 +28,21 @@ ColumnDialog.prototype.saveColumn = function(form){
 	var action = model.getAction();
 	
 	if(this.validateForm(form)){
-		var flags = 0;
-		
+
 		if(action == DBDesigner.Action.ALTER_COLUMN) columnModel.startEditing();
-		
-		if(form.isArray) flags |= ColumnModel.Flag.ARRAY;
-		if(form.isPrimaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
-		if(columnModel.isUniqueKey()) flags |= ColumnModel.Flag.UNIQUE_KEY;
-		if(form.isNotnull) flags |= ColumnModel.Flag.NOTNULL;
-		if(columnModel.isForeignKey()) flags |= ColumnModel.Flag.FOREIGN_KEY;
-		
 		
 		columnModel.setName(form.name);
 		columnModel.setType(form.type);
 		columnModel.setLength(form.length);
 		columnModel.setDefault(form.def);
 		columnModel.setComment(form.comment);
-		columnModel.setFlags(flags);
+		columnModel.setColumnFlags({
+			array: form.isArray,
+			primaryKey: form.isPrimaryKey,
+			uniqueKey: columnModel.isUniqueKey(),
+			notNull: form.isNotNull,
+			foreignKey: columnModel.isForeignKey()
+		});
 		
 		
 		if(action == DBDesigner.Action.ADD_COLUMN){
@@ -137,7 +135,7 @@ ColumnDialogUI.prototype.open = function(title){
 		$('#column-dialog_column-comment').val(columnModel.getComment());
 		$('#column-dialog_column-array').prop({checked: columnModel.isArray(), disabled: false});
 		$('#column-dialog_column-primarykey').prop('checked', columnModel.isPrimaryKey());
-		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotnull());
+		$('#column-dialog_column-notnull').prop('checked', columnModel.isNotNull());
 		$('#column-dialog_column-default').val(columnModel.getDefault());
 		
 		if(columnModel.isForeignKey()){
@@ -173,7 +171,7 @@ ColumnDialogUI.prototype.save = function(closeWindow){
 		type: $.trim($('#column-dialog_column-type').val()),
 		isArray: $('#column-dialog_column-array').prop('checked'),
 		isPrimaryKey: $('#column-dialog_column-primarykey').prop('checked'),
-		isNotnull: $('#column-dialog_column-notnull').prop('checked'),
+		isNotNull: $('#column-dialog_column-notnull').prop('checked'),
 		def: $.trim($('#column-dialog_column-default').val()),
 		comment: $.trim($('#column-dialog_column-comment').val())
 	};

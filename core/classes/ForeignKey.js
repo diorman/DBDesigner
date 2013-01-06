@@ -20,6 +20,10 @@ ForeignKey = function() {
 
 $.extend(ForeignKey.prototype, DBObject);
 
+ForeignKey.createFromJSON = function(json, parent, referencedTable){
+	return new ForeignKey(ForeignKeyModel.createFromJSON(json, parent, referencedTable));
+};
+
 ForeignKey.prototype.getParent = function(){
 	return this.getModel().getParent();
 };
@@ -103,6 +107,43 @@ ForeignKey.prototype.serialize = function(){
 
 ForeignKeyModel = function(){};
 $.extend(ForeignKeyModel.prototype, DBObjectModel);
+
+ForeignKeyModel.createFromJSON = function(json, parent, referencedTable){
+	var model = new ForeignKeyModel();
+	var localColumnCollection = parent.getColumnCollection();
+	var foreignColumnCollection = referencedTable.getColumnCollection();
+	
+	var columns = [];
+	for(var i = 0; i < json.columns.length; i++){
+		columns.push({
+			localColumn: localColumnCollection.getColumnByName(json.columns[i].localColumn),
+			foreignColumn: foreignColumnCollection.getColumnByName(json.columns[i].foreignColumn)
+		});
+	}
+	
+	model.setParent(parent);
+	model.setReferencedTable(referencedTable);
+	model.setName(json.name);
+	model.setComment(json.comment);	
+	model.setDeleteAction(json.deleteAction);
+	model.setUpdateAction(json.updateAction);
+	model.setColumns(columns);
+	model.setForeignKeyFlags({
+		deferrable: json.deferrable,
+		deferred: json.deferred,
+		matchFull: json.matchFull
+	});
+	
+	return model;
+};
+
+ForeignKeyModel.prototype.setForeignKeyFlags = function(attrs){
+	var flags = 0;
+	if(attrs.deferrable) flags |= ForeignKeyModel.Flag.DEFERRABLE;
+	if(attrs.deferred) flags |= ForeignKeyModel.Flag.DEFERRED;
+	if(attrs.matchFull) flags |= ForeignKeyModel.Flag.MATCH_FULL;
+	this.setFlags(flags);
+};
 
 ForeignKeyModel.prototype.setParent = function(table){
 	this._parent = table;
@@ -342,7 +383,7 @@ ForeignKeyModel.prototype.serialize = function(){
 	return {
 		name: this.getName(),
 		comment: this.getComment(),
-		referencedTable: this.getReferencedTable(),
+		referencedTable: this.getReferencedTable().getName(),
 		updateAction: this.getUpdateAction(),
 		deleteAction: this.getDeleteAction(),
 		matchFull: this.isMatchFull(),

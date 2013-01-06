@@ -59,3 +59,14 @@ ForeignKeyCollection.prototype.serialize = function() {
 	}
 	return collection;
 };
+
+ForeignKeyCollection.prototype.loadJSON = function(json, parent) {
+	var referencedTable;
+	var tableCollection = DBDesigner.app.getTableCollection();
+	for(var i = 0; i < json.length; i++) {
+		referencedTable = tableCollection.getTableByName(json[i].referencedTable);
+		if(referencedTable != null){
+			this.add(ForeignKey.createFromJSON(json[i], parent, referencedTable));
+		}
+	}
+};

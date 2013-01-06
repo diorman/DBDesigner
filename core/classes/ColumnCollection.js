@@ -112,3 +112,9 @@ ColumnCollection.prototype.serialize = function() {
 	}
 	return collection;
 };
+
+ColumnCollection.prototype.loadJSON = function(json, parent) {
+	for(var i = 0; i < json.length; i++) {
+		this.add(Column.createFromJSON(json[i], parent));
+	}
+};

@@ -118,3 +118,23 @@ TableCollection.prototype.serialize = function() {
 	}
 	return collection;
 };
+
+TableCollection.prototype.loadJSON = function(json){
+	var foreignKeyTables = [];
+	var table;
+	var i;
+	
+	for(i = 0; i < json.length; i++) {
+		table = Table.createFromJSON(json[i]);
+		this.add(table);
+		if(json[i].foreignKeys && json[i].foreignKeys.length > 0){
+			foreignKeyTables.push({table: table, fkJSON: json[i].foreignKeys});
+		}
+	}
+	// Create foreign keys after loading all tables
+	for(i = 0; i < foreignKeyTables.length; i++) {
+		foreignKeyTables[i].table.getForeignKeyCollection()
+			.loadJSON(foreignKeyTables[i].fkJSON, foreignKeyTables[i].table);
+	}
+	
+};

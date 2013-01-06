@@ -48,7 +48,7 @@
 			$this->lastUpdate = '';
 			$this->data = '';
 			$this->ownerName = $server_info['username'];
-			$this->owner = ERDiagram::getObjectOID('role', $this->ownerName); 
+			$this->owner = ERDiagram::getObjectOID('role', $this->ownerName);
 		}
 		
 		public static function loadFromRequest(){
@@ -237,7 +237,7 @@
                 WHERE usename = '{$username}'
 				AND usesysid = ANY (grolist)
 				AND grosysid = ANY('{$roles_with_privileges}')";
-            $rs = $this->storeDriver->selectSet($sql);
+            $rs = ERDiagram::$storeDriver->selectSet($sql);
             if($rs->recordCount() > 0) return TRUE;
             return FALSE;
         }
@@ -305,7 +305,6 @@
          * @return 0 Success
          */
         public function save(){
-            global $misc;
 			
 			if($this->id == 0){
 				$values = array(
@@ -340,17 +339,16 @@
          * @param $structure The structure to save
          * @return 0 Success
          */
-        public function updateERDiagramStructure($id, $structure){
-            global $misc;
-            $values = array(
-                'data' => $structure
+        public static function updateERDiagramStructure($id, $structure){
+			$values = array(
+                'data' => pg_escape_string($structure)
             );
             $filters = array(
-                'pg_database' => $this->getObjectOID('database'),
-                'pg_schema' => $this->getObjectOID('schema'),
+                'pg_database' => ERDiagram::getObjectOID('database'),
+                'pg_schema' => ERDiagram::getObjectOID('schema'),
                 'erdiagram_id' => $id
             );
-            return $this->storeDriver->update($this->storeTable, $values, $filters);
+            return ERDiagram::$storeDriver->update(ERDiagram::$storeTable, $values, $filters);
         }
 
         /**
@@ -606,4 +604,8 @@
             return $this->getJsonFromXml(NULL, $doc);
             //return $doc->saveXML();
         }
+		public function getStructure(){
+			if(empty($this->data)){ return 'null'; } 
+			return $this->data;
+		}
     }

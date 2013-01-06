@@ -43,14 +43,14 @@ ForeignKeyDialog.prototype.saveForeignKey = function(form){
 	var action = model.getAction();
 	
 	if(this.validateForm(form)){
-		var flags = 0;
 		if(action == DBDesigner.Action.ALTER_FOREIGNKEY) foreignKeyModel.startEditing();
-		if(form.isDeferrable) flags |= ForeignKeyModel.Flag.DEFERRABLE;
-		if(form.isDeferred) flags |= ForeignKeyModel.Flag.DEFERRED;
-		if(form.isMatchFull) flags |= ForeignKeyModel.Flag.MATCH_FULL;
 		
 		foreignKeyModel.setComment(form.comment);
-		foreignKeyModel.setFlags(flags);
+		foreignKeyModel.setForeignKeyFlags({
+			deferrable: form.isDeferrable,
+			deferred: form.isDeferred,
+			matchFull: form.isMatchFull
+		});
 		foreignKeyModel.setDeleteAction(form.onDelete);
 		foreignKeyModel.setUpdateAction(form.onUpdate);
 		foreignKeyModel.setColumns(form.columns);

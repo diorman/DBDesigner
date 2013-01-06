@@ -10,6 +10,10 @@ Column = function() {
 
 $.extend(Column.prototype, DBObject);
 
+Column.createFromJSON = function(json, parent){
+	return new Column(ColumnModel.createFromJSON(json, parent));
+};
+
 Column.prototype.modelPropertyChanged = function(event){
 	switch(event.property){
 		case 'dropped':
@@ -103,6 +107,35 @@ Column.prototype.serialize = function(){
 ColumnModel = function(){};
 $.extend(ColumnModel.prototype, DBObjectModel);
 
+ColumnModel.createFromJSON = function(json, parent){
+	json.array = $.parseBool(json.array);
+	json.primaryKey = $.parseBool(json.primaryKey);
+	json.notNull = $.parseBool(json.notNull);
+	
+	var model = new ColumnModel();
+	model.setParent(parent);
+	model.setName(json.name);
+	model.setComment(json.comment);
+	model.setType(json.type);
+	model.setDefault(json.defaultDef);
+	model.setColumnFlags({
+		array: json.array,
+		primaryKey: json.primaryKey,
+		notNull: json.notNull
+	});
+	return model;
+};
+
+ColumnModel.prototype.setColumnFlags = function(attrs){
+	var flags = 0;
+	if(attrs.array) flags |= ColumnModel.Flag.ARRAY;
+	if(attrs.primaryKey) flags |= ColumnModel.Flag.PRIMARY_KEY;
+	if(attrs.uniqueKey) flags |= ColumnModel.Flag.UNIQUE_KEY;
+	if(attrs.notNull) flags |= ColumnModel.Flag.NOTNULL;
+	if(attrs.foreignKey) flags |= ColumnModel.Flag.FOREIGN_KEY;
+	this.setFlags(flags);
+};
+
 ColumnModel.prototype.setType = function(type){
 	var oldValue = this.getType();
 	if(oldValue != type){
@@ -190,11 +223,11 @@ ColumnModel.prototype.isUniqueKey = function(){
 	return (this.getFlags() & ColumnModel.Flag.UNIQUE_KEY) != 0;
 };
 
-ColumnModel.prototype.setNotnull = function(b){
+ColumnModel.prototype.setNotNull = function(b){
 	this.setFlagState(ColumnModel.Flag.NOTNULL, b);
 };
 
-ColumnModel.prototype.isNotnull = function(){
+ColumnModel.prototype.isNotNull = function(){
 	return (this.getFlags() & ColumnModel.Flag.NOTNULL) != 0;
 };
 
@@ -215,11 +248,11 @@ ColumnModel.prototype.drop = function(){
 ColumnModel.prototype.serialize = function(){
 	return {
 		name: this.getName(),
-		comment: this.getName(),
+		comment: this.getComment(),
 		type: this.getType(),
 		array: this.isArray(),
 		primaryKey: this.isPrimaryKey(),
-		notNull: this.isNotnull(),
+		notNull: this.isNotNull(),
 		defaultDef: this.getDefault()
 	};
 };
@@ -250,7 +283,7 @@ ColumnUI.prototype.updateView = function(){
 	else if(model.isForeignKey()) $keys.attr('class', 'keys fk');
 	else $keys.attr('class', 'keys');
 	
-	if(model.isNotnull() || model.isPrimaryKey()) dom.addClass('notnull');
+	if(model.isNotNull() || model.isPrimaryKey()) dom.addClass('notnull');
 	else dom.removeClass('notnull');
 	model.getParent().refresh();
 };

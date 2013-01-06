@@ -11,6 +11,18 @@ Table = function() {
 
 $.extend(Table.prototype, DBObject);
 
+Table.createFromJSON = function(json){
+	var table = new Table(TableModel.createFromJSON(json));
+	if(json.columns && json.columns.length > 0) {
+		table.getColumnCollection().loadJSON(json.columns, table);
+	}
+	if(json.uniqueKeys && json.uniqueKeys.length > 0) {
+		table.getUniqueKeyCollection().loadJSON(json.uniqueKeys, table);
+	}
+	
+	return table;
+};
+
 Table.prototype.isSelected = function(){
 	return this.getModel().isSelected();
 };
@@ -105,6 +117,20 @@ TableModel = function() {
 };
 
 $.extend(TableModel.prototype, DBObjectModel);
+
+TableModel.createFromJSON = function(json){
+	json.withoutOIDS = $.parseBool(json.withoutOIDS);
+	json.collapsed = $.parseBool(json.collapsed);
+	json.position = {top: parseInt(json.position.top), left: parseInt(json.position.left)}
+	
+	var model = new TableModel();
+	model.setName(json.name);
+	model.setComment(json.comment);
+	model.setWithoutOIDS(json.withoutOIDS);
+	model.setCollapsed(json.collapsed);
+	model.setPosition(json.position);
+	return model;
+};
 
 TableModel.prototype.setPosition = function(position){
 	this._position = $.extend(this.getPosition(), position);

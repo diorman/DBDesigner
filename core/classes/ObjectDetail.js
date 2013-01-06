@@ -342,7 +342,7 @@ ObjectDetailUI.prototype.populateColumnHtmlData = function(columnData, $tr){
 			$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
 			$('<td></td>').html(columnModel.isForeignKey()?htmlChecked:'&nbsp;').appendTo($tr);
 			$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
-			$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isNotNull()?htmlChecked:'&nbsp;').appendTo($tr);
 			$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
 			$('<td class="data"></td>').data('dbobject', columns[i]).html(htmlActions).appendTo($tr);
 			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
@@ -359,7 +359,7 @@ ObjectDetailUI.prototype.populateColumnHtmlData = function(columnData, $tr){
 			$('<td></td>').html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;').appendTo($tr);
 			$('<td></td>').html(columnModel.isForeignKey()?htmlChecked:'&nbsp;').appendTo($tr);
 			$('<td></td>').html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;').appendTo($tr);
-			$('<td></td>').html(columnModel.isNotnull()?htmlChecked:'&nbsp;').appendTo($tr);
+			$('<td></td>').html(columnModel.isNotNull()?htmlChecked:'&nbsp;').appendTo($tr);
 			$('<td></td>').text(columnModel.getDefault()).appendTo($tr);
 			$('<td class="data"></td>').data('dbobject', columnData).html(htmlActions).appendTo($tr);
 			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
@@ -370,7 +370,7 @@ ObjectDetailUI.prototype.populateColumnHtmlData = function(columnData, $tr){
 			$tds.eq(2).html(columnModel.isPrimaryKey()?htmlChecked:'&nbsp;');
 			$tds.eq(3).html(columnModel.isForeignKey()?htmlChecked:'&nbsp;');
 			$tds.eq(4).html(columnModel.isUniqueKey()?htmlChecked:'&nbsp;');
-			$tds.eq(5).html(columnModel.isNotnull()?htmlChecked:'&nbsp;');
+			$tds.eq(5).html(columnModel.isNotNull()?htmlChecked:'&nbsp;');
 			$tds.eq(6).text(columnModel.getDefault());
 			if(comment != '') $tr.attr('title', DBDesigner.lang.strcomment + ': ' + comment);
 			else $tr.removeAttr('title');

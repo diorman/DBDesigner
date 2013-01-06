@@ -115,7 +115,6 @@ UniqueKeyDialogModel.prototype.setSelectedColumns = function(selectedColumns){
 UniqueKeyDialogModel.prototype.addColumns = function(columns){
 	var tableColumns = this.getTableColumns();
 	var selectedColumns = this.getSelectedColumns();
-	var column;
 	var j;
 	var throwEvent = false;
 	for (var i = 0; i < columns.length; i++){

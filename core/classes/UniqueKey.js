@@ -7,6 +7,10 @@ UniqueKey = function(){
 };
 $.extend(UniqueKey.prototype, DBObject);
 
+UniqueKey.createFromJSON = function(json, parent){
+	return new UniqueKey(UniqueKeyModel.createFromJSON(json, parent));
+};
+
 UniqueKey.prototype.modelPropertyChanged = function(event) {
 	switch(event.property){
 		case 'dropped':
@@ -37,6 +41,22 @@ UniqueKey.prototype.serialize = function(){
 
 UniqueKeyModel = function(){};
 $.extend(UniqueKeyModel.prototype, DBObjectModel);
+
+UniqueKeyModel.createFromJSON = function(json, parent){
+	var model = new UniqueKeyModel();
+	var columnCollection = parent.getColumnCollection();
+	var columns = [];
+	for(var i = 0; i < json.columns.length; i++){
+		columns.push(columnCollection.getColumnByName(json.columns[i]));
+	}
+	
+	model.setParent(parent);
+	model.setName(json.name);
+	model.setComment(json.comment);
+	model.setColumns(columns);
+	
+	return model;
+};
 
 UniqueKeyModel.prototype.setParent = function(table){
 	this._parent = table;

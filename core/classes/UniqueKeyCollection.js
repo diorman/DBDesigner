@@ -58,3 +58,9 @@ UniqueKeyCollection.prototype.serialize = function() {
 	}
 	return collection;
 };
+
+UniqueKeyCollection.prototype.loadJSON = function(json, parent) {
+	for(var i = 0; i < json.length; i++) {
+		this.add(UniqueKey.createFromJSON(json[i], parent));
+	}
+};
