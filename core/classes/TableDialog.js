@@ -75,7 +75,7 @@ TableDialogUI = function(controller) {
 	this.setTemplateID('TableDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 };
 
 $.extend(TableDialogUI.prototype, DBObjectDialogUI);

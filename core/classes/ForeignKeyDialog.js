@@ -228,7 +228,7 @@ ForeignKeyDialogUI = function(controller) {
 	this.setController(controller);
 	this.init();
 	var dom = this.getDom();
-	dom.appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	dom.appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 	dom.find('div.tabs').tabs();
 };
 

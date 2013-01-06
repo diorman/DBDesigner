@@ -1851,7 +1851,7 @@ TableDialogUI = function(controller) {
 	this.setTemplateID('TableDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 };
 
 $.extend(TableDialogUI.prototype, DBObjectDialogUI);
@@ -2015,7 +2015,7 @@ ColumnDialogUI = function(controller) {
 	this.setTemplateID('ColumnDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 };
 
 $.extend(ColumnDialogUI.prototype, DBObjectDialogUI);
@@ -4189,7 +4189,7 @@ ForeignKeyDialogUI = function(controller) {
 	this.setController(controller);
 	this.init();
 	var dom = this.getDom();
-	dom.appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	dom.appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 	dom.find('div.tabs').tabs();
 };
 
@@ -4768,7 +4768,7 @@ UniqueKeyDialogUI = function(controller) {
 	this.setTemplateID('UniqueKeyDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 };
 
 $.extend(UniqueKeyDialogUI.prototype, DBObjectDialogUI);
@@ -5002,7 +5002,7 @@ ConfirmDialogUI = function(controller){
 	this.setTemplateID('ConfirmDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 };
 $.extend(ConfirmDialogUI.prototype, ComponentUI);
 

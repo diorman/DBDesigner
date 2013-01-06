@@ -42,7 +42,7 @@ ConfirmDialogUI = function(controller){
 	this.setTemplateID('ConfirmDialog');
 	this.setController(controller);
 	this.init();
-	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, width: 'auto'});
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
 };
 $.extend(ConfirmDialogUI.prototype, ComponentUI);
 

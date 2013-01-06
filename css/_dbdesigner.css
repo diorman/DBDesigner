@@ -45,6 +45,10 @@ div.tool-bar a.forward-engineer span { background-image: url(../images/ForwardEn
 div.tool-bar a.reverse-engineer span { background-image: url(../images/ReverseEngineer.png);}
 div.tool-bar a.select span { background-image: url(../images/Arrow.png); }
 
+/* Undeveloped features*/
+div.tool-bar a.forward-engineer, div.tool-bar a.reverse-engineer, div.tool-bar a.align-tables { display:none; }
+
+
 /* Canvas */
 div.canvas {
     position: absolute;
