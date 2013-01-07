@@ -226,7 +226,7 @@ class DBDesigner extends Plugin {
 		global $data, $misc;
 		$diagram = ERDiagram::loadFromRequest();
 		
-		if(is_null($diagram)){
+		if(is_null($diagram) || $diagram->id === 0){
 			$this->showDefault ();
 			exit;
 		}
@@ -385,7 +385,7 @@ class DBDesigner extends Plugin {
 		global $data, $misc;
 		$diagram = ERDiagram::loadFromRequest();
 		
-		if(is_null($diagram)){
+		if(is_null($diagram) || $diagram->id === 0){
 			$this->showDefault ();
 			exit;
 		}
@@ -516,7 +516,8 @@ class DBDesigner extends Plugin {
 							'server' => field('server'),
 							'database' => field('database'),
 							'schema' => field('schema'),
-							'action' => 'open'
+							'action' => 'open',
+							'erdiagram_id' => $diagram->id
 						)
 					)
 				),
@@ -532,7 +533,8 @@ class DBDesigner extends Plugin {
 							'server' => field('server'),
 							'database' => field('database'),
 							'schema' => field('schema'),
-							'action' => 'open'
+							'action' => 'open',
+							'erdiagram_id' => $diagram->id
 						)
 					)
 				),
@@ -656,7 +658,7 @@ class DBDesigner extends Plugin {
 		$scripts = '';
 		
 		$diagram = ERDiagram::loadFromRequest();
-		if(is_null($diagram)) {
+		if(is_null($diagram) || $diagram->id === 0) {
 			$this->showDefault();
 			exit;
 		}
