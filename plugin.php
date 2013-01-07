@@ -190,9 +190,10 @@ class DBDesigner extends Plugin {
                 'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
             ),
-            'opennewwindow' => array(
-                'title' => $this->_('stropeninnewwindow'),
-                'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;new_window=true&amp;{$misc->href}&amp;",
+            'opennewtab' => array(
+				'target' => '_blanck',
+                'title' => $this->_('stropeninnewtab'),
+                'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;{$misc->href}&amp;",
                 'vars'  => array('erdiagram_id' => 'erdiagram_id'),
             ),
         );
@@ -523,6 +524,7 @@ class DBDesigner extends Plugin {
 			),
 			array (
 				'attr'=> array (
+					'target' => '_blanck',
 					'href' => array (
 						'url' => 'plugin.php',
 						'urlvars' => array (
@@ -530,12 +532,11 @@ class DBDesigner extends Plugin {
 							'server' => field('server'),
 							'database' => field('database'),
 							'schema' => field('schema'),
-							'new_window' => 'true',
 							'action' => 'open'
 						)
 					)
 				),
-				'content' => $this->_('stropeninnewwindow') 
+				'content' => $this->_('stropeninnewtab') 
 			),
 		);
 		$misc->printNavLinks($navlinks, 'dbdesigner-dbdesigner');

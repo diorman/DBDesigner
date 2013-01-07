@@ -11,7 +11,7 @@
 	$lang['strerdiagrams'] = 'E-R Diagrams';
 	$lang['strlastupdate'] = 'Last Update';
 	$lang['stropen'] = 'Open';
-	$lang['stropeninnewwindow'] = 'Open in new window';
+	$lang['stropeninnewtab'] = 'Open in new tab';
 	$lang['strnoerdiagrams'] = 'No E-R Diagrams found.';
 	$lang['strcreateerdiagram'] = 'Create E-R Diagram';
 	$lang['strediterdiagram'] = 'Edit E-R Diagram';
