@@ -11,6 +11,7 @@ class DBDesigner extends Plugin {
 	 */
 	protected $name = 'DBDesigner';
 	protected $lang;
+	protected $version = '1.0-BETA';
 
 	/**
 	 * Constructor
@@ -687,6 +688,7 @@ class DBDesigner extends Plugin {
 				DBDesigner.erdiagramId = "<?php echo $diagram->id; ?>";
 				DBDesigner.templateManager = <?php echo $templateManager; ?>;
 				DBDesigner.erdiagramStructure = <?php echo $diagram->getStructure(); ?>;
+				DBDesigner.version = "<?php echo $this->version; ?>";
 				
 				//Disable the default stylesheet
 				$(function(){
