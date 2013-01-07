@@ -9,7 +9,7 @@ Ajax = {
 					action: action,
 					erdiagram_id: DBDesigner.erdiagramId,
 					data: $.toJSON({
-						version: '1.0',
+						version: DBDesigner.version,
 						tables: DBDesigner.app.getTableCollection().serialize()
 					})
 				}, null, 'json').always(Ajax.manageResponse);
