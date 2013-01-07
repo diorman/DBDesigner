@@ -1,13 +1,16 @@
 -- SQL script to create ER diagrams database for PostgreSQL
--- 
--- To run, type: psql template1 < erdiagrams-pgsql.sql
 
+
+-- Create database
 CREATE DATABASE phppgadmin;
 
+-- Connect to the database created
 \connect phppgadmin
 
+-- Create a schema to be used just by this plugin
 CREATE SCHEMA dbdsgnr;
 
+-- Create the table responsible for storing diagram's data
 CREATE TABLE dbdsgnr.erdiagrams(
     erdiagram_id SERIAL,
     name NAME,
@@ -22,12 +25,14 @@ CREATE TABLE dbdsgnr.erdiagrams(
     PRIMARY KEY(erdiagram_id),
     UNIQUE (pg_database, pg_schema, name)
 );
+
+-- Give privileges to everybody to use this plugin (you might not want this)
 GRANT USAGE ON SCHEMA dbdsgnr TO PUBLIC;
 GRANT SELECT,INSERT,UPDATE,DELETE ON dbdsgnr.erdiagrams TO PUBLIC;
 GRANT SELECT,UPDATE ON dbdsgnr.erdiagrams_erdiagram_id_seq TO PUBLIC;
 
+-- Trigger to protect modifications on diagrams
 CREATE LANGUAGE plpgsql;
---Trigger for protecting modifications to diagrams
 CREATE OR REPLACE FUNCTION dbdsgnr.function_check_user_privileges() RETURNS TRIGGER AS $trigger_check_user_privileges$
     DECLARE
         current_user_oid OID;
