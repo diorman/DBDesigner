@@ -1,5 +1,7 @@
 <?php
 
+if(php_sapi_name() != 'cli') { exit; }
+
 include_once 'conf/dbdesigner.config.inc.php';
 
 
