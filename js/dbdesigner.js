@@ -375,6 +375,10 @@ DBDesigner.init = function(){
 
 DBDesigner.prototype.doAction = function(action, extra) {
 	switch(action){	
+		case DBDesigner.Action.ALIGN_TABLES:
+			DBDesigner.app.alignTables();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.ADD_TABLE:
 			DBDesigner.app.canvas.setCapturingPlacement(true);
 			break;
@@ -451,6 +455,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_UNIQUEKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -461,6 +466,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_FOREIGNKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -471,6 +477,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 	}
 };
@@ -596,6 +603,27 @@ DBDesigner.prototype.setDisabled = function(b){
 		$('body').append(this._$overlay);
 	} else if(this._$overlay) { this._$overlay.detach(); }
 	this.toolBar.setDisabled(b);
+};
+
+DBDesigner.prototype.alignTables = function() {
+    var canvasSize = this.canvas.getSize();
+	var margin = {x: 20, y: 20};
+	var tableSize;
+	var left, top, max = 0;
+	var tables = DBDesigner.app.getTableCollection().getTables();
+    left = margin.x;
+    top = margin.y;
+    for(var i = 0; i < tables.length; i++){
+        tableSize = tables[i].getSize();
+        if (top + tableSize.height > canvasSize.height && top != margin.y) {
+            left += margin.x + max;
+            top = margin.y;
+            max = 0;
+        }
+        tables[i].setPosition({top: top, left: left});
+        top += margin.y + tableSize.height;
+        if (tableSize.width > max) max = tableSize.width;
+    }
 };/**
  *
  * Class to manage the toolbar of the designer
@@ -752,6 +780,7 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('add-uniquekey')) action = DBDesigner.Action.ADD_UNIQUEKEY;
 	if($target.hasClass('drop-table')) action = DBDesigner.Action.DROP_TABLE;
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
+	if($target.hasClass('align-tables')) action = DBDesigner.Action.ALIGN_TABLES;
 	this.getController().setAction(action);
 };
 
@@ -875,6 +904,10 @@ Canvas.prototype.isCapturingPlacement = function() {
 Canvas.prototype.placementCaptured = function(position) {
 	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, {position: position});
 };
+
+Canvas.prototype.getSize = function() {
+	return this.getUI().getSize();
+}
 
 // *****************************************************************************
 
@@ -1057,7 +1090,12 @@ CanvasUI.prototype.updateCanvasState = function() {
 	else if(!isCapturingPlacement && $canvas.css('cursor') != 'default'){
 		$canvas.css('cursor', 'default');
 	}
-};/**
+};
+
+CanvasUI.prototype.getSize = function() {
+	var $canvas = this.getDom();
+	return { width: $canvas.width(), height: $canvas.height() };
+}/**
  * 
  * Class to manage the component used to show table details
  * 
@@ -2244,8 +2282,13 @@ Table.prototype.setSelected = function(b){
 	this.getUI().updateSelected(b);
 };
 
-Table.prototype.setPosition = function(position){
+Table.prototype.setPosition = function(position, updateUI){
+	if(typeof updateUI == 'undefined') { updateUI = true; }
 	this.getModel().setPosition(position);
+	if(updateUI){
+		this.getUI().updatePosition(position);
+	}
+	this.triggerViewBoxChanged();
 };
 
 Table.prototype.getPosition = function(){
@@ -2502,8 +2545,7 @@ TableUI.prototype.onDragStop = function(){
 	var controller = this.getController();
 	position.left += $canvas.scrollLeft();
 	position.top += $canvas.scrollTop();
-	controller.setPosition(position);
-	controller.triggerViewBoxChanged();
+	controller.setPosition(position, false);
 };
 
 TableUI.prototype.onButtonPressed = function(event){
@@ -4872,7 +4914,8 @@ DBDesigner.Action = {
 	DROP_FOREIGNKEY: 'actiondropforeignkey',
 	DROP_COLUMN: 'actiondropcolumn',
 	SAVE: 'actionsave',
-	SHOW_TABLE_DETAIL: 'actionshowtabledetail' 
+	SHOW_TABLE_DETAIL: 'actionshowtabledetail',
+	ALIGN_TABLES: 'actionaligntables'
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };

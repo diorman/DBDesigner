@@ -25,6 +25,10 @@ DBDesigner.init = function(){
 
 DBDesigner.prototype.doAction = function(action, extra) {
 	switch(action){	
+		case DBDesigner.Action.ALIGN_TABLES:
+			DBDesigner.app.alignTables();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.ADD_TABLE:
 			DBDesigner.app.canvas.setCapturingPlacement(true);
 			break;
@@ -101,6 +105,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_UNIQUEKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -111,6 +116,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_FOREIGNKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -121,6 +127,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 	}
 };
@@ -246,4 +253,25 @@ DBDesigner.prototype.setDisabled = function(b){
 		$('body').append(this._$overlay);
 	} else if(this._$overlay) { this._$overlay.detach(); }
 	this.toolBar.setDisabled(b);
+};
+
+DBDesigner.prototype.alignTables = function() {
+    var canvasSize = this.canvas.getSize();
+	var margin = {x: 20, y: 20};
+	var tableSize;
+	var left, top, max = 0;
+	var tables = DBDesigner.app.getTableCollection().getTables();
+    left = margin.x;
+    top = margin.y;
+    for(var i = 0; i < tables.length; i++){
+        tableSize = tables[i].getSize();
+        if (top + tableSize.height > canvasSize.height && top != margin.y) {
+            left += margin.x + max;
+            top = margin.y;
+            max = 0;
+        }
+        tables[i].setPosition({top: top, left: left});
+        top += margin.y + tableSize.height;
+        if (tableSize.width > max) max = tableSize.width;
+    }
 };

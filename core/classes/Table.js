@@ -32,8 +32,13 @@ Table.prototype.setSelected = function(b){
 	this.getUI().updateSelected(b);
 };
 
-Table.prototype.setPosition = function(position){
+Table.prototype.setPosition = function(position, updateUI){
+	if(typeof updateUI == 'undefined') { updateUI = true; }
 	this.getModel().setPosition(position);
+	if(updateUI){
+		this.getUI().updatePosition(position);
+	}
+	this.triggerViewBoxChanged();
 };
 
 Table.prototype.getPosition = function(){
@@ -290,8 +295,7 @@ TableUI.prototype.onDragStop = function(){
 	var controller = this.getController();
 	position.left += $canvas.scrollLeft();
 	position.top += $canvas.scrollTop();
-	controller.setPosition(position);
-	controller.triggerViewBoxChanged();
+	controller.setPosition(position, false);
 };
 
 TableUI.prototype.onButtonPressed = function(event){

@@ -46,7 +46,7 @@ div.tool-bar a.reverse-engineer span { background-image: url(../images/ReverseEn
 div.tool-bar a.select span { background-image: url(../images/Arrow.png); }
 
 /* Undeveloped features*/
-div.tool-bar a.forward-engineer, div.tool-bar a.reverse-engineer, div.tool-bar a.align-tables { display:none; }
+div.tool-bar a.forward-engineer, div.tool-bar a.reverse-engineer { display:none; }
 
 
 /* Canvas */

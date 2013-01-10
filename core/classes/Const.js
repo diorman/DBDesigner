@@ -13,7 +13,8 @@ DBDesigner.Action = {
 	DROP_FOREIGNKEY: 'actiondropforeignkey',
 	DROP_COLUMN: 'actiondropcolumn',
 	SAVE: 'actionsave',
-	SHOW_TABLE_DETAIL: 'actionshowtabledetail' 
+	SHOW_TABLE_DETAIL: 'actionshowtabledetail',
+	ALIGN_TABLES: 'actionaligntables'
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };

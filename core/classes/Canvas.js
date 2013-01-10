@@ -65,6 +65,10 @@ Canvas.prototype.placementCaptured = function(position) {
 	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, {position: position});
 };
 
+Canvas.prototype.getSize = function() {
+	return this.getUI().getSize();
+}
+
 // *****************************************************************************
 
 /**
@@ -247,3 +251,8 @@ CanvasUI.prototype.updateCanvasState = function() {
 		$canvas.css('cursor', 'default');
 	}
 };
+
+CanvasUI.prototype.getSize = function() {
+	var $canvas = this.getDom();
+	return { width: $canvas.width(), height: $canvas.height() };
+}
