@@ -14,6 +14,7 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
+	this.setForwardEngineerDialog();
 };
 
 DBDesigner.init = function(){
@@ -24,47 +25,51 @@ DBDesigner.init = function(){
 
 
 DBDesigner.prototype.doAction = function(action, extra) {
-	switch(action){	
+	switch(action){
+		case DBDesigner.Action.FORWARD_ENGINEER:
+			this.forwardEngineerDialog.open();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.ALIGN_TABLES:
-			DBDesigner.app.alignTables();
+			this.alignTables();
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_TABLE:
-			DBDesigner.app.canvas.setCapturingPlacement(true);
+			this.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.SAVE:
 			Ajax.sendRequest(Ajax.Action.SAVE);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
-			DBDesigner.app.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
+			this.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_COLUMN:
-			DBDesigner.app.columnDialog.editColumn(extra);
+			this.columnDialog.editColumn(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_TABLE:
-			DBDesigner.app.tableDialog.editTable(extra);
+			this.tableDialog.editTable(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SELECT:
-			DBDesigner.app.canvas.setCapturingPlacement(false);
+			this.canvas.setCapturingPlacement(false);
 			break;
 		case DBDesigner.Action.ADD_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
+			this.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
+			this.foreignKeyDialog.editForeignKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
+			this.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.editUniqueKey(extra);
+			this.uniqueKeyDialog.editUniqueKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
@@ -73,7 +78,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 		case DBDesigner.Action.DROP_TABLE:
 			var message, scope, method, selection, count;
 			if(typeof extra == 'undefined') {
-				selection = DBDesigner.app.getTableCollection();
+				selection = this.getTableCollection();
 				count = selection.count();
 				if(count == 1) {
 					extra = selection.getSelectedTables()[0];
@@ -226,7 +231,7 @@ DBDesigner.prototype.tableSelectionChanged = function(event){
 			actionState[DBDesigner.Action.DROP_TABLE] = true;
 			break;
 	}
-	DBDesigner.app.toolBar.setActionState(actionState);
+	this.toolBar.setActionState(actionState);
 };
 
 DBDesigner.prototype.alterTable = function(event){
@@ -247,6 +252,10 @@ DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
 };
 
+DBDesigner.prototype.setForwardEngineerDialog = function(){
+	this.forwardEngineerDialog = new ForwardEngineerDialog();
+};
+
 DBDesigner.prototype.setDisabled = function(b){
 	if(b) {
 		if(!this._$overlay) { this._$overlay = $('<div class="ui-widget-overlay"></div>'); }
@@ -260,7 +269,7 @@ DBDesigner.prototype.alignTables = function() {
 	var margin = {x: 20, y: 20};
 	var tableSize;
 	var left, top, max = 0;
-	var tables = DBDesigner.app.getTableCollection().getTables();
+	var tables = this.getTableCollection().getTables();
     left = margin.x;
     top = margin.y;
     for(var i = 0; i < tables.length; i++){

@@ -364,6 +364,7 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
+	this.setForwardEngineerDialog();
 };
 
 DBDesigner.init = function(){
@@ -374,47 +375,51 @@ DBDesigner.init = function(){
 
 
 DBDesigner.prototype.doAction = function(action, extra) {
-	switch(action){	
+	switch(action){
+		case DBDesigner.Action.FORWARD_ENGINEER:
+			this.forwardEngineerDialog.open();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.ALIGN_TABLES:
-			DBDesigner.app.alignTables();
+			this.alignTables();
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_TABLE:
-			DBDesigner.app.canvas.setCapturingPlacement(true);
+			this.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.SAVE:
 			Ajax.sendRequest(Ajax.Action.SAVE);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
-			DBDesigner.app.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
+			this.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_COLUMN:
-			DBDesigner.app.columnDialog.editColumn(extra);
+			this.columnDialog.editColumn(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_TABLE:
-			DBDesigner.app.tableDialog.editTable(extra);
+			this.tableDialog.editTable(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SELECT:
-			DBDesigner.app.canvas.setCapturingPlacement(false);
+			this.canvas.setCapturingPlacement(false);
 			break;
 		case DBDesigner.Action.ADD_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
+			this.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
+			this.foreignKeyDialog.editForeignKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
+			this.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.editUniqueKey(extra);
+			this.uniqueKeyDialog.editUniqueKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
@@ -423,7 +428,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 		case DBDesigner.Action.DROP_TABLE:
 			var message, scope, method, selection, count;
 			if(typeof extra == 'undefined') {
-				selection = DBDesigner.app.getTableCollection();
+				selection = this.getTableCollection();
 				count = selection.count();
 				if(count == 1) {
 					extra = selection.getSelectedTables()[0];
@@ -576,7 +581,7 @@ DBDesigner.prototype.tableSelectionChanged = function(event){
 			actionState[DBDesigner.Action.DROP_TABLE] = true;
 			break;
 	}
-	DBDesigner.app.toolBar.setActionState(actionState);
+	this.toolBar.setActionState(actionState);
 };
 
 DBDesigner.prototype.alterTable = function(event){
@@ -597,6 +602,10 @@ DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
 };
 
+DBDesigner.prototype.setForwardEngineerDialog = function(){
+	this.forwardEngineerDialog = new ForwardEngineerDialog();
+};
+
 DBDesigner.prototype.setDisabled = function(b){
 	if(b) {
 		if(!this._$overlay) { this._$overlay = $('<div class="ui-widget-overlay"></div>'); }
@@ -610,7 +619,7 @@ DBDesigner.prototype.alignTables = function() {
 	var margin = {x: 20, y: 20};
 	var tableSize;
 	var left, top, max = 0;
-	var tables = DBDesigner.app.getTableCollection().getTables();
+	var tables = this.getTableCollection().getTables();
     left = margin.x;
     top = margin.y;
     for(var i = 0; i < tables.length; i++){
@@ -781,6 +790,7 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('drop-table')) action = DBDesigner.Action.DROP_TABLE;
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
 	if($target.hasClass('align-tables')) action = DBDesigner.Action.ALIGN_TABLES;
+	if($target.hasClass('forward-engineer')) action = DBDesigner.Action.FORWARD_ENGINEER;
 	this.getController().setAction(action);
 };
 
@@ -4915,7 +4925,8 @@ DBDesigner.Action = {
 	DROP_COLUMN: 'actiondropcolumn',
 	SAVE: 'actionsave',
 	SHOW_TABLE_DETAIL: 'actionshowtabledetail',
-	ALIGN_TABLES: 'actionaligntables'
+	ALIGN_TABLES: 'actionaligntables',
+	FORWARD_ENGINEER: 'actionforwardengineer'
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
@@ -5082,3 +5093,56 @@ ConfirmDialogUI.prototype.onDialogClose = function(event){
 	this.getController().clearReferences();
 };
 
+ForwardEngineerDialog = function(){
+	this.setUI(new ForwardEngineerDialogUI(this));
+};
+$.extend(ForwardEngineerDialog.prototype, Component);
+
+ForwardEngineerDialog.prototype.open = function(){
+	this.getUI().open();
+};
+
+// *****************************************************************************
+
+ForwardEngineerDialogUI = function(controller){
+	this.setTemplateID('ForwardEngineerDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({
+		title: DBDesigner.lang.strforwardengineer,
+		modal: true,
+		autoOpen: false,
+		resizable: false,
+		width: 'auto'
+	});
+};
+$.extend(ForwardEngineerDialogUI.prototype, ComponentUI);
+
+ForwardEngineerDialogUI.prototype.open = function(message, title){
+	var dom = this.getDom();
+	dom.removeClass('show-output');
+	dom.find('textarea').val('');
+	dom.find('input[type="checkbox"]').prop('checked', false);
+	dom.find('#fordwardengineer-dialog_cascadeprmt').prop('disabled', true);
+	dom.dialog('open');
+};
+
+ForwardEngineerDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.on('click', 'input[type="button"]', $.proxy(this.onButtonClick, this));
+	dom.find('#fordwardengineer-dialog_dropstmt').click(function(event){
+		dom.find('#fordwardengineer-dialog_cascadeprmt')
+			.prop({checked: this.checked, disabled: !this.checked });
+	});
+};
+
+ForwardEngineerDialogUI.prototype.onButtonClick = function(event){
+	switch(event.target.id) {
+		case 'forwardengineer-dialog_show-output':
+			this.getDom().addClass('show-output');
+			break;
+		case 'forwardengineer-dialog_hide-output':
+			this.getDom().removeClass('show-output');
+			break;
+	}
+};

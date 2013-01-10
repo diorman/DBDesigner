@@ -155,6 +155,7 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('drop-table')) action = DBDesigner.Action.DROP_TABLE;
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
 	if($target.hasClass('align-tables')) action = DBDesigner.Action.ALIGN_TABLES;
+	if($target.hasClass('forward-engineer')) action = DBDesigner.Action.FORWARD_ENGINEER;
 	this.getController().setAction(action);
 };
 

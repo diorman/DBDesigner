@@ -65,3 +65,9 @@
 	$lang['strsaveandnew'] = 'Save & New';
 	$lang['strsaving'] = 'Saving...';
 	$lang['strerdiagramsaved'] = 'E-R Diagram saved.';
+	$lang['stronlyselectedtables'] = 'Only selected tables';
+	$lang['strgeneratedropstmt'] = 'Generate DROP TABLE';
+	$lang['strgeneratecascadeprmt'] = 'Generate CASCADE';
+	$lang['strgenerate'] = 'Generate';
+	$lang['stroutput'] = 'Output';
+	$lang['strhide'] = 'Hide';

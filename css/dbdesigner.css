@@ -79,7 +79,7 @@ div.tool-bar a.reverse-engineer span { background-image: url(../images/ReverseEn
 div.tool-bar a.select span { background-image: url(../images/Arrow.png); }
 
 /* Undeveloped features*/
-div.tool-bar a.forward-engineer, div.tool-bar a.reverse-engineer { display:none; }
+div.tool-bar a.reverse-engineer { display:none; }
 
 
 /* Canvas */
@@ -378,6 +378,19 @@ div.foreignkey-dialog table th{
 }
 div.foreignkey-dialog table th, div.foreignkey-dialog table td { border: 1px solid #E6E6CC; }
 div.foreignkey-dialog table th.remove { width: 38px;}
+
+div.fordwardengineer-dialog div.field-textarea textarea {
+	width: 410px;
+	height: 200px;
+}
+div.fordwardengineer-dialog div.field-textarea textarea.show-output { 
+	background-color: #E6E6CC;
+	height: 266px;
+}
+div.fordwardengineer-dialog .show-output {display: none;}
+div.fordwardengineer-dialog.show-output .show-output {display: inline;}
+div.fordwardengineer-dialog.show-output .hide-output {display: none;}
+
 svg {position: absolute; top: 0; left: 0;}
 
 /* Overlay */
