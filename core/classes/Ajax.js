@@ -1,7 +1,13 @@
 
 Ajax = {
-	sendRequest: function(action){
+	sendRequest: function(action, extraData, callback){
 		DBDesigner.app.setDisabled(true);
+		
+		var alwaysCallback = callback? function(response, status, jqxhr) {
+			Ajax.manageResponse(response, status, jqxhr);
+			callback(response, status, jqxhr);
+		} : Ajax.manageResponse;
+		
 		switch(action){
 			case Ajax.Action.SAVE:
 				Message.show(DBDesigner.lang.strsaving, false);
@@ -12,15 +18,25 @@ Ajax = {
 						version: DBDesigner.version,
 						tables: DBDesigner.app.getTableCollection().serialize()
 					})
-				}, null, 'json').always(Ajax.manageResponse);
+				}, null, 'json').always(alwaysCallback);
+				break;
+			case Ajax.Action.EXECUTE_SQL:
+				Message.show(DBDesigner.lang.strexecutingsql, false);
+				$.post('', {
+					action: action,
+					sql: extraData
+				}, null, 'json').always(alwaysCallback);
 				break;
 		}
 	},
-	manageResponse: function(data, status, jqxhr){
+	manageResponse: function(response, status, jqxhr){
 		if(status == 'success'){
-			switch(data.action){
+			switch(response.action){
 				case Ajax.Action.SAVE:
 					Message.show(DBDesigner.lang.strerdiagramsaved, true);
+					break;
+				case Ajax.Action.EXECUTE_SQL:
+					Message.close(true);
 					break;
 			}
 		} else {}
@@ -28,7 +44,8 @@ Ajax = {
 	},
 	
 	Action: {
-		SAVE: 'ajaxSave'
+		SAVE: 'ajaxSave',
+		EXECUTE_SQL: 'ajaxExecuteSQL'
 	}
 };
 

@@ -71,3 +71,4 @@
 	$lang['strgenerate'] = 'Generate';
 	$lang['stroutput'] = 'Output';
 	$lang['strhide'] = 'Hide';
+	$lang['strexecutingsql'] = 'Executing SQL...';

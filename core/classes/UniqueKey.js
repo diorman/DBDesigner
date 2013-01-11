@@ -33,6 +33,10 @@ UniqueKey.prototype.drop = function(){
 	this.getModel().drop();
 };
 
+UniqueKey.prototype.getColumns = function(){
+	return this.getModel().getColumns();
+};
+
 UniqueKey.prototype.serialize = function(){
 	return this.getModel().serialize();
 };

@@ -39,6 +39,7 @@ function concatJS($c) {
 		//classes
 		'core/classes/Message.js',
 		'core/classes/Ajax.js',
+		'core/classes/SqlGenerator.js',
 		'core/classes/JSONLoader.js',
 		'core/classes/EventDispatcher.js',
 		'core/classes/Component.js',
