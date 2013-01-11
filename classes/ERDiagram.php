@@ -341,7 +341,7 @@
          */
         public static function updateERDiagramStructure($id, $structure){
 			$values = array(
-                'data' => pg_escape_string($structure)
+                'data' => $structure
             );
             $filters = array(
                 'pg_database' => ERDiagram::getObjectOID('database'),

@@ -101,6 +101,26 @@ ForeignKey.prototype.drop = function(){
 	this.getModel().drop();
 };
 
+ForeignKey.prototype.getColumns = function(){
+	return this.getModel().getColumns();
+};
+
+ForeignKey.prototype.isMatchFull = function(){
+	return this.getModel().isMatchFull();
+};
+
+ForeignKey.prototype.isDeferrable = function(){
+	return this.getModel().isDeferrable();
+};
+
+ForeignKey.prototype.isDeferred = function(){
+	return this.getModel().isDeferred();
+};
+
+ForeignKey.prototype.getActionString = function(eventType) {
+	return this.getModel().getActionString(eventType);
+};
+
 ForeignKey.prototype.serialize = function(){
 	return this.getModel().serialize();
 };

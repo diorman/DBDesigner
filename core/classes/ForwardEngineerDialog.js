@@ -27,8 +27,9 @@ ForwardEngineerDialogUI.prototype.open = function(message, title){
 	var dom = this.getDom();
 	dom.removeClass('show-output');
 	dom.find('textarea').val('');
-	dom.find('input[type="checkbox"]').prop('checked', false);
-	dom.find('#fordwardengineer-dialog_cascadeprmt').prop('disabled', true);
+	$('#forwardengineer-dialog_output').empty();
+	dom.find('input[type="checkbox"]').prop('checked', false)
+		.filter('#fordwardengineer-dialog_cascadeprmt').prop('disabled', true);
 	dom.dialog('open');
 };
 
@@ -48,6 +49,25 @@ ForwardEngineerDialogUI.prototype.onButtonClick = function(event){
 			break;
 		case 'forwardengineer-dialog_hide-output':
 			this.getDom().removeClass('show-output');
+			break;
+		case 'forwardengineer-dialog_generate':
+			var dom = this.getDom();
+			var sql = SqlGenerator.generate({
+				selectedTablesOnly: $('#fordwardengineer-dialog_filter-selected-tables').prop('checked'),
+				generateDropTable: $('#fordwardengineer-dialog_dropstmt').prop('checked'), 
+				generateCascade: $('#fordwardengineer-dialog_cascadeprmt').prop('checked')
+			});
+			$('#forwardengineer-dialog_script').val(sql);
+			break;
+		case 'forwardengineer-dialog_execute':
+			var sql = $.trim($('#forwardengineer-dialog_script').val());
+			if(sql != ''){
+				var dom = this.getDom();
+				Ajax.sendRequest(Ajax.Action.EXECUTE_SQL, sql, function(response) {
+					$('#forwardengineer-dialog_output').html(response.data);
+					dom.addClass('show-output');
+				});
+			}
 			break;
 	}
 };

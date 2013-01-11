@@ -99,7 +99,8 @@ class DBDesigner extends Plugin {
 			'tree',
 			'drop',
 			'open',
-			'ajaxSave'
+			'ajaxSave',
+			'ajaxExecuteSQL'
 		);
 		return $actions;
 	}
@@ -689,6 +690,7 @@ class DBDesigner extends Plugin {
 				DBDesigner.templateManager = <?php echo $templateManager; ?>;
 				DBDesigner.erdiagramStructure = <?php echo $diagram->getStructure(); ?>;
 				DBDesigner.version = "<?php echo $this->version; ?>";
+				DBDesigner.schemaName = "<?php echo $_GET['schema']; ?>";
 				
 				//Disable the default stylesheet
 				$(function(){
@@ -814,7 +816,8 @@ class DBDesigner extends Plugin {
 			'stralteruniq',
 			'strempty',
 			'strsaving',
-			'strerdiagramsaved'
+			'strerdiagramsaved',
+			'strexecutingsql'
 		);
 		
 		$js_lang = array();
@@ -846,6 +849,17 @@ class DBDesigner extends Plugin {
 		$diagramId = intval($_POST['erdiagram_id']);
 		$ret = ERDiagram::updateERDiagramStructure($diagramId, $_POST['data']);
 		$this->sendAjaxResponse($ret);
+	}
+	
+	function ajaxExecuteSQL(){
+		global $data;
+		ob_start();
+		$data->conn->setFetchMode(ADODB_FETCH_NUM);
+		$rs = $data->conn->Execute($_POST['sql']);
+		if(is_object($rs)) {
+			echo "<p>{$this->_('strsqlexecuted')}</p>\n";
+		}
+		$this->sendAjaxResponse(ob_get_clean());
 	}
 	
 	function sendAjaxResponse($data = NULL){

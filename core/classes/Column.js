@@ -92,8 +92,20 @@ Column.prototype.getParent = function(){
 	return this.getModel().getParent();
 };
 
-Column.prototype.getName = function(){
-	return this.getModel().getName();
+Column.prototype.getDefault = function(){
+	return this.getModel().getDefault();
+};
+
+Column.prototype.getFullType = function(){
+	return this.getModel().getFullType();
+};
+
+Column.prototype.isNotNull = function(){
+	return this.getModel().isNotNull();
+};
+
+Column.prototype.toString = function(){
+	return this.getName();
 };
 
 Column.prototype.serialize = function(){
