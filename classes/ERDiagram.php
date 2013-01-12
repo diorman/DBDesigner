@@ -441,169 +441,112 @@
             return $json.=']}';
         }
 
-        public function getJsonFromSchema($id){
-            $sql = "SELECT relname, oid, pg_catalog.obj_description(oid, 'pg_class') AS comment, CASE WHEN relhasoids THEN '0' ELSE '1' END AS woids
-                FROM pg_catalog.pg_class 
-                WHERE relkind='r' AND relnamespace={$this->getObjectOID('schema')}
-                ORDER BY relname";
-            $tables = $this->logicDriver->selectSet($sql);
-            $doc = new DOMDocument("<dgrm></dgrm>");
-            $tableCount = 0;
-            while(!$tables->EOF){
-                $xmlTable = $doc->createElement("tbl");
-                $doc->appendChild($xmlTable);
-
-                $xmlTable->setAttribute("id", "t_{$tables->fields["oid"]}");
-                $xmlTable->setIdAttribute("id", TRUE);
-                $xmlTable->setAttribute("i", $tableCount); // this is de id that javascript will use
-                $xmlTable->setAttribute("woids", $tables->fields["woids"]);
-
-                $xmlName = $doc->createElement("nm");
-                $textNode = $doc->createTextNode($tables->fields["relname"]);
-                $xmlName->appendChild($textNode);
-
-                $xmlTable->appendChild($xmlName);
-
-                if(!empty($tables->fields["comment"])){
-                    $xmlComment = $doc->createElement("cmt");
-                    $xmlCDATA = $doc->createCDATASection($this->cleanCDATA($tables->fields["comment"]));
-                    $xmlComment->appendChild($xmlCDATA);
-                    $xmlTable->appendChild($xmlComment);
-                }
-
-                $sql =
-                    "SELECT a.attname AS name, CASE WHEN a.attnotnull THEN '1' ELSE '0' END AS nn, adef.adsrc AS df, a.attnum AS num,
-                        pg_catalog.col_description(a.attrelid, a.attnum) AS comment, pg_catalog.format_type(a.atttypid, a.atttypmod) as type
-                        FROM
-                            pg_catalog.pg_attribute a LEFT JOIN pg_catalog.pg_attrdef adef
-                            ON a.attrelid=adef.adrelid
-                            AND a.attnum=adef.adnum
-                        WHERE
-                            a.attrelid = {$tables->fields["oid"]}
-                            AND a.attnum > 0 AND NOT a.attisdropped
-                        ORDER BY a.attnum";
-                $columns = $this->logicDriver->selectSet($sql);
-                $columnCount=0;
-                while(!$columns->EOF){
-                    $array = preg_match('/\[\]/', $columns->fields["type"])?"1":"0";
-                    $len = preg_match('/\\(([0-9, ]*)\\)/', $columns->fields["type"], $matches)? $matches[1]: "";
-                    $type = strtoupper(preg_replace('/\([0-9, ]*\)/', '', preg_replace('/\[\]/', '', $columns->fields["type"])));
-
-                    if(preg_match('/^nextval/', strtolower($columns->fields["df"])) == TRUE && $columns->fields["nn"] == "1" && ($type == "INTEGER" || $type == "BIGINT")){
-                        $columns->fields["df"] = "";
-                        $type = ($type == "INTEGER")? "SERIAL" : "BIGSERIAL";
-                    }
-
-                    $xmlColumn = $doc->createElement("col");
-                    $xmlTable->appendChild($xmlColumn);
-
-                    $xmlColumn->setAttribute("id", "c_{$tables->fields["oid"]}_{$columns->fields["num"]}");
-                    $xmlColumn->setIdAttribute("id", TRUE);
-                    $xmlColumn->setAttribute("i", $columnCount);
-                    $xmlColumn->setAttribute("nn", $columns->fields["nn"]);
-                    $xmlColumn->setAttribute("array", $array);
-                    $xmlColumn->setAttribute("len", $len);
-                    $xmlColumn->setAttribute("pk", "0");
-                    $xmlColumn->setAttribute("uk", "0");
-
-                    $xmlName = $doc->createElement("nm");
-                    $textNode = $doc->createTextNode($columns->fields["name"]);
-                    $xmlName->appendChild($textNode);
-                    $xmlColumn->appendChild($xmlName);
-
-                    $xmlDataType = $doc->createElement("dt", $type);
-                    $xmlColumn->appendChild($xmlDataType);
-
-                    if(!empty($columns->fields["comment"])){
-                        $xmlComment = $doc->createElement("cmt");
-                        $xmlCDATA = $doc->createCDATASection($this->cleanCDATA($columns->fields["comment"]));
-                        $xmlComment->appendChild($xmlCDATA);
-                        $xmlColumn->appendChild($xmlComment);
-                    }
-                    if(!empty($columns->fields["df"])){
-                        $xmlDefault = $doc->createElement("df");
-                        $xmlCDATA = $doc->createCDATASection($this->cleanCDATA($columns->fields["df"]));
-                        $xmlDefault->appendChild($xmlCDATA);
-                        $xmlColumn->appendChild($xmlDefault);
-                    }
-                    $columnCount++;
-                    $columns->MoveNext();
-                }
-                $tables->MoveNext();
-                $tableCount++;
-            }
-
-            $sql =
-                "SELECT conname, contype, CASE WHEN condeferrable THEN '1' ELSE '0' END AS d, CASE WHEN condeferred THEN '1' ELSE '0' END AS initd, conrelid,
-                    confrelid, confupdtype, confdeltype, CASE WHEN confmatchtype = 'f' THEN '1' ELSE '0' END AS mf, conkey, confkey, pg_catalog.obj_description(oid, 'pg_constraint') AS comment
-                FROM pg_catalog.pg_constraint
-                WHERE contype IN ('f', 'p', 'u') AND connamespace={$this->getObjectOID("schema")}";
-            $constraints = $this->logicDriver->selectSet($sql);
-            while(!$constraints->EOF){
-                $conkey = explode(",", str_replace(array("{", "}"), "", $constraints->fields["conkey"]));
-                switch ($constraints->fields["contype"]){
-                    case "f":
-                        $xmlFk = $doc->createElement("fk");
-                        $doc->appendChild($xmlFk);
-
-                        $ownerTable = $doc->getElementById("t_{$constraints->fields["conrelid"]}");
-                        $referencedTable = $doc->getElementById("t_{$constraints->fields["confrelid"]}");
-
-                        $xmlFk->setAttribute("otbl", $ownerTable->getAttribute("i"));
-                        $xmlFk->setAttribute("rtbl", $referencedTable->getAttribute("i"));
-                        $xmlFk->setAttribute("d", $constraints->fields["d"]);
-                        $xmlFk->setAttribute("initd", $constraints->fields["initd"]);
-                        $xmlFk->setAttribute("ua", $constraints->fields["confupdtype"]);
-                        $xmlFk->setAttribute("da", $constraints->fields["confdeltype"]);
-                        $xmlFk->setAttribute("mf", $constraints->fields["mf"]);
-
-                        $xmlName = $doc->createElement("nm");
-                        $textNode = $doc->createTextNode($constraints->fields["conname"]);
-                        $xmlName->appendChild($textNode);
-                        $xmlFk->appendChild($xmlName);
-
-                        if(!empty($constraints->fields["comment"])){
-                            $xmlComment = $doc->createElement("cmt");
-                            $xmlCDATA = $doc->createCDATASection($this->cleanCDATA($constraints->fields["comment"]));
-                            $xmlComment->appendChild($xmlCDATA);
-                            $xmlFk->appendChild($xmlComment);
-                        }
-
-                        $confkey = explode(",", str_replace(array("{", "}"), "", $constraints->fields["confkey"]));
-                        for($i = 0, $n = sizeof($conkey); $i < $n; $i++){
-                            $localColumn = $doc->getElementById("c_{$constraints->fields["conrelid"]}_{$conkey[$i]}");
-                            $referencedColumn = $doc->getElementById("c_{$constraints->fields["confrelid"]}_{$confkey[$i]}");
-                            
-                            $xmlKey = $doc->createElement("key");
-                            $xmlFk->appendChild($xmlKey);
-
-                            $xmlKey->setAttribute("lcol", $localColumn->getAttribute("i"));
-                            $xmlKey->setAttribute("rcol", $referencedColumn->getAttribute("i"));
-
-                        }
-                        break;
-                    case "p":
-                    case "u":
-                        $attName = $constraints->fields["contype"]."k";
-                        for($i = 0, $n = sizeof($conkey); $i < $n; $i++){
-                            $column = $doc->getElementById("c_{$constraints->fields["conrelid"]}_{$conkey[$i]}");
-                            if($column != null) {
-                                $column->setAttribute($attName, "1");
-                                //if($attName == "pk") $column->setAttribute("nn", "0");
-                            }
-                        }
-                        break;
-                }
-                $constraints->MoveNext();
-            }
-
-            $tabs = $doc->getElementsByTagName("tbl");
-            $cols = $doc->getElementsByTagName("col");
-            foreach($tabs as $tab) $tab->removeAttribute("id");
-            foreach($cols as $col) $col->removeAttribute("id");
-            return $this->getJsonFromXml(NULL, $doc);
-            //return $doc->saveXML();
+		public static function loadCurrentSchema() {		 
+            $schemaOID = ERDiagram::getObjectOID('schema');
+			$sql =	'SELECT "table"."oid" AS "tableOID", "table"."relname" AS "tableName", COALESCE("pg_catalog"."obj_description"("table"."oid", \'pg_class\'), \'\') AS "tableComment", NOT "table"."relhasoids" AS "tableWithoutOIDS",
+					"column"."attnum" AS "columnNum", "column"."attname" AS "columnName", "column"."attnotnull" AS "columnNotNull", COALESCE("columnDef"."adsrc", \'\') AS "columnDefaultDef", COALESCE("pg_catalog"."col_description"("column"."attrelid", "column"."attnum"), \'\') AS "columnComment", UPPER("pg_catalog"."format_type"("column"."atttypid", "column"."atttypmod")) as "columnType"
+					FROM "pg_catalog"."pg_class" AS "table"
+					LEFT JOIN "pg_catalog"."pg_attribute" AS "column" ON "table"."oid" = "column"."attrelid" AND "column"."attnum" > 0 AND NOT "column"."attisdropped"
+					LEFT JOIN "pg_catalog"."pg_attrdef" AS "columnDef" ON "column"."attrelid" = "columnDef"."adrelid" AND "column"."attnum" = "columnDef"."adnum"
+					WHERE "relkind"=\'r\' AND "relnamespace" = '.$schemaOID.'
+					ORDER BY "table"."oid", "column"."attnum"';
+            $rs = ERDiagram::$logicDriver->selectSet($sql);
+            $tables = array();
+			$indexedTables = array();
+			$indexedColumns = array();
+			$table = null;
+			$column = null;
+			if(is_object($rs)) {
+				while(!$rs->EOF){
+					if(is_null($table) || $table->name != $rs->fields['tableName']) {
+						$table = new stdClass();
+						$table->name = $rs->fields['tableName'];
+						$table->withoutOIDS = $rs->fields['tableWithoutOIDS'] == 't';
+						$table->comment = $rs->fields['tableComment'];
+						$table->columns = array();
+						$table->uniqueKeys = array();
+						$table->foreignKeys = array();
+						$tables[] = $table;
+						$indexedTables[(int)$rs->fields['tableOID']] = $table;
+					}
+					if(!is_null($rs->fields['columnNum'])) {
+						$column = new stdClass();
+						$column->name = $rs->fields['columnName'];
+						$column->comment = $rs->fields['columnComment'];
+						$column->defaultDef = $rs->fields['columnDefaultDef'];
+						$column->notNull = $rs->fields['columnNotNull'] == 't';
+						$column->array = preg_match('/\[\]/', $rs->fields['columnType']) === 1;
+						$column->length = preg_match('/\\(([0-9, ]*)\\)/', $rs->fields['columnType'], $matches)? $matches[1] : '';
+						$column->type = preg_replace('/\([0-9, ]*\)/', '', preg_replace('/\[\]/', '', $rs->fields["columnType"]));
+						$column->primaryKey = false;
+						
+						if(preg_match('/^nextval/', strtolower($column->defaultDef)) && $column->notNull && ($column->type == "INTEGER" || $column->type == "BIGINT")){
+							$column->defaultDef = '';
+							$column->type = ($type == 'INTEGER')? 'SERIAL' : 'BIGSERIAL';
+						}
+						
+						$table->columns[] = $column;
+						$indexedColumns[(int)$rs->fields['tableOID']][(int)$rs->fields['columnNum']] = $column;
+					}
+					$rs->MoveNext();
+				}
+			}
+			
+			$sql =
+                'SELECT "conname", "contype", "condeferrable", "condeferred", "conrelid",
+                "confrelid", "confupdtype", "confdeltype", "confmatchtype", "conkey", "confkey",
+				COALESCE("pg_catalog"."obj_description"("oid", \'pg_constraint\'), \'\') AS "comment"
+                FROM "pg_catalog"."pg_constraint"
+                WHERE "contype" IN (\'f\', \'p\', \'u\') AND connamespace = '.$schemaOID;
+            
+			$rs = ERDiagram::$logicDriver->selectSet($sql);
+			
+			if(is_object($rs)) {
+				while(!$rs->EOF){
+					$tableOID = (int)$rs->fields['conrelid'];
+					$conkey = explode(',', str_replace(array('{', '}'), '', $rs->fields['conkey']));
+					$constraint = new stdClass();
+					$constraint->name = $rs->fields['conname'];
+					$constraint->comment = $rs->fields['comment'];
+					$constraint->columns = array();
+					switch($rs->fields["contype"]) {
+						case 'f':
+							$confkey = explode(',', str_replace(array('{', '}'), '', $rs->fields['confkey']));
+							$ftableOID = (int)$rs->fields['confrelid'];
+							foreach($conkey as $i => $key) {
+								$constraint->columns[] = array(
+									'localColumn' => $indexedColumns[$tableOID][(int)$key]->name,
+									'foreignColumn' => $indexedColumns[$ftableOID][(int)$confkey[$i]]->name 
+								);
+							}
+							$constraint->deleteAction = $rs->fields['confdeltype'];
+							$constraint->updateAction = $rs->fields['confupdtype'];
+							$constraint->deferred = $rs->fields['condeferred'];
+							$constraint->deferrable = $rs->fields['condeferrable'];
+							$constraint->matchFull = $rs->fields['confmatchtype'] == 'f';
+							$constraint->referencedTable = $indexedTables[$ftableOID]->name;
+							
+							$indexedTables[$tableOID]->foreignKeys[] = $constraint;
+							break;
+						case 'p':
+							foreach($conkey as $key) {
+								$indexedColumns[$tableOID][(int)$key]->primaryKey = true;
+							}
+							break;
+						case 'u':
+							$constraint->columns = array();
+							foreach($conkey as $key) {
+								$constraint->columns[] = $indexedColumns[$tableOID][(int)$key]->name;
+							}
+							$indexedTables[$tableOID]->uniqueKeys[] = $constraint;
+							break;
+					}
+					$rs->MoveNext();
+				}
+			}
+			return array('tables' => $tables);
         }
+		
 		public function getStructure(){
 			if(empty($this->data)){ return 'null'; } 
 			return $this->data;

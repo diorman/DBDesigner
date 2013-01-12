@@ -100,7 +100,8 @@ class DBDesigner extends Plugin {
 			'drop',
 			'open',
 			'ajaxSave',
-			'ajaxExecuteSQL'
+			'ajaxExecuteSQL',
+			'ajaxLoadSchemaStructure'
 		);
 		return $actions;
 	}
@@ -691,6 +692,7 @@ class DBDesigner extends Plugin {
 				DBDesigner.erdiagramStructure = <?php echo $diagram->getStructure(); ?>;
 				DBDesigner.version = "<?php echo $this->version; ?>";
 				DBDesigner.schemaName = "<?php echo $_GET['schema']; ?>";
+				DBDesigner.databaseName = "<?php echo $_GET['database']; ?>";
 				
 				//Disable the default stylesheet
 				$(function(){
@@ -862,9 +864,14 @@ class DBDesigner extends Plugin {
 		$this->sendAjaxResponse(ob_get_clean());
 	}
 	
+	function ajaxLoadSchemaStructure(){
+		$schema = ERDiagram::loadCurrentSchema();
+		$this->sendAjaxResponse($schema);
+	}
+	
 	function sendAjaxResponse($data = NULL){
 		$response = new stdClass();
-		$response->action = $_POST['action'];
+		$response->action = $_REQUEST['action'];
 		if(!is_null($data)){ $response->data = $data; }
 		echo $this->jsonEncode($response);
 	}

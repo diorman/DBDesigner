@@ -125,8 +125,8 @@ $.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.createFromJSON = function(json){
 	json.withoutOIDS = $.parseBool(json.withoutOIDS);
-	json.collapsed = $.parseBool(json.collapsed);
-	json.position = {top: parseInt(json.position.top), left: parseInt(json.position.left)}
+	json.collapsed = (typeof json.collapsed != 'undefined'? $.parseBool(json.collapsed) : false);
+	json.position = (typeof json.position != 'undefined'? {top: parseInt(json.position.top), left: parseInt(json.position.left)} : {})
 	
 	var model = new TableModel();
 	model.setName(json.name);
@@ -182,19 +182,6 @@ TableModel.prototype.setCollapsed = function(b){
 	if(oldValue != b){
 		this._collapsed = b;
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'collapsed', oldValue: oldValue, newValue: b});
-	}
-};
-
-TableModel.prototype.isSelected = function(){
-	if(typeof this._selected == 'undefined') this._selected = false;
-	return this._selected;
-};
-
-TableModel.prototype.setSelected = function(b){
-	var oldValue = this.isSelected();
-	if(oldValue != b){
-		this._selected = b;
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'selected', oldValue: oldValue, newValue: b});
 	}
 };
 

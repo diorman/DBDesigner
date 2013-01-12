@@ -149,11 +149,23 @@ Ajax = {
 					})
 				}, null, 'json').always(alwaysCallback);
 				break;
+				
 			case Ajax.Action.EXECUTE_SQL:
 				Message.show(DBDesigner.lang.strexecutingsql, false);
 				$.post('', {
 					action: action,
 					sql: extraData
+				}, null, 'json').always(alwaysCallback);
+				break;
+				
+			case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
+				//Message.show(DBDesigner.lang.strexecutingsql, false);
+				$.get('', {
+					action: action,
+					server: DBDesigner.server,
+					database: DBDesigner.databaseName,
+					schema: DBDesigner.schemaName,
+					plugin: 'DBDesigner'
 				}, null, 'json').always(alwaysCallback);
 				break;
 		}
@@ -167,6 +179,9 @@ Ajax = {
 				case Ajax.Action.EXECUTE_SQL:
 					Message.close(true);
 					break;
+				case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
+					if(JSONLoader.load(response.data, true)) DBDesigner.app.alignTables();
+					break;
 			}
 		} else {}
 		DBDesigner.app.setDisabled(false);
@@ -174,7 +189,8 @@ Ajax = {
 	
 	Action: {
 		SAVE: 'ajaxSave',
-		EXECUTE_SQL: 'ajaxExecuteSQL'
+		EXECUTE_SQL: 'ajaxExecuteSQL',
+		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure'
 	}
 };
 
@@ -279,47 +295,55 @@ SqlGenerator = {
 		return sql;
 	},
 	_quote: function(str) {
+		var filter = function(str) { return '"' + str.toString().replace(/"/g,'""') + '"'; }
 		if($.isArray(str)) {
 			var ret = [];
 			for(var i = 0; i < str.length; i++) {
-				ret.push('"' + str[i].toString().replace(/"/g,'""') + '"');
+				ret.push(filter(str[i]));
 			}
 			return ret;
 		}
-		return '"' + str.toString().replace(/"/g,'""') + '"';
+		return filter(str);
 	},
 	_escape: function(str) {
 		return str.replace(/'/g,"''");
 	}
 };
 JSONLoader = {
-	load: function(json){
+	_conflicts: null,
+	
+	load: function(json, selectTables){
 		if(json != null && json.tables){
-			var collisions = JSONLoader._findCollisions(json);
-			if(collisions === false) {
-				DBDesigner.app.getTableCollection().loadJSON(json.tables);
-			} else {
-				//console.log(collisions);
+			var conflicts = JSONLoader._findConflicts(json);
+			if(!conflicts) {
+				DBDesigner.app.getTableCollection().loadJSON(json.tables, selectTables);
+				return true;
 			}
 		}
+		return false;
 	},
+	getConflicts: function(){ return JSONLoader._conflicts; },
 	
-	_findCollisions: function(json) {
+	_findConflicts: function(json) {
 		var i;
-		var collisionFound = false;
+		var conflictFound = false;
 		var collection = DBDesigner.app.getTableCollection();
-		var collisions = {
+		var conflicts = {
 			tables: [],
 			uniqueKeys: [],
 			foreignKeys: []
 		}
+		JSONLoader._conflicts = null;
 		for(i = 0; i < json.tables.length; i++) {
 			if(collection.getTableByName(json.tables[i].name) != null) {
-				collisionFound = true;
-				collisions.tables.push(json.tables[i].name);
+				conflictFound = true;
+				conflicts.tables.push(json.tables[i].name);
 			}
 		}
-		if(collisionFound) return collisions;
+		if(conflictFound) {
+			JSONLoader._collisions = conflicts;
+			return true;
+		}
 		return false;
 	}
 };EventDispatcher = {
@@ -2515,8 +2539,8 @@ $.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.createFromJSON = function(json){
 	json.withoutOIDS = $.parseBool(json.withoutOIDS);
-	json.collapsed = $.parseBool(json.collapsed);
-	json.position = {top: parseInt(json.position.top), left: parseInt(json.position.left)}
+	json.collapsed = (typeof json.collapsed != 'undefined'? $.parseBool(json.collapsed) : false);
+	json.position = (typeof json.position != 'undefined'? {top: parseInt(json.position.top), left: parseInt(json.position.left)} : {})
 	
 	var model = new TableModel();
 	model.setName(json.name);
@@ -2572,19 +2596,6 @@ TableModel.prototype.setCollapsed = function(b){
 	if(oldValue != b){
 		this._collapsed = b;
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'collapsed', oldValue: oldValue, newValue: b});
-	}
-};
-
-TableModel.prototype.isSelected = function(){
-	if(typeof this._selected == 'undefined') this._selected = false;
-	return this._selected;
-};
-
-TableModel.prototype.setSelected = function(b){
-	var oldValue = this.isSelected();
-	if(oldValue != b){
-		this._selected = b;
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'selected', oldValue: oldValue, newValue: b});
 	}
 };
 
@@ -2895,6 +2906,7 @@ ColumnModel.createFromJSON = function(json, parent){
 	model.setComment(json.comment);
 	model.setType(json.type);
 	model.setDefault(json.defaultDef);
+	model.setLength(json.length);
 	model.setColumnFlags({
 		array: json.array,
 		primaryKey: json.primaryKey,
@@ -3030,7 +3042,8 @@ ColumnModel.prototype.serialize = function(){
 		array: this.isArray(),
 		primaryKey: this.isPrimaryKey(),
 		notNull: this.isNotNull(),
-		defaultDef: this.getDefault()
+		defaultDef: this.getDefault(),
+		length: this.getLength()
 	};
 };
 
@@ -3214,14 +3227,16 @@ TableCollection.prototype.serialize = function() {
 	return collection;
 };
 
-TableCollection.prototype.loadJSON = function(json){
+TableCollection.prototype.loadJSON = function(json, selectTables){
 	var foreignKeyTables = [];
 	var table;
 	var i;
+	if(typeof selectTables == 'undefined') { selectTables = false; }
 	
 	for(i = 0; i < json.length; i++) {
 		table = Table.createFromJSON(json[i]);
 		this.add(table);
+		if(selectTables) { table.setSelected(true); }
 		if(json[i].foreignKeys && json[i].foreignKeys.length > 0){
 			foreignKeyTables.push({table: table, fkJSON: json[i].foreignKeys});
 		}

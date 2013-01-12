@@ -20,11 +20,23 @@ Ajax = {
 					})
 				}, null, 'json').always(alwaysCallback);
 				break;
+				
 			case Ajax.Action.EXECUTE_SQL:
 				Message.show(DBDesigner.lang.strexecutingsql, false);
 				$.post('', {
 					action: action,
 					sql: extraData
+				}, null, 'json').always(alwaysCallback);
+				break;
+				
+			case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
+				//Message.show(DBDesigner.lang.strexecutingsql, false);
+				$.get('', {
+					action: action,
+					server: DBDesigner.server,
+					database: DBDesigner.databaseName,
+					schema: DBDesigner.schemaName,
+					plugin: 'DBDesigner'
 				}, null, 'json').always(alwaysCallback);
 				break;
 		}
@@ -38,6 +50,9 @@ Ajax = {
 				case Ajax.Action.EXECUTE_SQL:
 					Message.close(true);
 					break;
+				case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
+					if(JSONLoader.load(response.data, true)) DBDesigner.app.alignTables();
+					break;
 			}
 		} else {}
 		DBDesigner.app.setDisabled(false);
@@ -45,7 +60,8 @@ Ajax = {
 	
 	Action: {
 		SAVE: 'ajaxSave',
-		EXECUTE_SQL: 'ajaxExecuteSQL'
+		EXECUTE_SQL: 'ajaxExecuteSQL',
+		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure'
 	}
 };
 

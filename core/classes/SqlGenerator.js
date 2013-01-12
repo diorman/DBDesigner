@@ -98,14 +98,15 @@ SqlGenerator = {
 		return sql;
 	},
 	_quote: function(str) {
+		var filter = function(str) { return '"' + str.toString().replace(/"/g,'""') + '"'; }
 		if($.isArray(str)) {
 			var ret = [];
 			for(var i = 0; i < str.length; i++) {
-				ret.push('"' + str[i].toString().replace(/"/g,'""') + '"');
+				ret.push(filter(str[i]));
 			}
 			return ret;
 		}
-		return '"' + str.toString().replace(/"/g,'""') + '"';
+		return filter(str);
 	},
 	_escape: function(str) {
 		return str.replace(/'/g,"''");

@@ -130,6 +130,7 @@ ColumnModel.createFromJSON = function(json, parent){
 	model.setComment(json.comment);
 	model.setType(json.type);
 	model.setDefault(json.defaultDef);
+	model.setLength(json.length);
 	model.setColumnFlags({
 		array: json.array,
 		primaryKey: json.primaryKey,
@@ -265,7 +266,8 @@ ColumnModel.prototype.serialize = function(){
 		array: this.isArray(),
 		primaryKey: this.isPrimaryKey(),
 		notNull: this.isNotNull(),
-		defaultDef: this.getDefault()
+		defaultDef: this.getDefault(),
+		length: this.getLength()
 	};
 };
 

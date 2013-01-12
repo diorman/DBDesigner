@@ -119,14 +119,16 @@ TableCollection.prototype.serialize = function() {
 	return collection;
 };
 
-TableCollection.prototype.loadJSON = function(json){
+TableCollection.prototype.loadJSON = function(json, selectTables){
 	var foreignKeyTables = [];
 	var table;
 	var i;
+	if(typeof selectTables == 'undefined') { selectTables = false; }
 	
 	for(i = 0; i < json.length; i++) {
 		table = Table.createFromJSON(json[i]);
 		this.add(table);
+		if(selectTables) { table.setSelected(true); }
 		if(json[i].foreignKeys && json[i].foreignKeys.length > 0){
 			foreignKeyTables.push({table: table, fkJSON: json[i].foreignKeys});
 		}
