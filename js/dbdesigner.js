@@ -149,7 +149,7 @@ Ajax = {
 					})
 				}, null, 'json').always(alwaysCallback);
 				break;
-				
+
 			case Ajax.Action.EXECUTE_SQL:
 				Message.show(DBDesigner.lang.strexecutingsql, false);
 				$.post('', {

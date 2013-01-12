@@ -868,7 +868,7 @@ class DBDesigner extends Plugin {
 		$schema = ERDiagram::loadCurrentSchema();
 		$this->sendAjaxResponse($schema);
 	}
-	
+
 	function sendAjaxResponse($data = NULL){
 		$response = new stdClass();
 		$response->action = $_REQUEST['action'];
