@@ -23,7 +23,7 @@ ForwardEngineerDialogUI = function(controller){
 };
 $.extend(ForwardEngineerDialogUI.prototype, ComponentUI);
 
-ForwardEngineerDialogUI.prototype.open = function(message, title){
+ForwardEngineerDialogUI.prototype.open = function(){
 	var dom = this.getDom();
 	dom.removeClass('show-output');
 	dom.find('textarea').val('');
@@ -49,6 +49,9 @@ ForwardEngineerDialogUI.prototype.onButtonClick = function(event){
 			break;
 		case 'forwardengineer-dialog_hide-output':
 			this.getDom().removeClass('show-output');
+			break;
+		case 'forwardengineer-dialog_cancel':
+			this.getDom().dialog('close');
 			break;
 		case 'forwardengineer-dialog_generate':
 			var dom = this.getDom();

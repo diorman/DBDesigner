@@ -45,10 +45,6 @@ div.tool-bar a.forward-engineer span { background-image: url(../images/ForwardEn
 div.tool-bar a.reverse-engineer span { background-image: url(../images/ReverseEngineer.png);}
 div.tool-bar a.select span { background-image: url(../images/Arrow.png); }
 
-/* Undeveloped features*/
-div.tool-bar a.reverse-engineer { display:none; }
-
-
 /* Canvas */
 div.canvas {
     position: absolute;
@@ -357,9 +353,20 @@ div.fordwardengineer-dialog div.output-text {
 	padding: 2px 3px;
 	overflow: auto;
 }
-div.fordwardengineer-dialog .show-output {display: none;}
+div.reverseengineer-dialog div.output-text { 
+	background-color: #E6E6CC;
+	width: 404px;
+	height: 233px;
+	padding: 2px 3px;
+	overflow: auto;
+}
+div.fordwardengineer-dialog .show-output,
+div.reverseengineer-dialog .show-output {display: none;}
+div.reverseengineer-dialog.show-output input.show-output,
 div.fordwardengineer-dialog.show-output input.show-output {display: inline;}
+div.reverseengineer-dialog.show-output div.show-output,
 div.fordwardengineer-dialog.show-output div.show-output {display: block;}
+div.reverseengineer-dialog.show-output .hide-output,
 div.fordwardengineer-dialog.show-output .hide-output {display: none;}
 
 svg {position: absolute; top: 0; left: 0;}

@@ -15,6 +15,7 @@ DBDesigner = function(){
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
 	this.setForwardEngineerDialog();
+	this.setReverseEngineerDialog();
 };
 
 DBDesigner.init = function(){
@@ -28,6 +29,13 @@ DBDesigner.prototype.doAction = function(action, extra) {
 	switch(action){
 		case DBDesigner.Action.FORWARD_ENGINEER:
 			this.forwardEngineerDialog.open();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.REVERSE_ENGINEER:
+			Ajax.sendRequest(Ajax.Action.LOAD_SCHEMA_STRUCTURE, null, function(response){
+				var tables = response.data.tables || [];
+				DBDesigner.app.reverseEngineerDialog.open(tables);
+			});
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALIGN_TABLES:
@@ -254,6 +262,10 @@ DBDesigner.prototype.setConfirmDialog = function(){
 
 DBDesigner.prototype.setForwardEngineerDialog = function(){
 	this.forwardEngineerDialog = new ForwardEngineerDialog();
+};
+
+DBDesigner.prototype.setReverseEngineerDialog = function(){
+	this.reverseEngineerDialog = new ReverseEngineerDialog();
 };
 
 DBDesigner.prototype.setDisabled = function(b){

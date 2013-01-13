@@ -72,3 +72,6 @@
 	$lang['stroutput'] = 'Output';
 	$lang['strhide'] = 'Hide';
 	$lang['strexecutingsql'] = 'Executing SQL...';
+	$lang['strloadingschema'] = 'Loading schema...';
+	$lang['strtablesinschema'] = 'Tables in schema';
+	$lang['strselectedtables'] = 'Selected tables';

@@ -68,7 +68,8 @@ function concatJS($c) {
 		'core/classes/Const.js',
 		'core/classes/Helper.js',
 		'core/classes/ConfirmDialog.js',
-		'core/classes/ForwardEngineerDialog.js'
+		'core/classes/ForwardEngineerDialog.js',
+		'core/classes/ReverseEngineerDialog.js'
 	);
 	if($c) {
 		echo "Compiling Javascript\n";

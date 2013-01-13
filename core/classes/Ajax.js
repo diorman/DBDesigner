@@ -30,7 +30,7 @@ Ajax = {
 				break;
 				
 			case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
-				//Message.show(DBDesigner.lang.strexecutingsql, false);
+				Message.show(DBDesigner.lang.strloadingschema, false);
 				$.get('', {
 					action: action,
 					server: DBDesigner.server,
@@ -51,7 +51,7 @@ Ajax = {
 					Message.close(true);
 					break;
 				case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
-					if(JSONLoader.load(response.data, true)) DBDesigner.app.alignTables();
+					Message.close(true);
 					break;
 			}
 		} else {}

@@ -159,7 +159,7 @@ Ajax = {
 				break;
 				
 			case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
-				//Message.show(DBDesigner.lang.strexecutingsql, false);
+				Message.show(DBDesigner.lang.strloadingschema, false);
 				$.get('', {
 					action: action,
 					server: DBDesigner.server,
@@ -180,7 +180,7 @@ Ajax = {
 					Message.close(true);
 					break;
 				case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
-					if(JSONLoader.load(response.data, true)) DBDesigner.app.alignTables();
+					Message.close(true);
 					break;
 			}
 		} else {}
@@ -325,7 +325,7 @@ JSONLoader = {
 	getConflicts: function(){ return JSONLoader._conflicts; },
 	
 	_findConflicts: function(json) {
-		var i;
+		var i, j;
 		var conflictFound = false;
 		var collection = DBDesigner.app.getTableCollection();
 		var conflicts = {
@@ -339,9 +339,27 @@ JSONLoader = {
 				conflictFound = true;
 				conflicts.tables.push(json.tables[i].name);
 			}
+			/*for(j = 0; j < json.tables[i].uniqueKeys.length; j++) {
+				if(ConstraintHelper.constraintNameExists(json.tables[i].uniqueKeys[j].name)) {
+					conflictFound = true;
+					conflicts.uniqueKeys.push({
+						name: json.tables[i].uniqueKeys[j].name,
+						table: json.tables[i].name
+					});
+				}
+			}
+			for(j = 0; j < json.tables[i].foreignKeys.length; j++) {
+				if(ConstraintHelper.constraintNameExists(json.tables[i].foreignKeys[j].name)) {
+					conflictFound = true;
+					conflicts.foreignKeys.push({
+						name: json.tables[i].foreignKeys[j].name,
+						table: json.tables[i].name
+					});
+				}
+			}*/
 		}
 		if(conflictFound) {
-			JSONLoader._collisions = conflicts;
+			JSONLoader._conflicts = conflicts;
 			return true;
 		}
 		return false;
@@ -519,6 +537,7 @@ DBDesigner = function(){
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
 	this.setForwardEngineerDialog();
+	this.setReverseEngineerDialog();
 };
 
 DBDesigner.init = function(){
@@ -532,6 +551,13 @@ DBDesigner.prototype.doAction = function(action, extra) {
 	switch(action){
 		case DBDesigner.Action.FORWARD_ENGINEER:
 			this.forwardEngineerDialog.open();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.REVERSE_ENGINEER:
+			Ajax.sendRequest(Ajax.Action.LOAD_SCHEMA_STRUCTURE, null, function(response){
+				var tables = response.data.tables || [];
+				DBDesigner.app.reverseEngineerDialog.open(tables);
+			});
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALIGN_TABLES:
@@ -760,6 +786,10 @@ DBDesigner.prototype.setForwardEngineerDialog = function(){
 	this.forwardEngineerDialog = new ForwardEngineerDialog();
 };
 
+DBDesigner.prototype.setReverseEngineerDialog = function(){
+	this.reverseEngineerDialog = new ReverseEngineerDialog();
+};
+
 DBDesigner.prototype.setDisabled = function(b){
 	if(b) {
 		if(!this._$overlay) { this._$overlay = $('<div class="ui-widget-overlay"></div>'); }
@@ -945,6 +975,7 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
 	if($target.hasClass('align-tables')) action = DBDesigner.Action.ALIGN_TABLES;
 	if($target.hasClass('forward-engineer')) action = DBDesigner.Action.FORWARD_ENGINEER;
+	if($target.hasClass('reverse-engineer')) action = DBDesigner.Action.REVERSE_ENGINEER;
 	this.getController().setAction(action);
 };
 
@@ -3229,13 +3260,16 @@ TableCollection.prototype.serialize = function() {
 
 TableCollection.prototype.loadJSON = function(json, selectTables){
 	var foreignKeyTables = [];
+	var tablesInJSON = [];
 	var table;
-	var i;
+	var i, j;
+	var fkJSON;
 	if(typeof selectTables == 'undefined') { selectTables = false; }
 	
 	for(i = 0; i < json.length; i++) {
 		table = Table.createFromJSON(json[i]);
 		this.add(table);
+		tablesInJSON.push(table.getName());
 		if(selectTables) { table.setSelected(true); }
 		if(json[i].foreignKeys && json[i].foreignKeys.length > 0){
 			foreignKeyTables.push({table: table, fkJSON: json[i].foreignKeys});
@@ -3243,17 +3277,26 @@ TableCollection.prototype.loadJSON = function(json, selectTables){
 	}
 	// Create foreign keys after loading all tables
 	for(i = 0; i < foreignKeyTables.length; i++) {
+		// Make sure that foreign table is in JSON
+		fkJSON = [];
+		for(j = 0; j < foreignKeyTables[i].fkJSON.length; j++) {
+			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON)) {
+				fkJSON.push(foreignKeyTables[i].fkJSON[j]);
+			}
+		}
 		foreignKeyTables[i].table.getForeignKeyCollection()
-			.loadJSON(foreignKeyTables[i].fkJSON, foreignKeyTables[i].table);
+			.loadJSON(fkJSON, foreignKeyTables[i].table);
 	}
 	
 };ConstraintHelper = {
 	constraintNameExists: function (name, constraintModel){
 		var constraintList = DBDesigner.app.getConstraintList();
 		var constraint = null;
+		//var instanceClass;
 		var instanceClass = constraintModel.constructor;
-		//if(this.constructor == ForeignKeyCollection) instanceClass = ForeignKey;
-		//else if(this.constructor == UniqueKeyCollection) instanceClass = UniqueKey;
+		/*if(typeof constraintModel == 'undefined') {
+			instanceClass = constraintModel.constructor;
+		}*/
 		for(var i = 0; i < constraintList.length; i++){
 			if(constraintList[i].getName() == name && constraintList[i].getModel() instanceof instanceClass){
 				constraint = constraintList[i];
@@ -5059,7 +5102,7 @@ UniqueKeyDialogUI.prototype.updateSelect = function(columns, selectSelector){
 	if($.isArray(columns) && columns.length > 0){
 		for(var i = 0; i < columns.length; i++){
 			columnName = columns[i].getName();
-			$option = $('<option></option>').val(columnName).text(columnName);
+			$option = $('<option></option>', {value: columnName, text: columnName});
 			$options = $options.add($option);
 		}
 		$(selectSelector).html($options);
@@ -5107,7 +5150,8 @@ DBDesigner.Action = {
 	SAVE: 'actionsave',
 	SHOW_TABLE_DETAIL: 'actionshowtabledetail',
 	ALIGN_TABLES: 'actionaligntables',
-	FORWARD_ENGINEER: 'actionforwardengineer'
+	FORWARD_ENGINEER: 'actionforwardengineer',
+	REVERSE_ENGINEER: 'actionreverseengineer'
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
@@ -5299,7 +5343,7 @@ ForwardEngineerDialogUI = function(controller){
 };
 $.extend(ForwardEngineerDialogUI.prototype, ComponentUI);
 
-ForwardEngineerDialogUI.prototype.open = function(message, title){
+ForwardEngineerDialogUI.prototype.open = function(){
 	var dom = this.getDom();
 	dom.removeClass('show-output');
 	dom.find('textarea').val('');
@@ -5325,6 +5369,113 @@ ForwardEngineerDialogUI.prototype.onButtonClick = function(event){
 			break;
 		case 'forwardengineer-dialog_hide-output':
 			this.getDom().removeClass('show-output');
+			break;
+		case 'forwardengineer-dialog_cancel':
+			this.getDom().dialog('close');
+			break;
+		case 'forwardengineer-dialog_generate':
+			var dom = this.getDom();
+			var sql = SqlGenerator.generate({
+				selectedTablesOnly: $('#fordwardengineer-dialog_filter-selected-tables').prop('checked'),
+				generateDropTable: $('#fordwardengineer-dialog_dropstmt').prop('checked'), 
+				generateCascade: $('#fordwardengineer-dialog_cascadeprmt').prop('checked')
+			});
+			$('#forwardengineer-dialog_script').val(sql);
+			break;
+		case 'forwardengineer-dialog_execute':
+			var sql = $.trim($('#forwardengineer-dialog_script').val());
+			if(sql != ''){
+				var dom = this.getDom();
+				Ajax.sendRequest(Ajax.Action.EXECUTE_SQL, sql, function(response) {
+					$('#forwardengineer-dialog_output').html(response.data);
+					dom.addClass('show-output');
+				});
+			}
+			break;
+	}
+};ReverseEngineerDialog = function(){
+	this.setUI(new ReverseEngineerDialogUI(this));
+};
+$.extend(ReverseEngineerDialog.prototype, Component);
+
+ReverseEngineerDialog.prototype.open = function(tables){
+	this.getUI().open(tables);
+};
+
+// *****************************************************************************
+
+ReverseEngineerDialogUI = function(controller){
+	this.setTemplateID('ReverseEngineerDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({
+		title: DBDesigner.lang.strreverseengineer,
+		modal: true,
+		autoOpen: false,
+		resizable: false,
+		width: 'auto'
+	});
+};
+$.extend(ReverseEngineerDialogUI.prototype, ComponentUI);
+
+ReverseEngineerDialogUI.prototype.open = function(tables){
+	var dom = this.getDom();
+	var $html = $();
+	var $option;
+	for(var i = 0; i < tables.length; i++) {
+		$option = $('<option></option>', {
+			text: tables[i].name,
+			value: tables[i].name,
+			selected: 'selected',
+			data: { jsontable: tables[i] }
+		});
+		$html = $html.add($option);
+	}
+	$('#reverseengineer-dialog_available-tables').html($html);
+	$('#reverseengineer-dialog_selected-tables, #forwardengineer-dialog_output').empty();
+	dom.removeClass('show-output');
+	dom.dialog('open');
+};
+
+ReverseEngineerDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.on('click', 'input[type="button"]', $.proxy(this.onButtonClick, this));
+};
+
+ReverseEngineerDialogUI.prototype.onButtonClick = function(event){
+	switch(event.target.id) {
+		case 'reverseengineer-dialog_show-output':
+			this.getDom().addClass('show-output');
+			break;
+		case 'reverseengineer-dialog_hide-output':
+			this.getDom().removeClass('show-output');
+			break;
+		case 'reverseengineer-dialog_cancel':
+			this.getDom().dialog('close');
+			break;
+		case 'reverseengineer-dialog_ok':
+			var json = {tables: []};
+			$('#reverseengineer-dialog_selected-tables').find('option:selected').each(function() {
+				json.tables.push($(this).data('jsontable'));
+			});
+			if(JSONLoader.load(json, true)){
+				DBDesigner.app.alignTables();
+				this.getDom().dialog('close');
+			} else {
+				var conflicts = JSONLoader.getConflicts();
+				$('#reverseengineer-dialog_output').text(conflicts.toString());
+				this.getDom().addClass('show-output');
+			}
+			break;
+		case 'reverseengineer-dialog_remove-tables':
+			var targetID = '#reverseengineer-dialog_available-tables';
+			var sourceID = '#reverseengineer-dialog_selected-tables';
+		case 'reverseengineer-dialog_add-tables':
+			if(!targetID && !sourceID) {
+				var sourceID = '#reverseengineer-dialog_available-tables';
+				var targetID = '#reverseengineer-dialog_selected-tables';
+			}
+			$(sourceID).find('option:selected').appendTo(targetID);
 			break;
 		case 'forwardengineer-dialog_generate':
 			var dom = this.getDom();

@@ -819,7 +819,8 @@ class DBDesigner extends Plugin {
 			'strempty',
 			'strsaving',
 			'strerdiagramsaved',
-			'strexecutingsql'
+			'strexecutingsql',
+			'strloadingschema'
 		);
 		
 		$js_lang = array();

@@ -8,6 +8,7 @@
 	include_once 'UniqueKeyDialog.php';
 	include_once 'ConfirmDialog.php';
 	include_once 'ForwardEngineerDialog.php';
+	include_once 'ReverseEngineerDialog.php';
 	
 	$templateManager['Column'] = '<div class="db-column"><span class="keys"></span><span class="definition"></span></div>';
 	$templateManager['Canvas'] = '<div id="canvas" class="canvas"><div class="inner-canvas"></div></div>';

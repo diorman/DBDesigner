@@ -15,7 +15,7 @@ JSONLoader = {
 	getConflicts: function(){ return JSONLoader._conflicts; },
 	
 	_findConflicts: function(json) {
-		var i;
+		var i, j;
 		var conflictFound = false;
 		var collection = DBDesigner.app.getTableCollection();
 		var conflicts = {
@@ -29,9 +29,27 @@ JSONLoader = {
 				conflictFound = true;
 				conflicts.tables.push(json.tables[i].name);
 			}
+			/*for(j = 0; j < json.tables[i].uniqueKeys.length; j++) {
+				if(ConstraintHelper.constraintNameExists(json.tables[i].uniqueKeys[j].name)) {
+					conflictFound = true;
+					conflicts.uniqueKeys.push({
+						name: json.tables[i].uniqueKeys[j].name,
+						table: json.tables[i].name
+					});
+				}
+			}
+			for(j = 0; j < json.tables[i].foreignKeys.length; j++) {
+				if(ConstraintHelper.constraintNameExists(json.tables[i].foreignKeys[j].name)) {
+					conflictFound = true;
+					conflicts.foreignKeys.push({
+						name: json.tables[i].foreignKeys[j].name,
+						table: json.tables[i].name
+					});
+				}
+			}*/
 		}
 		if(conflictFound) {
-			JSONLoader._collisions = conflicts;
+			JSONLoader._conflicts = conflicts;
 			return true;
 		}
 		return false;

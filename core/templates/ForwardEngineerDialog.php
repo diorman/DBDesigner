@@ -29,6 +29,7 @@
 			<input type="button" id="forwardengineer-dialog_execute" class="hide-output" value="<?php echo $this->_('strexecute'); ?>" />
 			<input type="button" id="forwardengineer-dialog_show-output" class="hide-output" value="<?php echo $this->_('stroutput'); ?>" />
 			<input type="button" id="forwardengineer-dialog_hide-output" class="show-output" value="<?php echo $this->_('strhide'); ?>" />
+			<input type="button" id="forwardengineer-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
 <?php $templateManager['ForwardEngineerDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

@@ -15,7 +15,8 @@ DBDesigner.Action = {
 	SAVE: 'actionsave',
 	SHOW_TABLE_DETAIL: 'actionshowtabledetail',
 	ALIGN_TABLES: 'actionaligntables',
-	FORWARD_ENGINEER: 'actionforwardengineer'
+	FORWARD_ENGINEER: 'actionforwardengineer',
+	REVERSE_ENGINEER: 'actionreverseengineer'
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
