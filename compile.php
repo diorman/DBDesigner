@@ -67,6 +67,7 @@ function concatJS($c) {
 		'core/classes/UniqueKeyDialog.js',
 		'core/classes/Const.js',
 		'core/classes/Helper.js',
+		'core/classes/AlertDialog.js',
 		'core/classes/ConfirmDialog.js',
 		'core/classes/ForwardEngineerDialog.js',
 		'core/classes/ReverseEngineerDialog.js'

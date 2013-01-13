@@ -37,7 +37,6 @@ return'"'+str+'"';};}(jQuery));
 				left: $parent.scrollLeft(),
 				top: $parent.scrollTop()
 			};
-			console.log(scroll);
 			plugin.group = $(this).css('z-index', '40').siblings('div.ui-selected').css('z-index', '30');
 			plugin.group.each(function(){
 				var $this = $(this);
@@ -126,7 +125,7 @@ Message = {
 	},
 	close: function(force){
 		force = force || false;
-		if(Message._$box && (Message._$box.data('closeable') === true ) || force === true) {
+		if(Message._$box && (Message._$box.data('closeable') === true  || force === true)) {
 			Message.clearTimer();
 			Message._$box.detach();
 		}
@@ -138,12 +137,32 @@ Message = {
 
 
 Ajax = {
+	_sessionTimerID: null,
+	
+	startSessionTimer: function() {
+		Ajax._sessionTimerID = window.setTimeout(
+			function() {
+				Ajax.sendRequest(Ajax.Action.KEEP_SESSION_ALIVE);
+			}, 10000
+		);
+	},
+	
+	stopSessionTimer: function() {
+		if(Ajax._sessionTimerID != null) {
+			window.clearTimeout(Ajax._sessionTimerID);
+		}
+	},
+	
 	sendRequest: function(action, extraData, callback){
-		DBDesigner.app.setDisabled(true);
+		Ajax.stopSessionTimer();
+		
+		if(Ajax.Action.KEEP_SESSION_ALIVE != action) {
+			DBDesigner.app.setDisabled(true);
+		}
 		
 		var alwaysCallback = callback? function(response, status, jqxhr) {
 			Ajax.manageResponse(response, status, jqxhr);
-			callback(response, status, jqxhr);
+			if(status == 'success') { callback(response, status, jqxhr); }
 		} : Ajax.manageResponse;
 		
 		switch(action){
@@ -177,6 +196,16 @@ Ajax = {
 					plugin: 'DBDesigner'
 				}, null, 'json').always(alwaysCallback);
 				break;
+				
+			case Ajax.Action.KEEP_SESSION_ALIVE:
+				$.get('', {
+					action: action,
+					server: DBDesigner.server,
+					database: DBDesigner.databaseName,
+					schema: DBDesigner.schemaName,
+					plugin: 'DBDesigner'
+				}, null, 'json').always(alwaysCallback);
+				break;
 		}
 	},
 	manageResponse: function(response, status, jqxhr){
@@ -192,14 +221,23 @@ Ajax = {
 					Message.close(true);
 					break;
 			}
-		} else {}
+			Ajax.startSessionTimer();
+		} else {
+			Message.close(true);
+			DBDesigner.app.alertDialog.show(
+				DBDesigner.lang.strunexpectedserverresponse,
+				DBDesigner.lang.strservererror,
+				{ method: Ajax.startSessionTimer, scope: window } 
+			);
+		}
 		DBDesigner.app.setDisabled(false);
 	},
 	
 	Action: {
 		SAVE: 'ajaxSave',
 		EXECUTE_SQL: 'ajaxExecuteSQL',
-		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure'
+		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure',
+		KEEP_SESSION_ALIVE: 'ajaxKeepSessionAlive'
 	}
 };
 
@@ -525,6 +563,7 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
+	this.setAlertDialog();
 	this.setForwardEngineerDialog();
 	this.setReverseEngineerDialog();
 };
@@ -533,6 +572,7 @@ DBDesigner.init = function(){
 	DBDesigner.app = new DBDesigner();
 	JSONLoader.load(DBDesigner.erdiagramStructure);
 	DBDesigner.app.toolBar.setDisabled(false);
+	Ajax.startSessionTimer();
 };
 
 
@@ -764,6 +804,10 @@ DBDesigner.prototype.setGlobalUIBehavior = function(){
 
 DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
+};
+
+DBDesigner.prototype.setAlertDialog = function(){
+	this.alertDialog = new AlertDialog();
 };
 
 DBDesigner.prototype.setForwardEngineerDialog = function(){
@@ -5208,6 +5252,85 @@ Vector.VML = 'vml';(function($){
 	};
 })(jQuery);
 
+
+AlertDialog = function(){
+	this.setUI(new AlertDialogUI(this));
+};
+$.extend(AlertDialog.prototype, Component);
+
+AlertDialog.prototype.show = function(message, title, callback){
+	this.setCallback(callback);
+	this.getUI().show(message, title);
+};
+
+AlertDialog.prototype.setCallback = function(callback){
+	if(callback == null) this._callback = null;
+	else{
+		this._callback = {
+			scope: callback.scope,
+			method: callback.method,
+			params: callback.params
+		};
+	}
+};
+
+AlertDialog.prototype.getCallback = function(){
+	if(typeof this._callback == 'undefined') return null;
+	return this._callback;
+};
+
+AlertDialog.prototype.executeCallback = function(){
+	var callback = this.getCallback();
+	if(callback != null){
+		if(!$.isArray(callback.params)) callback.params = [];
+		callback.method.apply(callback.scope, callback.params);
+	}
+};
+
+AlertDialog.prototype.clearReferences = function(){
+	this.setCallback(null);
+};
+
+// *****************************************************************************
+
+AlertDialogUI = function(controller){
+	this.setTemplateID('AlertDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
+};
+$.extend(AlertDialogUI.prototype, ComponentUI);
+
+AlertDialogUI.prototype.show = function(message, title){
+	var dom = this.getDom();
+	var paragraphs = message.split('\n');
+	var $html = $();
+	for(var i = 0; i < paragraphs.length; i++){
+		$html = $html.add($('<p></p>').text(paragraphs[i]));
+	}
+	dom.find('div.content').html($html);
+	dom.dialog('option','title', title);
+	dom.dialog('open');
+};
+
+AlertDialogUI.prototype.close = function(){
+	this.getDom().dialog('close');
+};
+
+AlertDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.bind('dialogclose', $.proxy(this.onDialogClose, this));
+	dom.find('input').click($.proxy(this.onButtonClick, this));
+};
+
+AlertDialogUI.prototype.onButtonClick = function(event){
+	this.getController().executeCallback();
+	this.getDom().dialog('close');
+};
+
+AlertDialogUI.prototype.onDialogClose = function(event){
+	this.getController().clearReferences();
+};
 
 ConfirmDialog = function(){
 	this.setUI(new ConfirmDialogUI(this));

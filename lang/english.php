@@ -77,3 +77,5 @@
 	$lang['strselectedtables'] = 'Selected tables';
 	$lang['strreverseengineerconflictmessage'] = 'Following tables present conflict with extistent:';
 	$lang['stryouhavenotselectedanytable'] = 'You have not selected any table';
+	$lang['strservererror'] = 'Server error';
+	$lang['strunexpectedserverresponse'] = 'Unexpected server response. Your session might have expired';

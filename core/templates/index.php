@@ -6,6 +6,7 @@
 	include_once 'ColumnDialog.php';
 	include_once 'ForeignKeyDialog.php';
 	include_once 'UniqueKeyDialog.php';
+	include_once 'AlertDialog.php';
 	include_once 'ConfirmDialog.php';
 	include_once 'ForwardEngineerDialog.php';
 	include_once 'ReverseEngineerDialog.php';

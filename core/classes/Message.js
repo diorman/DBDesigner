@@ -13,7 +13,7 @@ Message = {
 	},
 	close: function(force){
 		force = force || false;
-		if(Message._$box && (Message._$box.data('closeable') === true ) || force === true) {
+		if(Message._$box && (Message._$box.data('closeable') === true  || force === true)) {
 			Message.clearTimer();
 			Message._$box.detach();
 		}

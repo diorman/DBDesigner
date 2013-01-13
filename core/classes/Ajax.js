@@ -1,11 +1,31 @@
 
 Ajax = {
+	_sessionTimerID: null,
+	
+	startSessionTimer: function() {
+		Ajax._sessionTimerID = window.setTimeout(
+			function() {
+				Ajax.sendRequest(Ajax.Action.KEEP_SESSION_ALIVE);
+			}, 10000
+		);
+	},
+	
+	stopSessionTimer: function() {
+		if(Ajax._sessionTimerID != null) {
+			window.clearTimeout(Ajax._sessionTimerID);
+		}
+	},
+	
 	sendRequest: function(action, extraData, callback){
-		DBDesigner.app.setDisabled(true);
+		Ajax.stopSessionTimer();
+		
+		if(Ajax.Action.KEEP_SESSION_ALIVE != action) {
+			DBDesigner.app.setDisabled(true);
+		}
 		
 		var alwaysCallback = callback? function(response, status, jqxhr) {
 			Ajax.manageResponse(response, status, jqxhr);
-			callback(response, status, jqxhr);
+			if(status == 'success') { callback(response, status, jqxhr); }
 		} : Ajax.manageResponse;
 		
 		switch(action){
@@ -39,6 +59,16 @@ Ajax = {
 					plugin: 'DBDesigner'
 				}, null, 'json').always(alwaysCallback);
 				break;
+				
+			case Ajax.Action.KEEP_SESSION_ALIVE:
+				$.get('', {
+					action: action,
+					server: DBDesigner.server,
+					database: DBDesigner.databaseName,
+					schema: DBDesigner.schemaName,
+					plugin: 'DBDesigner'
+				}, null, 'json').always(alwaysCallback);
+				break;
 		}
 	},
 	manageResponse: function(response, status, jqxhr){
@@ -54,14 +84,23 @@ Ajax = {
 					Message.close(true);
 					break;
 			}
-		} else {}
+			Ajax.startSessionTimer();
+		} else {
+			Message.close(true);
+			DBDesigner.app.alertDialog.show(
+				DBDesigner.lang.strunexpectedserverresponse,
+				DBDesigner.lang.strservererror,
+				{ method: Ajax.startSessionTimer, scope: window } 
+			);
+		}
 		DBDesigner.app.setDisabled(false);
 	},
 	
 	Action: {
 		SAVE: 'ajaxSave',
 		EXECUTE_SQL: 'ajaxExecuteSQL',
-		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure'
+		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure',
+		KEEP_SESSION_ALIVE: 'ajaxKeepSessionAlive'
 	}
 };
 

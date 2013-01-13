@@ -14,6 +14,7 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
+	this.setAlertDialog();
 	this.setForwardEngineerDialog();
 	this.setReverseEngineerDialog();
 };
@@ -22,6 +23,7 @@ DBDesigner.init = function(){
 	DBDesigner.app = new DBDesigner();
 	JSONLoader.load(DBDesigner.erdiagramStructure);
 	DBDesigner.app.toolBar.setDisabled(false);
+	Ajax.startSessionTimer();
 };
 
 
@@ -253,6 +255,10 @@ DBDesigner.prototype.setGlobalUIBehavior = function(){
 
 DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
+};
+
+DBDesigner.prototype.setAlertDialog = function(){
+	this.alertDialog = new AlertDialog();
 };
 
 DBDesigner.prototype.setForwardEngineerDialog = function(){

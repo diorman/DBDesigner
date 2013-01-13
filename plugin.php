@@ -101,7 +101,8 @@ class DBDesigner extends Plugin {
 			'open',
 			'ajaxSave',
 			'ajaxExecuteSQL',
-			'ajaxLoadSchemaStructure'
+			'ajaxLoadSchemaStructure',
+			'ajaxKeepSessionAlive'
 		);
 		return $actions;
 	}
@@ -822,7 +823,9 @@ class DBDesigner extends Plugin {
 			'strexecutingsql',
 			'strloadingschema',
 			'strreverseengineerconflictmessage',
-			'stryouhavenotselectedanytable'
+			'stryouhavenotselectedanytable',
+			'strunexpectedserverresponse',
+			'strservererror'
 		);
 		
 		$js_lang = array();
@@ -870,6 +873,10 @@ class DBDesigner extends Plugin {
 	function ajaxLoadSchemaStructure(){
 		$schema = ERDiagram::loadCurrentSchema();
 		$this->sendAjaxResponse($schema);
+	}
+	
+	function ajaxKeepSessionAlive(){
+		$this->sendAjaxResponse();
 	}
 
 	function sendAjaxResponse($data = NULL){
