@@ -32,11 +32,20 @@ return'"'+str+'"';};}(jQuery));
 		onStart: function(event, ui){
 			if(event.ctrlKey) return false;
 			var pos1 = ui.position;
+			var $parent = $(this).parent();
+			var scroll = {
+				left: $parent.scrollLeft(),
+				top: $parent.scrollTop()
+			};
+			console.log(scroll);
 			plugin.group = $(this).css('z-index', '40').siblings('div.ui-selected').css('z-index', '30');
 			plugin.group.each(function(){
 				var $this = $(this);
 				var pos2 = $this.position();
-				$this.data('dragdiff', {top: pos1.top - pos2.top, left: pos1.left - pos2.left});
+				$this.data('dragdiff', {
+					top: pos1.top - pos2.top - scroll.top,
+					left: pos1.left - pos2.left - scroll.left
+				});
 				$this.trigger('dragstart');
 			});
 		},
