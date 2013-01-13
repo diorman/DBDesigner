@@ -15,7 +15,6 @@ ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
-		DBDesigner.app.getConstraintList().push(foreignKey);
 		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
@@ -40,11 +39,8 @@ ForeignKeyCollection.prototype.onForeignKeyDropped = function(event){
 };
 
 ForeignKeyCollection.prototype.remove = function(foreignKey){
-	var constraintList = DBDesigner.app.getConstraintList();
-	var index1 = $.inArray(foreignKey, this._foreignKeys);
-	var index2 = $.inArray(foreignKey, constraintList);
-	this._foreignKeys.splice(index1, 1);
-	constraintList.splice(index2, 1);
+	var index = $.inArray(foreignKey, this._foreignKeys);
+	this._foreignKeys.splice(index);
 	foreignKey.unbind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);

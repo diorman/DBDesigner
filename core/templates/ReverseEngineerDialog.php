@@ -1,5 +1,6 @@
 <?php ob_start(); ?>
 	<div class="reverseengineer-dialog">
+		<ul class="error-list hide"></ul>
 		<div class="hide-output">
 			<div class="field-multiselection">
 				<div class="layout-select">

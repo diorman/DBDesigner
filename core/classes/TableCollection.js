@@ -141,7 +141,7 @@ TableCollection.prototype.loadJSON = function(json, selectTables){
 		// Make sure that foreign table is in JSON
 		fkJSON = [];
 		for(j = 0; j < foreignKeyTables[i].fkJSON.length; j++) {
-			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON)) {
+			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON) != -1) {
 				fkJSON.push(foreignKeyTables[i].fkJSON[j]);
 			}
 		}

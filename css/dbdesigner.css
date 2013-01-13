@@ -393,6 +393,9 @@ div.reverseengineer-dialog div.output-text {
 	padding: 2px 3px;
 	overflow: auto;
 }
+div.reverseengineer-dialog div.output-text ul {
+	list-style: disc inside; 
+}
 div.fordwardengineer-dialog .show-output,
 div.reverseengineer-dialog .show-output {display: none;}
 div.reverseengineer-dialog.show-output input.show-output,

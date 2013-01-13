@@ -325,13 +325,11 @@ JSONLoader = {
 	getConflicts: function(){ return JSONLoader._conflicts; },
 	
 	_findConflicts: function(json) {
-		var i, j;
+		var i;
 		var conflictFound = false;
 		var collection = DBDesigner.app.getTableCollection();
 		var conflicts = {
-			tables: [],
-			uniqueKeys: [],
-			foreignKeys: []
+			tables: []
 		}
 		JSONLoader._conflicts = null;
 		for(i = 0; i < json.tables.length; i++) {
@@ -339,24 +337,6 @@ JSONLoader = {
 				conflictFound = true;
 				conflicts.tables.push(json.tables[i].name);
 			}
-			/*for(j = 0; j < json.tables[i].uniqueKeys.length; j++) {
-				if(ConstraintHelper.constraintNameExists(json.tables[i].uniqueKeys[j].name)) {
-					conflictFound = true;
-					conflicts.uniqueKeys.push({
-						name: json.tables[i].uniqueKeys[j].name,
-						table: json.tables[i].name
-					});
-				}
-			}
-			for(j = 0; j < json.tables[i].foreignKeys.length; j++) {
-				if(ConstraintHelper.constraintNameExists(json.tables[i].foreignKeys[j].name)) {
-					conflictFound = true;
-					conflicts.foreignKeys.push({
-						name: json.tables[i].foreignKeys[j].name,
-						table: json.tables[i].name
-					});
-				}
-			}*/
 		}
 		if(conflictFound) {
 			JSONLoader._conflicts = conflicts;
@@ -732,11 +712,6 @@ DBDesigner.prototype.getTableCollection = function() {
 		this._tableCollection.bind(Table.Event.SELECTION_CHANGED, this.tableSelectionChanged, this);
 	}
 	return this._tableCollection;
-};
-
-DBDesigner.prototype.getConstraintList = function(){
-	if(typeof this._constraintList == 'undefined') this._constraintList = [];
-	return this._constraintList;
 };
 
 DBDesigner.prototype.tableSelectionChanged = function(event){
@@ -3280,7 +3255,7 @@ TableCollection.prototype.loadJSON = function(json, selectTables){
 		// Make sure that foreign table is in JSON
 		fkJSON = [];
 		for(j = 0; j < foreignKeyTables[i].fkJSON.length; j++) {
-			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON)) {
+			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON) != -1) {
 				fkJSON.push(foreignKeyTables[i].fkJSON[j]);
 			}
 		}
@@ -3290,20 +3265,16 @@ TableCollection.prototype.loadJSON = function(json, selectTables){
 	
 };ConstraintHelper = {
 	constraintNameExists: function (name, constraintModel){
-		var constraintList = DBDesigner.app.getConstraintList();
-		var constraint = null;
-		//var instanceClass;
-		var instanceClass = constraintModel.constructor;
-		/*if(typeof constraintModel == 'undefined') {
-			instanceClass = constraintModel.constructor;
-		}*/
+		var table = constraintModel.getParent();
+		var constraintList = [].concat(
+			table.getForeignKeyCollection().getForeignKeys(),
+			table.getUniqueKeyCollection().getUniqueKeys()
+		);
 		for(var i = 0; i < constraintList.length; i++){
-			if(constraintList[i].getName() == name && constraintList[i].getModel() instanceof instanceClass){
-				constraint = constraintList[i];
-				break;
+			if(constraintList[i].getName() == name && constraintList[i].getModel() != constraintModel){
+				return true;
 			}
 		}
-		if(constraint != null && constraint.getModel() != constraintModel) return true;
 		return false;
 	},
 	buildConstraintName: function(name1, name2, label){
@@ -3467,7 +3438,6 @@ ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
-		DBDesigner.app.getConstraintList().push(foreignKey);
 		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
@@ -3492,11 +3462,8 @@ ForeignKeyCollection.prototype.onForeignKeyDropped = function(event){
 };
 
 ForeignKeyCollection.prototype.remove = function(foreignKey){
-	var constraintList = DBDesigner.app.getConstraintList();
-	var index1 = $.inArray(foreignKey, this._foreignKeys);
-	var index2 = $.inArray(foreignKey, constraintList);
-	this._foreignKeys.splice(index1, 1);
-	constraintList.splice(index2, 1);
+	var index = $.inArray(foreignKey, this._foreignKeys);
+	this._foreignKeys.splice(index);
 	foreignKey.unbind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
@@ -4678,7 +4645,6 @@ UniqueKeyCollection.prototype.getUniqueKeyByName = function(name){
 UniqueKeyCollection.prototype.add = function(uniqueKey){
 	if($.inArray(uniqueKey, this._uniqueKeys) == -1){
 		this._uniqueKeys.push(uniqueKey);
-		DBDesigner.app.getConstraintList().push(uniqueKey);
 		uniqueKey.bind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 		uniqueKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
 		uniqueKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
@@ -4703,11 +4669,8 @@ UniqueKeyCollection.prototype.alterUniqueKey = function(event){
 };
 
 UniqueKeyCollection.prototype.remove = function(uniqueKey){
-	var constraintList = DBDesigner.app.getConstraintList();
-	var index1 = $.inArray(uniqueKey, this._uniqueKeys);
-	var index2 = $.inArray(uniqueKey, constraintList);
-	this._uniqueKeys.splice(index1, 1);
-	constraintList.splice(index2, 1);
+	var index = $.inArray(uniqueKey, this._uniqueKeys);
+	this._uniqueKeys.splice(index, 1);
 	uniqueKey.unbind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
@@ -5432,14 +5395,18 @@ ReverseEngineerDialogUI.prototype.open = function(tables){
 		$html = $html.add($option);
 	}
 	$('#reverseengineer-dialog_available-tables').html($html);
-	$('#reverseengineer-dialog_selected-tables, #forwardengineer-dialog_output').empty();
-	dom.removeClass('show-output');
+	$('#reverseengineer-dialog_output').empty();
+	dom.removeClass('show-output')
+		.find('.error-list').empty().hide();
 	dom.dialog('open');
 };
 
 ReverseEngineerDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
 	dom.on('click', 'input[type="button"]', $.proxy(this.onButtonClick, this));
+	dom.on('dialogclose', function(event, ui) {
+		$('#reverseengineer-dialog_available-tables, #reverseengineer-dialog_selected-tables').empty();
+	});
 };
 
 ReverseEngineerDialogUI.prototype.onButtonClick = function(event){
@@ -5458,12 +5425,24 @@ ReverseEngineerDialogUI.prototype.onButtonClick = function(event){
 			$('#reverseengineer-dialog_selected-tables').find('option:selected').each(function() {
 				json.tables.push($(this).data('jsontable'));
 			});
+			if(json.tables.length == 0) {
+				this.getDom().find('.error-list').html(
+					'<li>' + DBDesigner.lang.stryouhavenotselectedanytable + '</li>'
+				).show();
+				break;
+			}
 			if(JSONLoader.load(json, true)){
 				DBDesigner.app.alignTables();
 				this.getDom().dialog('close');
 			} else {
 				var conflicts = JSONLoader.getConflicts();
-				$('#reverseengineer-dialog_output').text(conflicts.toString());
+				var html = '<p><b>' + DBDesigner.lang.strreverseengineerconflictmessage + '</b></p>';
+				html += '<ul>';
+				for(var i = 0; i < conflicts.tables.length; i++) {
+					html += '<li>' + conflicts.tables[i] + '</li>';
+				}
+				html += '</ul>';
+				$('#reverseengineer-dialog_output').html(html);
 				this.getDom().addClass('show-output');
 			}
 			break;

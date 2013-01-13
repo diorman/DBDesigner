@@ -37,14 +37,18 @@ ReverseEngineerDialogUI.prototype.open = function(tables){
 		$html = $html.add($option);
 	}
 	$('#reverseengineer-dialog_available-tables').html($html);
-	$('#reverseengineer-dialog_selected-tables, #forwardengineer-dialog_output').empty();
-	dom.removeClass('show-output');
+	$('#reverseengineer-dialog_output').empty();
+	dom.removeClass('show-output')
+		.find('.error-list').empty().hide();
 	dom.dialog('open');
 };
 
 ReverseEngineerDialogUI.prototype.bindEvents = function(){
 	var dom = this.getDom();
 	dom.on('click', 'input[type="button"]', $.proxy(this.onButtonClick, this));
+	dom.on('dialogclose', function(event, ui) {
+		$('#reverseengineer-dialog_available-tables, #reverseengineer-dialog_selected-tables').empty();
+	});
 };
 
 ReverseEngineerDialogUI.prototype.onButtonClick = function(event){
@@ -63,12 +67,24 @@ ReverseEngineerDialogUI.prototype.onButtonClick = function(event){
 			$('#reverseengineer-dialog_selected-tables').find('option:selected').each(function() {
 				json.tables.push($(this).data('jsontable'));
 			});
+			if(json.tables.length == 0) {
+				this.getDom().find('.error-list').html(
+					'<li>' + DBDesigner.lang.stryouhavenotselectedanytable + '</li>'
+				).show();
+				break;
+			}
 			if(JSONLoader.load(json, true)){
 				DBDesigner.app.alignTables();
 				this.getDom().dialog('close');
 			} else {
 				var conflicts = JSONLoader.getConflicts();
-				$('#reverseengineer-dialog_output').text(conflicts.toString());
+				var html = '<p><b>' + DBDesigner.lang.strreverseengineerconflictmessage + '</b></p>';
+				html += '<ul>';
+				for(var i = 0; i < conflicts.tables.length; i++) {
+					html += '<li>' + conflicts.tables[i] + '</li>';
+				}
+				html += '</ul>';
+				$('#reverseengineer-dialog_output').html(html);
 				this.getDom().addClass('show-output');
 			}
 			break;

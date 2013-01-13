@@ -820,7 +820,9 @@ class DBDesigner extends Plugin {
 			'strsaving',
 			'strerdiagramsaved',
 			'strexecutingsql',
-			'strloadingschema'
+			'strloadingschema',
+			'strreverseengineerconflictmessage',
+			'stryouhavenotselectedanytable'
 		);
 		
 		$js_lang = array();

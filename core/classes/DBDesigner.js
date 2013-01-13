@@ -212,11 +212,6 @@ DBDesigner.prototype.getTableCollection = function() {
 	return this._tableCollection;
 };
 
-DBDesigner.prototype.getConstraintList = function(){
-	if(typeof this._constraintList == 'undefined') this._constraintList = [];
-	return this._constraintList;
-};
-
 DBDesigner.prototype.tableSelectionChanged = function(event){
 	var actionState = {};
 	switch(this.getTableCollection().count()){

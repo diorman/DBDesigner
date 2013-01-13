@@ -75,3 +75,5 @@
 	$lang['strloadingschema'] = 'Loading schema...';
 	$lang['strtablesinschema'] = 'Tables in schema';
 	$lang['strselectedtables'] = 'Selected tables';
+	$lang['strreverseengineerconflictmessage'] = 'Following tables present conflict with extistent:';
+	$lang['stryouhavenotselectedanytable'] = 'You have not selected any table';
