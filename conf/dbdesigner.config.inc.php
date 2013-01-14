@@ -2,16 +2,18 @@
 
 	class DBDesignerConfig {
 		
+		const pluginName = 'DBDesigner';
+		
 		const database = 'phppgadmin';
 
 		const schema = 'dbdsgnr';
+		
+		//seconds
+		const keepSessionAliveInterval = 20;
 
-		const ownedERDiagramsOnly = FALSE;
+		const showOwnedERDiagramsOnly = FALSE;
 
 		const table = 'erdiagrams';
-
-		
-		//const dbdesignerJS = 'plugins/DBDesigner/js/dbdesigner.js';
 
 		const jquery = 'jquery-1.8.3.min.js';
 

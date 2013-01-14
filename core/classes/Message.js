@@ -11,8 +11,9 @@ Message = {
 			Message._timer = window.setTimeout(Message.close, 5000);
 		}
 	},
-	close: function(){
-		if(Message._$box && Message._$box.data('closeable') === true ){
+	close: function(force){
+		force = force || false;
+		if(Message._$box && (Message._$box.data('closeable') === true  || force === true)) {
 			Message.clearTimer();
 			Message._$box.detach();
 		}

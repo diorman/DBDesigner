@@ -228,7 +228,7 @@ UniqueKeyDialogUI.prototype.updateSelect = function(columns, selectSelector){
 	if($.isArray(columns) && columns.length > 0){
 		for(var i = 0; i < columns.length; i++){
 			columnName = columns[i].getName();
-			$option = $('<option></option>').val(columnName).text(columnName);
+			$option = $('<option></option>', {value: columnName, text: columnName});
 			$options = $options.add($option);
 		}
 		$(selectSelector).html($options);

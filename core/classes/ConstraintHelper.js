@@ -1,17 +1,15 @@
 ConstraintHelper = {
 	constraintNameExists: function (name, constraintModel){
-		var constraintList = DBDesigner.app.getConstraintList();
-		var constraint = null;
-		var instanceClass = constraintModel.constructor;
-		//if(this.constructor == ForeignKeyCollection) instanceClass = ForeignKey;
-		//else if(this.constructor == UniqueKeyCollection) instanceClass = UniqueKey;
+		var table = constraintModel.getParent();
+		var constraintList = [].concat(
+			table.getForeignKeyCollection().getForeignKeys(),
+			table.getUniqueKeyCollection().getUniqueKeys()
+		);
 		for(var i = 0; i < constraintList.length; i++){
-			if(constraintList[i].getName() == name && constraintList[i].getModel() instanceof instanceClass){
-				constraint = constraintList[i];
-				break;
+			if(constraintList[i].getName() == name && constraintList[i].getModel() != constraintModel){
+				return true;
 			}
 		}
-		if(constraint != null && constraint.getModel() != constraintModel) return true;
 		return false;
 	},
 	buildConstraintName: function(name1, name2, label){

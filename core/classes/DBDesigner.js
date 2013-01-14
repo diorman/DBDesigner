@@ -14,53 +14,72 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
+	this.setAlertDialog();
+	this.setForwardEngineerDialog();
+	this.setReverseEngineerDialog();
 };
 
 DBDesigner.init = function(){
 	DBDesigner.app = new DBDesigner();
 	JSONLoader.load(DBDesigner.erdiagramStructure);
 	DBDesigner.app.toolBar.setDisabled(false);
+	Ajax.startSessionTimer();
 };
 
 
 DBDesigner.prototype.doAction = function(action, extra) {
-	switch(action){	
+	switch(action){
+		case DBDesigner.Action.FORWARD_ENGINEER:
+			this.forwardEngineerDialog.open();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.REVERSE_ENGINEER:
+			Ajax.sendRequest(Ajax.Action.LOAD_SCHEMA_STRUCTURE, null, function(response){
+				var tables = response.data.tables || [];
+				DBDesigner.app.reverseEngineerDialog.open(tables);
+			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.ALIGN_TABLES:
+			this.alignTables();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.ADD_TABLE:
-			DBDesigner.app.canvas.setCapturingPlacement(true);
+			this.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.SAVE:
 			Ajax.sendRequest(Ajax.Action.SAVE);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
-			DBDesigner.app.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
+			this.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_COLUMN:
-			DBDesigner.app.columnDialog.editColumn(extra);
+			this.columnDialog.editColumn(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_TABLE:
-			DBDesigner.app.tableDialog.editTable(extra);
+			this.tableDialog.editTable(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SELECT:
-			DBDesigner.app.canvas.setCapturingPlacement(false);
+			this.canvas.setCapturingPlacement(false);
 			break;
 		case DBDesigner.Action.ADD_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
+			this.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
+			this.foreignKeyDialog.editForeignKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
+			this.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.editUniqueKey(extra);
+			this.uniqueKeyDialog.editUniqueKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
@@ -69,7 +88,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 		case DBDesigner.Action.DROP_TABLE:
 			var message, scope, method, selection, count;
 			if(typeof extra == 'undefined') {
-				selection = DBDesigner.app.getTableCollection();
+				selection = this.getTableCollection();
 				count = selection.count();
 				if(count == 1) {
 					extra = selection.getSelectedTables()[0];
@@ -101,6 +120,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_UNIQUEKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -111,6 +131,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_FOREIGNKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -121,6 +142,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 	}
 };
@@ -192,11 +214,6 @@ DBDesigner.prototype.getTableCollection = function() {
 	return this._tableCollection;
 };
 
-DBDesigner.prototype.getConstraintList = function(){
-	if(typeof this._constraintList == 'undefined') this._constraintList = [];
-	return this._constraintList;
-};
-
 DBDesigner.prototype.tableSelectionChanged = function(event){
 	var actionState = {};
 	switch(this.getTableCollection().count()){
@@ -219,7 +236,7 @@ DBDesigner.prototype.tableSelectionChanged = function(event){
 			actionState[DBDesigner.Action.DROP_TABLE] = true;
 			break;
 	}
-	DBDesigner.app.toolBar.setActionState(actionState);
+	this.toolBar.setActionState(actionState);
 };
 
 DBDesigner.prototype.alterTable = function(event){
@@ -240,10 +257,43 @@ DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
 };
 
+DBDesigner.prototype.setAlertDialog = function(){
+	this.alertDialog = new AlertDialog();
+};
+
+DBDesigner.prototype.setForwardEngineerDialog = function(){
+	this.forwardEngineerDialog = new ForwardEngineerDialog();
+};
+
+DBDesigner.prototype.setReverseEngineerDialog = function(){
+	this.reverseEngineerDialog = new ReverseEngineerDialog();
+};
+
 DBDesigner.prototype.setDisabled = function(b){
 	if(b) {
 		if(!this._$overlay) { this._$overlay = $('<div class="ui-widget-overlay"></div>'); }
 		$('body').append(this._$overlay);
 	} else if(this._$overlay) { this._$overlay.detach(); }
 	this.toolBar.setDisabled(b);
+};
+
+DBDesigner.prototype.alignTables = function() {
+    var canvasSize = this.canvas.getSize();
+	var margin = {x: 20, y: 20};
+	var tableSize;
+	var left, top, max = 0;
+	var tables = this.getTableCollection().getTables();
+    left = margin.x;
+    top = margin.y;
+    for(var i = 0; i < tables.length; i++){
+        tableSize = tables[i].getSize();
+        if (top + tableSize.height > canvasSize.height && top != margin.y) {
+            left += margin.x + max;
+            top = margin.y;
+            max = 0;
+        }
+        tables[i].setPosition({top: top, left: left});
+        top += margin.y + tableSize.height;
+        if (tableSize.width > max) max = tableSize.width;
+    }
 };

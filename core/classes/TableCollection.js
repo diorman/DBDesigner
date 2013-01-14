@@ -119,22 +119,34 @@ TableCollection.prototype.serialize = function() {
 	return collection;
 };
 
-TableCollection.prototype.loadJSON = function(json){
+TableCollection.prototype.loadJSON = function(json, selectTables){
 	var foreignKeyTables = [];
+	var tablesInJSON = [];
 	var table;
-	var i;
+	var i, j;
+	var fkJSON;
+	if(typeof selectTables == 'undefined') { selectTables = false; }
 	
 	for(i = 0; i < json.length; i++) {
 		table = Table.createFromJSON(json[i]);
 		this.add(table);
+		tablesInJSON.push(table.getName());
+		if(selectTables) { table.setSelected(true); }
 		if(json[i].foreignKeys && json[i].foreignKeys.length > 0){
 			foreignKeyTables.push({table: table, fkJSON: json[i].foreignKeys});
 		}
 	}
 	// Create foreign keys after loading all tables
 	for(i = 0; i < foreignKeyTables.length; i++) {
+		// Make sure that foreign table is in JSON
+		fkJSON = [];
+		for(j = 0; j < foreignKeyTables[i].fkJSON.length; j++) {
+			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON) != -1) {
+				fkJSON.push(foreignKeyTables[i].fkJSON[j]);
+			}
+		}
 		foreignKeyTables[i].table.getForeignKeyCollection()
-			.loadJSON(foreignKeyTables[i].fkJSON, foreignKeyTables[i].table);
+			.loadJSON(fkJSON, foreignKeyTables[i].table);
 	}
 	
 };

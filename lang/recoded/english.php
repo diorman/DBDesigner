@@ -65,3 +65,17 @@
 	$lang['strsaveandnew'] = 'Save &amp; New';
 	$lang['strsaving'] = 'Saving...';
 	$lang['strerdiagramsaved'] = 'E-R Diagram saved.';
+	$lang['stronlyselectedtables'] = 'Only selected tables';
+	$lang['strgeneratedropstmt'] = 'Generate DROP TABLE';
+	$lang['strgeneratecascadeprmt'] = 'Generate CASCADE';
+	$lang['strgenerate'] = 'Generate';
+	$lang['stroutput'] = 'Output';
+	$lang['strhide'] = 'Hide';
+	$lang['strexecutingsql'] = 'Executing SQL...';
+	$lang['strloadingschema'] = 'Loading schema...';
+	$lang['strtablesinschema'] = 'Tables in schema';
+	$lang['strselectedtables'] = 'Selected tables';
+	$lang['strreverseengineerconflictmessage'] = 'Following tables present conflict with extistent:';
+	$lang['stryouhavenotselectedanytable'] = 'You have not selected any table';
+	$lang['strservererror'] = 'Server error';
+	$lang['strunexpectedserverresponse'] = 'Unexpected server response. Your session might have expired';

@@ -154,6 +154,9 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('add-uniquekey')) action = DBDesigner.Action.ADD_UNIQUEKEY;
 	if($target.hasClass('drop-table')) action = DBDesigner.Action.DROP_TABLE;
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
+	if($target.hasClass('align-tables')) action = DBDesigner.Action.ALIGN_TABLES;
+	if($target.hasClass('forward-engineer')) action = DBDesigner.Action.FORWARD_ENGINEER;
+	if($target.hasClass('reverse-engineer')) action = DBDesigner.Action.REVERSE_ENGINEER;
 	this.getController().setAction(action);
 };
 

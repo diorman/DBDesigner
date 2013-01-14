@@ -32,11 +32,19 @@ return'"'+str+'"';};}(jQuery));
 		onStart: function(event, ui){
 			if(event.ctrlKey) return false;
 			var pos1 = ui.position;
+			var $parent = $(this).parent();
+			var scroll = {
+				left: $parent.scrollLeft(),
+				top: $parent.scrollTop()
+			};
 			plugin.group = $(this).css('z-index', '40').siblings('div.ui-selected').css('z-index', '30');
 			plugin.group.each(function(){
 				var $this = $(this);
 				var pos2 = $this.position();
-				$this.data('dragdiff', {top: pos1.top - pos2.top, left: pos1.left - pos2.left});
+				$this.data('dragdiff', {
+					top: pos1.top - pos2.top - scroll.top,
+					left: pos1.left - pos2.left - scroll.left
+				});
 				$this.trigger('dragstart');
 			});
 		},
@@ -115,8 +123,9 @@ Message = {
 			Message._timer = window.setTimeout(Message.close, 5000);
 		}
 	},
-	close: function(){
-		if(Message._$box && Message._$box.data('closeable') === true ){
+	close: function(force){
+		force = force || false;
+		if(Message._$box && (Message._$box.data('closeable') === true  || force === true)) {
 			Message.clearTimer();
 			Message._$box.detach();
 		}
@@ -128,8 +137,34 @@ Message = {
 
 
 Ajax = {
-	sendRequest: function(action){
-		DBDesigner.app.setDisabled(true);
+	_sessionTimerID: null,
+	
+	startSessionTimer: function() {
+		Ajax._sessionTimerID = window.setTimeout(
+			function() {
+				Ajax.sendRequest(Ajax.Action.KEEP_SESSION_ALIVE);
+			}, DBDesigner.keepSessionAliveInterval * 1000
+		);
+	},
+	
+	stopSessionTimer: function() {
+		if(Ajax._sessionTimerID != null) {
+			window.clearTimeout(Ajax._sessionTimerID);
+		}
+	},
+	
+	sendRequest: function(action, extraData, callback){
+		Ajax.stopSessionTimer();
+		
+		if(Ajax.Action.KEEP_SESSION_ALIVE != action) {
+			DBDesigner.app.setDisabled(true);
+		}
+		
+		var alwaysCallback = callback? function(response, status, jqxhr) {
+			Ajax.manageResponse(response, status, jqxhr);
+			if(status == 'success') { callback(response, status, jqxhr); }
+		} : Ajax.manageResponse;
+		
 		switch(action){
 			case Ajax.Action.SAVE:
 				Message.show(DBDesigner.lang.strsaving, false);
@@ -140,56 +175,220 @@ Ajax = {
 						version: DBDesigner.version,
 						tables: DBDesigner.app.getTableCollection().serialize()
 					})
-				}, null, 'json').always(Ajax.manageResponse);
+				}, null, 'json').always(alwaysCallback);
+				break;
+
+			case Ajax.Action.EXECUTE_SQL:
+				Message.show(DBDesigner.lang.strexecutingsql, false);
+				$.post('', {
+					action: action,
+					sql: extraData
+				}, null, 'json').always(alwaysCallback);
+				break;
+				
+			case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
+				Message.show(DBDesigner.lang.strloadingschema, false);
+				$.get('', {
+					action: action,
+					server: DBDesigner.server,
+					database: DBDesigner.databaseName,
+					schema: DBDesigner.schemaName,
+					plugin: DBDesigner.pluginName
+				}, null, 'json').always(alwaysCallback);
+				break;
+				
+			case Ajax.Action.KEEP_SESSION_ALIVE:
+				$.get('', {
+					action: action,
+					server: DBDesigner.server,
+					database: DBDesigner.databaseName,
+					schema: DBDesigner.schemaName,
+					plugin: DBDesigner.pluginName
+				}, null, 'json').always(alwaysCallback);
 				break;
 		}
 	},
-	manageResponse: function(data, status, jqxhr){
+	manageResponse: function(response, status, jqxhr){
 		if(status == 'success'){
-			switch(data.action){
+			switch(response.action){
 				case Ajax.Action.SAVE:
 					Message.show(DBDesigner.lang.strerdiagramsaved, true);
 					break;
+				case Ajax.Action.EXECUTE_SQL:
+					Message.close(true);
+					break;
+				case Ajax.Action.LOAD_SCHEMA_STRUCTURE:
+					Message.close(true);
+					break;
 			}
-		} else {}
+			Ajax.startSessionTimer();
+		} else {
+			Message.close(true);
+			DBDesigner.app.alertDialog.show(
+				DBDesigner.lang.strunexpectedserverresponse,
+				DBDesigner.lang.strservererror,
+				{ method: Ajax.startSessionTimer, scope: window } 
+			);
+		}
 		DBDesigner.app.setDisabled(false);
 	},
 	
 	Action: {
-		SAVE: 'ajaxSave'
+		SAVE: 'ajaxSave',
+		EXECUTE_SQL: 'ajaxExecuteSQL',
+		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure',
+		KEEP_SESSION_ALIVE: 'ajaxKeepSessionAlive'
 	}
 };
 
 
 
+SqlGenerator = {
+	generate: function(options) {
+		var tableCollection = DBDesigner.app.getTableCollection();
+		var tables = options.selectedTablesOnly? tableCollection.getSelectedTables() : tableCollection.getTables();
+		var i, j, k;
+		var sql = '', sqlFK = '';
+		var columns;
+		var comment;
+		var columnName, columnDefault, columnSQL;
+		var constraintName, constraints, constraintColumns;
+		var tablePK, tableSQL, tableName, tableComments;
+		var foreignColumns, localColumns, referencedTableName;
+		
+		for(i = 0; i < tables.length; i++) {
+			tableName = SqlGenerator._quote(DBDesigner.schemaName) + '.' + SqlGenerator._quote(tables[i].getName());
+			sql += '\n-- -----------------------------------\n-- ' + tableName + '\n-- -----------------------------------\n\n'
+			if(options.generateDropTable) { 
+				sql += 'DROP TABLE IF EXISTS ' + tableName;
+				if(options.generateCascade) { sql += ' CASCADE'; }
+				sql += ';\n';
+			}
+			sql += "CREATE TABLE " + tableName + " (\n";
+			
+			tablePK = [];
+			tableSQL = [];
+			tableComments = [];
+			comment = SqlGenerator._escape(tables[i].getComment());
+			if(comment != '') { 
+				tableComments.push('COMMENT ON TABLE ' + tableName + ' IS \'' + comment + '\';');
+			}
+			
+			// Columns
+			columns = tables[i].getColumnCollection().getColumns();
+			for(j = 0; j < columns.length; j++){
+				columnName = SqlGenerator._quote(columns[j].getName());
+				columnDefault = columns[j].getDefault();
+				comment = SqlGenerator._escape(columns[j].getComment());
+				columnSQL = '\t' + columnName + ' ' + columns[j].getFullType();
+				if(columns[j].isNotNull()) columnSQL += ' NOT NULL';
+				if(columnDefault != '') columnSQL += ' DEFAULT ' + columnDefault;
+				if(columns[j].isPrimaryKey()) tablePK.push(columnName);
+				if(comment != "") { tableComments.push('COMMENT ON COLUMN ' + tableName + '.' + columnName + ' IS \'' + comment + '\';')};
+				tableSQL.push(columnSQL);
+			}
+			// Primary Key
+			if(tablePK.length > 0) {
+				tableSQL.push('\tPRIMARY KEY ( ' + tablePK.join(', ') + ' )');
+			}
+			
+			// Unique Keys
+			constraints = tables[i].getUniqueKeyCollection().getUniqueKeys();
+			for(j = 0; j < constraints.length; j++) {
+				constraintName = SqlGenerator._quote(constraints[j].getName());
+				comment = SqlGenerator._escape(constraints[j].getComment());
+				constraintColumns = SqlGenerator._quote(constraints[j].getColumns());
+				if(comment != '') {
+					tableComments.push('COMMENT ON CONSTRAINT ' + constraintName + ' ON ' + tableName + ' IS \'' + comment + '\';');
+				}
+				tableSQL.push('\tCONSTRAINT ' + constraintName + ' UNIQUE ( ' + constraintColumns.join(', ') + ' )');
+			}
+			sql += tableSQL.join(',\n');
+			sql += '\n)\nWITH ( OIDS=' + (!tables[i].getWithoutOIDS()).toString().toUpperCase() + ' );\n'
+			
+			if(tableComments.length > 0) {
+				sql += tableComments.join('\n') + '\n';
+			}
+			
+			// Foreign Keys
+			constraints = tables[i].getForeignKeyCollection().getForeignKeys();
+			for(j = 0; j < constraints.length; j++){
+				constraintName = SqlGenerator._quote(constraints[j].getName());
+				constraintColumns = constraints[j].getColumns();
+				referencedTableName = SqlGenerator._quote(DBDesigner.schemaName) + '.' + SqlGenerator._quote(constraints[j].getReferencedTable().getName());
+				foreignColumns = [];
+				localColumns = [];
+				for(k = 0; k < constraintColumns.length; k++) {
+					foreignColumns.push(SqlGenerator._quote(constraintColumns[k].foreignColumn.getName()));
+					localColumns.push(SqlGenerator._quote(constraintColumns[k].localColumn.getName()));
+				}
+
+				sqlFK += 
+					'\nALTER TABLE ' + tableName + '\n' +
+					'\tADD CONSTRAINT ' + constraintName + ' FOREIGN KEY ( ' + localColumns.join(', ') + ' ) ' +
+					'REFERENCES ' + referencedTableName + ' ( ' + foreignColumns.join(', ') + ' )\n' +
+					(constraints[j].isMatchFull() ? '\tMATCH FULL ' : '\t') +
+					'ON DELETE ' + constraints[j].getActionString('delete') + ' ON UPDATE ' + constraints[j].getActionString('update') +
+					(constraints[j].isDeferrable() ? '\n\tDEFERRABLE ' + (constraints[j].isDeferred()? 'INITIALLY DEFERRED' : '') : '') + ';\n';
+				comment = SqlGenerator._escape(constraints[j].getComment());
+				if(comment != '') {
+					sqlFK += 'COMMENT ON CONSTRAINT ' + constraintName + " ON " + tableName + " IS '" + comment + "';\n";
+				}
+			}	
+		}	
+		if(sqlFK != '') {
+			sql += '\n-- -----------------------------------\n-- Foreign Keys\n-- -----------------------------------\n' + sqlFK;
+		}
+		return sql;
+	},
+	_quote: function(str) {
+		var filter = function(str) { return '"' + str.toString().replace(/"/g,'""') + '"'; }
+		if($.isArray(str)) {
+			var ret = [];
+			for(var i = 0; i < str.length; i++) {
+				ret.push(filter(str[i]));
+			}
+			return ret;
+		}
+		return filter(str);
+	},
+	_escape: function(str) {
+		return str.replace(/'/g,"''");
+	}
+};
 JSONLoader = {
-	load: function(json){
+	_conflicts: null,
+	
+	load: function(json, selectTables){
 		if(json != null && json.tables){
-			var collisions = JSONLoader._findCollisions(json);
-			if(collisions === false) {
-				DBDesigner.app.getTableCollection().loadJSON(json.tables);
-			} else {
-				//console.log(collisions);
+			var conflicts = JSONLoader._findConflicts(json);
+			if(!conflicts) {
+				DBDesigner.app.getTableCollection().loadJSON(json.tables, selectTables);
+				return true;
 			}
 		}
+		return false;
 	},
+	getConflicts: function(){ return JSONLoader._conflicts; },
 	
-	_findCollisions: function(json) {
+	_findConflicts: function(json) {
 		var i;
-		var collisionFound = false;
+		var conflictFound = false;
 		var collection = DBDesigner.app.getTableCollection();
-		var collisions = {
-			tables: [],
-			uniqueKeys: [],
-			foreignKeys: []
+		var conflicts = {
+			tables: []
 		}
+		JSONLoader._conflicts = null;
 		for(i = 0; i < json.tables.length; i++) {
 			if(collection.getTableByName(json.tables[i].name) != null) {
-				collisionFound = true;
-				collisions.tables.push(json.tables[i].name);
+				conflictFound = true;
+				conflicts.tables.push(json.tables[i].name);
 			}
 		}
-		if(collisionFound) return collisions;
+		if(conflictFound) {
+			JSONLoader._conflicts = conflicts;
+			return true;
+		}
 		return false;
 	}
 };EventDispatcher = {
@@ -364,53 +563,72 @@ DBDesigner = function(){
 	this.setForeignKeyDialog();
 	this.setUniqueKeyDialog();
 	this.setConfirmDialog();
+	this.setAlertDialog();
+	this.setForwardEngineerDialog();
+	this.setReverseEngineerDialog();
 };
 
 DBDesigner.init = function(){
 	DBDesigner.app = new DBDesigner();
 	JSONLoader.load(DBDesigner.erdiagramStructure);
 	DBDesigner.app.toolBar.setDisabled(false);
+	Ajax.startSessionTimer();
 };
 
 
 DBDesigner.prototype.doAction = function(action, extra) {
-	switch(action){	
+	switch(action){
+		case DBDesigner.Action.FORWARD_ENGINEER:
+			this.forwardEngineerDialog.open();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.REVERSE_ENGINEER:
+			Ajax.sendRequest(Ajax.Action.LOAD_SCHEMA_STRUCTURE, null, function(response){
+				var tables = response.data.tables || [];
+				DBDesigner.app.reverseEngineerDialog.open(tables);
+			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
+		case DBDesigner.Action.ALIGN_TABLES:
+			this.alignTables();
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
+			break;
 		case DBDesigner.Action.ADD_TABLE:
-			DBDesigner.app.canvas.setCapturingPlacement(true);
+			this.canvas.setCapturingPlacement(true);
 			break;
 		case DBDesigner.Action.SAVE:
 			Ajax.sendRequest(Ajax.Action.SAVE);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_COLUMN:
-			DBDesigner.app.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
+			this.columnDialog.createColumn(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_COLUMN:
-			DBDesigner.app.columnDialog.editColumn(extra);
+			this.columnDialog.editColumn(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_TABLE:
-			DBDesigner.app.tableDialog.editTable(extra);
+			this.tableDialog.editTable(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SELECT:
-			DBDesigner.app.canvas.setCapturingPlacement(false);
+			this.canvas.setCapturingPlacement(false);
 			break;
 		case DBDesigner.Action.ADD_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
+			this.foreignKeyDialog.createForeignKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_FOREIGNKEY:
-			DBDesigner.app.foreignKeyDialog.editForeignKey(extra);
+			this.foreignKeyDialog.editForeignKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ADD_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
+			this.uniqueKeyDialog.createUniqueKey(this.getTableCollection().getSelectedTables()[0]);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.ALTER_UNIQUEKEY:
-			DBDesigner.app.uniqueKeyDialog.editUniqueKey(extra);
+			this.uniqueKeyDialog.editUniqueKey(extra);
 			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.SHOW_TABLE_DETAIL:
@@ -419,7 +637,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 		case DBDesigner.Action.DROP_TABLE:
 			var message, scope, method, selection, count;
 			if(typeof extra == 'undefined') {
-				selection = DBDesigner.app.getTableCollection();
+				selection = this.getTableCollection();
 				count = selection.count();
 				if(count == 1) {
 					extra = selection.getSelectedTables()[0];
@@ -451,6 +669,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_UNIQUEKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -461,6 +680,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 		case DBDesigner.Action.DROP_FOREIGNKEY:
 			var message = DBDesigner.lang.strconfdropconstraint
@@ -471,6 +691,7 @@ DBDesigner.prototype.doAction = function(action, extra) {
 				scope: extra,
 				method: extra.drop
 			});
+			this.toolBar.setAction(DBDesigner.Action.SELECT);
 			break;
 	}
 };
@@ -542,11 +763,6 @@ DBDesigner.prototype.getTableCollection = function() {
 	return this._tableCollection;
 };
 
-DBDesigner.prototype.getConstraintList = function(){
-	if(typeof this._constraintList == 'undefined') this._constraintList = [];
-	return this._constraintList;
-};
-
 DBDesigner.prototype.tableSelectionChanged = function(event){
 	var actionState = {};
 	switch(this.getTableCollection().count()){
@@ -569,7 +785,7 @@ DBDesigner.prototype.tableSelectionChanged = function(event){
 			actionState[DBDesigner.Action.DROP_TABLE] = true;
 			break;
 	}
-	DBDesigner.app.toolBar.setActionState(actionState);
+	this.toolBar.setActionState(actionState);
 };
 
 DBDesigner.prototype.alterTable = function(event){
@@ -590,12 +806,45 @@ DBDesigner.prototype.setConfirmDialog = function(){
 	this.confirmDialog = new ConfirmDialog();
 };
 
+DBDesigner.prototype.setAlertDialog = function(){
+	this.alertDialog = new AlertDialog();
+};
+
+DBDesigner.prototype.setForwardEngineerDialog = function(){
+	this.forwardEngineerDialog = new ForwardEngineerDialog();
+};
+
+DBDesigner.prototype.setReverseEngineerDialog = function(){
+	this.reverseEngineerDialog = new ReverseEngineerDialog();
+};
+
 DBDesigner.prototype.setDisabled = function(b){
 	if(b) {
 		if(!this._$overlay) { this._$overlay = $('<div class="ui-widget-overlay"></div>'); }
 		$('body').append(this._$overlay);
 	} else if(this._$overlay) { this._$overlay.detach(); }
 	this.toolBar.setDisabled(b);
+};
+
+DBDesigner.prototype.alignTables = function() {
+    var canvasSize = this.canvas.getSize();
+	var margin = {x: 20, y: 20};
+	var tableSize;
+	var left, top, max = 0;
+	var tables = this.getTableCollection().getTables();
+    left = margin.x;
+    top = margin.y;
+    for(var i = 0; i < tables.length; i++){
+        tableSize = tables[i].getSize();
+        if (top + tableSize.height > canvasSize.height && top != margin.y) {
+            left += margin.x + max;
+            top = margin.y;
+            max = 0;
+        }
+        tables[i].setPosition({top: top, left: left});
+        top += margin.y + tableSize.height;
+        if (tableSize.width > max) max = tableSize.width;
+    }
 };/**
  *
  * Class to manage the toolbar of the designer
@@ -752,6 +1001,9 @@ ToolBarUI.prototype.buttonPressed = function(event) {
 	if($target.hasClass('add-uniquekey')) action = DBDesigner.Action.ADD_UNIQUEKEY;
 	if($target.hasClass('drop-table')) action = DBDesigner.Action.DROP_TABLE;
 	if($target.hasClass('save')) action = DBDesigner.Action.SAVE;
+	if($target.hasClass('align-tables')) action = DBDesigner.Action.ALIGN_TABLES;
+	if($target.hasClass('forward-engineer')) action = DBDesigner.Action.FORWARD_ENGINEER;
+	if($target.hasClass('reverse-engineer')) action = DBDesigner.Action.REVERSE_ENGINEER;
 	this.getController().setAction(action);
 };
 
@@ -875,6 +1127,10 @@ Canvas.prototype.isCapturingPlacement = function() {
 Canvas.prototype.placementCaptured = function(position) {
 	this.trigger(Canvas.Event.PLACEMENT_CAPTURED, {position: position});
 };
+
+Canvas.prototype.getSize = function() {
+	return this.getUI().getSize();
+}
 
 // *****************************************************************************
 
@@ -1057,7 +1313,12 @@ CanvasUI.prototype.updateCanvasState = function() {
 	else if(!isCapturingPlacement && $canvas.css('cursor') != 'default'){
 		$canvas.css('cursor', 'default');
 	}
-};/**
+};
+
+CanvasUI.prototype.getSize = function() {
+	var $canvas = this.getDom();
+	return { width: $canvas.width(), height: $canvas.height() };
+}/**
  * 
  * Class to manage the component used to show table details
  * 
@@ -2244,8 +2505,13 @@ Table.prototype.setSelected = function(b){
 	this.getUI().updateSelected(b);
 };
 
-Table.prototype.setPosition = function(position){
+Table.prototype.setPosition = function(position, updateUI){
+	if(typeof updateUI == 'undefined') { updateUI = true; }
 	this.getModel().setPosition(position);
+	if(updateUI){
+		this.getUI().updatePosition(position);
+	}
+	this.triggerViewBoxChanged();
 };
 
 Table.prototype.getPosition = function(){
@@ -2332,8 +2598,8 @@ $.extend(TableModel.prototype, DBObjectModel);
 
 TableModel.createFromJSON = function(json){
 	json.withoutOIDS = $.parseBool(json.withoutOIDS);
-	json.collapsed = $.parseBool(json.collapsed);
-	json.position = {top: parseInt(json.position.top), left: parseInt(json.position.left)}
+	json.collapsed = (typeof json.collapsed != 'undefined'? $.parseBool(json.collapsed) : false);
+	json.position = (typeof json.position != 'undefined'? {top: parseInt(json.position.top), left: parseInt(json.position.left)} : {})
 	
 	var model = new TableModel();
 	model.setName(json.name);
@@ -2389,19 +2655,6 @@ TableModel.prototype.setCollapsed = function(b){
 	if(oldValue != b){
 		this._collapsed = b;
 		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'collapsed', oldValue: oldValue, newValue: b});
-	}
-};
-
-TableModel.prototype.isSelected = function(){
-	if(typeof this._selected == 'undefined') this._selected = false;
-	return this._selected;
-};
-
-TableModel.prototype.setSelected = function(b){
-	var oldValue = this.isSelected();
-	if(oldValue != b){
-		this._selected = b;
-		this.trigger(DBDesigner.Event.PROPERTY_CHANGED, {property: 'selected', oldValue: oldValue, newValue: b});
 	}
 };
 
@@ -2502,8 +2755,7 @@ TableUI.prototype.onDragStop = function(){
 	var controller = this.getController();
 	position.left += $canvas.scrollLeft();
 	position.top += $canvas.scrollTop();
-	controller.setPosition(position);
-	controller.triggerViewBoxChanged();
+	controller.setPosition(position, false);
 };
 
 TableUI.prototype.onButtonPressed = function(event){
@@ -2675,8 +2927,20 @@ Column.prototype.getParent = function(){
 	return this.getModel().getParent();
 };
 
-Column.prototype.getName = function(){
-	return this.getModel().getName();
+Column.prototype.getDefault = function(){
+	return this.getModel().getDefault();
+};
+
+Column.prototype.getFullType = function(){
+	return this.getModel().getFullType();
+};
+
+Column.prototype.isNotNull = function(){
+	return this.getModel().isNotNull();
+};
+
+Column.prototype.toString = function(){
+	return this.getName();
 };
 
 Column.prototype.serialize = function(){
@@ -2701,6 +2965,7 @@ ColumnModel.createFromJSON = function(json, parent){
 	model.setComment(json.comment);
 	model.setType(json.type);
 	model.setDefault(json.defaultDef);
+	model.setLength(json.length);
 	model.setColumnFlags({
 		array: json.array,
 		primaryKey: json.primaryKey,
@@ -2836,7 +3101,8 @@ ColumnModel.prototype.serialize = function(){
 		array: this.isArray(),
 		primaryKey: this.isPrimaryKey(),
 		notNull: this.isNotNull(),
-		defaultDef: this.getDefault()
+		defaultDef: this.getDefault(),
+		length: this.getLength()
 	};
 };
 
@@ -3020,38 +3286,48 @@ TableCollection.prototype.serialize = function() {
 	return collection;
 };
 
-TableCollection.prototype.loadJSON = function(json){
+TableCollection.prototype.loadJSON = function(json, selectTables){
 	var foreignKeyTables = [];
+	var tablesInJSON = [];
 	var table;
-	var i;
+	var i, j;
+	var fkJSON;
+	if(typeof selectTables == 'undefined') { selectTables = false; }
 	
 	for(i = 0; i < json.length; i++) {
 		table = Table.createFromJSON(json[i]);
 		this.add(table);
+		tablesInJSON.push(table.getName());
+		if(selectTables) { table.setSelected(true); }
 		if(json[i].foreignKeys && json[i].foreignKeys.length > 0){
 			foreignKeyTables.push({table: table, fkJSON: json[i].foreignKeys});
 		}
 	}
 	// Create foreign keys after loading all tables
 	for(i = 0; i < foreignKeyTables.length; i++) {
+		// Make sure that foreign table is in JSON
+		fkJSON = [];
+		for(j = 0; j < foreignKeyTables[i].fkJSON.length; j++) {
+			if($.inArray(foreignKeyTables[i].fkJSON[j].referencedTable, tablesInJSON) != -1) {
+				fkJSON.push(foreignKeyTables[i].fkJSON[j]);
+			}
+		}
 		foreignKeyTables[i].table.getForeignKeyCollection()
-			.loadJSON(foreignKeyTables[i].fkJSON, foreignKeyTables[i].table);
+			.loadJSON(fkJSON, foreignKeyTables[i].table);
 	}
 	
 };ConstraintHelper = {
 	constraintNameExists: function (name, constraintModel){
-		var constraintList = DBDesigner.app.getConstraintList();
-		var constraint = null;
-		var instanceClass = constraintModel.constructor;
-		//if(this.constructor == ForeignKeyCollection) instanceClass = ForeignKey;
-		//else if(this.constructor == UniqueKeyCollection) instanceClass = UniqueKey;
+		var table = constraintModel.getParent();
+		var constraintList = [].concat(
+			table.getForeignKeyCollection().getForeignKeys(),
+			table.getUniqueKeyCollection().getUniqueKeys()
+		);
 		for(var i = 0; i < constraintList.length; i++){
-			if(constraintList[i].getName() == name && constraintList[i].getModel() instanceof instanceClass){
-				constraint = constraintList[i];
-				break;
+			if(constraintList[i].getName() == name && constraintList[i].getModel() != constraintModel){
+				return true;
 			}
 		}
-		if(constraint != null && constraint.getModel() != constraintModel) return true;
 		return false;
 	},
 	buildConstraintName: function(name1, name2, label){
@@ -3215,7 +3491,6 @@ ForeignKeyCollection.prototype.getForeignKeyByName = function(name){
 ForeignKeyCollection.prototype.add = function(foreignKey){
 	if($.inArray(foreignKey, this._foreignKeys) == -1){
 		this._foreignKeys.push(foreignKey);
-		DBDesigner.app.getConstraintList().push(foreignKey);
 		foreignKey.bind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 		foreignKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
@@ -3240,11 +3515,8 @@ ForeignKeyCollection.prototype.onForeignKeyDropped = function(event){
 };
 
 ForeignKeyCollection.prototype.remove = function(foreignKey){
-	var constraintList = DBDesigner.app.getConstraintList();
-	var index1 = $.inArray(foreignKey, this._foreignKeys);
-	var index2 = $.inArray(foreignKey, constraintList);
-	this._foreignKeys.splice(index1, 1);
-	constraintList.splice(index2, 1);
+	var index = $.inArray(foreignKey, this._foreignKeys);
+	this._foreignKeys.splice(index);
 	foreignKey.unbind(ForeignKey.Event.ALTER_REQUEST, this.alterForeignKey, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onForeignKeyAltered, this);
 	foreignKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onForeignKeyDropped, this);
@@ -3370,6 +3642,26 @@ ForeignKey.prototype.alterForeignKey = function(){
 
 ForeignKey.prototype.drop = function(){
 	this.getModel().drop();
+};
+
+ForeignKey.prototype.getColumns = function(){
+	return this.getModel().getColumns();
+};
+
+ForeignKey.prototype.isMatchFull = function(){
+	return this.getModel().isMatchFull();
+};
+
+ForeignKey.prototype.isDeferrable = function(){
+	return this.getModel().isDeferrable();
+};
+
+ForeignKey.prototype.isDeferred = function(){
+	return this.getModel().isDeferred();
+};
+
+ForeignKey.prototype.getActionString = function(eventType) {
+	return this.getModel().getActionString(eventType);
 };
 
 ForeignKey.prototype.serialize = function(){
@@ -4406,7 +4698,6 @@ UniqueKeyCollection.prototype.getUniqueKeyByName = function(name){
 UniqueKeyCollection.prototype.add = function(uniqueKey){
 	if($.inArray(uniqueKey, this._uniqueKeys) == -1){
 		this._uniqueKeys.push(uniqueKey);
-		DBDesigner.app.getConstraintList().push(uniqueKey);
 		uniqueKey.bind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 		uniqueKey.bind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
 		uniqueKey.bind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
@@ -4431,11 +4722,8 @@ UniqueKeyCollection.prototype.alterUniqueKey = function(event){
 };
 
 UniqueKeyCollection.prototype.remove = function(uniqueKey){
-	var constraintList = DBDesigner.app.getConstraintList();
-	var index1 = $.inArray(uniqueKey, this._uniqueKeys);
-	var index2 = $.inArray(uniqueKey, constraintList);
-	this._uniqueKeys.splice(index1, 1);
-	constraintList.splice(index2, 1);
+	var index = $.inArray(uniqueKey, this._uniqueKeys);
+	this._uniqueKeys.splice(index, 1);
 	uniqueKey.unbind(UniqueKey.Event.ALTER_REQUEST, this.alterUniqueKey, this);
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_ALTERED, this.onUniqueKeyAltered, this);
 	uniqueKey.unbind(DBObject.Event.DBOBJECT_DROPPED, this.onUniqueKeyDropped, this);
@@ -4488,6 +4776,10 @@ UniqueKey.prototype.getParent = function(){
 
 UniqueKey.prototype.drop = function(){
 	this.getModel().drop();
+};
+
+UniqueKey.prototype.getColumns = function(){
+	return this.getModel().getColumns();
 };
 
 UniqueKey.prototype.serialize = function(){
@@ -4826,7 +5118,7 @@ UniqueKeyDialogUI.prototype.updateSelect = function(columns, selectSelector){
 	if($.isArray(columns) && columns.length > 0){
 		for(var i = 0; i < columns.length; i++){
 			columnName = columns[i].getName();
-			$option = $('<option></option>').val(columnName).text(columnName);
+			$option = $('<option></option>', {value: columnName, text: columnName});
 			$options = $options.add($option);
 		}
 		$(selectSelector).html($options);
@@ -4872,7 +5164,10 @@ DBDesigner.Action = {
 	DROP_FOREIGNKEY: 'actiondropforeignkey',
 	DROP_COLUMN: 'actiondropcolumn',
 	SAVE: 'actionsave',
-	SHOW_TABLE_DETAIL: 'actionshowtabledetail' 
+	SHOW_TABLE_DETAIL: 'actionshowtabledetail',
+	ALIGN_TABLES: 'actionaligntables',
+	FORWARD_ENGINEER: 'actionforwardengineer',
+	REVERSE_ENGINEER: 'actionreverseengineer'
 };
 
 DBDesigner.Event = { PROPERTY_CHANGED: 'propertychanged' };
@@ -4958,6 +5253,85 @@ Vector.VML = 'vml';(function($){
 })(jQuery);
 
 
+AlertDialog = function(){
+	this.setUI(new AlertDialogUI(this));
+};
+$.extend(AlertDialog.prototype, Component);
+
+AlertDialog.prototype.show = function(message, title, callback){
+	this.setCallback(callback);
+	this.getUI().show(message, title);
+};
+
+AlertDialog.prototype.setCallback = function(callback){
+	if(callback == null) this._callback = null;
+	else{
+		this._callback = {
+			scope: callback.scope,
+			method: callback.method,
+			params: callback.params
+		};
+	}
+};
+
+AlertDialog.prototype.getCallback = function(){
+	if(typeof this._callback == 'undefined') return null;
+	return this._callback;
+};
+
+AlertDialog.prototype.executeCallback = function(){
+	var callback = this.getCallback();
+	if(callback != null){
+		if(!$.isArray(callback.params)) callback.params = [];
+		callback.method.apply(callback.scope, callback.params);
+	}
+};
+
+AlertDialog.prototype.clearReferences = function(){
+	this.setCallback(null);
+};
+
+// *****************************************************************************
+
+AlertDialogUI = function(controller){
+	this.setTemplateID('AlertDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({modal: true, autoOpen: false, resizable: false, width: 'auto'});
+};
+$.extend(AlertDialogUI.prototype, ComponentUI);
+
+AlertDialogUI.prototype.show = function(message, title){
+	var dom = this.getDom();
+	var paragraphs = message.split('\n');
+	var $html = $();
+	for(var i = 0; i < paragraphs.length; i++){
+		$html = $html.add($('<p></p>').text(paragraphs[i]));
+	}
+	dom.find('div.content').html($html);
+	dom.dialog('option','title', title);
+	dom.dialog('open');
+};
+
+AlertDialogUI.prototype.close = function(){
+	this.getDom().dialog('close');
+};
+
+AlertDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.bind('dialogclose', $.proxy(this.onDialogClose, this));
+	dom.find('input').click($.proxy(this.onButtonClick, this));
+};
+
+AlertDialogUI.prototype.onButtonClick = function(event){
+	this.getController().executeCallback();
+	this.getDom().dialog('close');
+};
+
+AlertDialogUI.prototype.onDialogClose = function(event){
+	this.getController().clearReferences();
+};
+
 ConfirmDialog = function(){
 	this.setUI(new ConfirmDialogUI(this));
 };
@@ -5039,3 +5413,199 @@ ConfirmDialogUI.prototype.onDialogClose = function(event){
 	this.getController().clearReferences();
 };
 
+ForwardEngineerDialog = function(){
+	this.setUI(new ForwardEngineerDialogUI(this));
+};
+$.extend(ForwardEngineerDialog.prototype, Component);
+
+ForwardEngineerDialog.prototype.open = function(){
+	this.getUI().open();
+};
+
+// *****************************************************************************
+
+ForwardEngineerDialogUI = function(controller){
+	this.setTemplateID('ForwardEngineerDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({
+		title: DBDesigner.lang.strforwardengineer,
+		modal: true,
+		autoOpen: false,
+		resizable: false,
+		width: 'auto'
+	});
+};
+$.extend(ForwardEngineerDialogUI.prototype, ComponentUI);
+
+ForwardEngineerDialogUI.prototype.open = function(){
+	var dom = this.getDom();
+	dom.removeClass('show-output');
+	dom.find('textarea').val('');
+	$('#forwardengineer-dialog_output').empty();
+	dom.find('input[type="checkbox"]').prop('checked', false)
+		.filter('#fordwardengineer-dialog_cascadeprmt').prop('disabled', true);
+	dom.dialog('open');
+};
+
+ForwardEngineerDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.on('click', 'input[type="button"]', $.proxy(this.onButtonClick, this));
+	dom.find('#fordwardengineer-dialog_dropstmt').click(function(event){
+		dom.find('#fordwardengineer-dialog_cascadeprmt')
+			.prop({checked: this.checked, disabled: !this.checked });
+	});
+};
+
+ForwardEngineerDialogUI.prototype.onButtonClick = function(event){
+	switch(event.target.id) {
+		case 'forwardengineer-dialog_show-output':
+			this.getDom().addClass('show-output');
+			break;
+		case 'forwardengineer-dialog_hide-output':
+			this.getDom().removeClass('show-output');
+			break;
+		case 'forwardengineer-dialog_cancel':
+			this.getDom().dialog('close');
+			break;
+		case 'forwardengineer-dialog_generate':
+			var dom = this.getDom();
+			var sql = SqlGenerator.generate({
+				selectedTablesOnly: $('#fordwardengineer-dialog_filter-selected-tables').prop('checked'),
+				generateDropTable: $('#fordwardengineer-dialog_dropstmt').prop('checked'), 
+				generateCascade: $('#fordwardengineer-dialog_cascadeprmt').prop('checked')
+			});
+			$('#forwardengineer-dialog_script').val(sql);
+			break;
+		case 'forwardengineer-dialog_execute':
+			var sql = $.trim($('#forwardengineer-dialog_script').val());
+			if(sql != ''){
+				var dom = this.getDom();
+				Ajax.sendRequest(Ajax.Action.EXECUTE_SQL, sql, function(response) {
+					$('#forwardengineer-dialog_output').html(response.data);
+					dom.addClass('show-output');
+				});
+			}
+			break;
+	}
+};ReverseEngineerDialog = function(){
+	this.setUI(new ReverseEngineerDialogUI(this));
+};
+$.extend(ReverseEngineerDialog.prototype, Component);
+
+ReverseEngineerDialog.prototype.open = function(tables){
+	this.getUI().open(tables);
+};
+
+// *****************************************************************************
+
+ReverseEngineerDialogUI = function(controller){
+	this.setTemplateID('ReverseEngineerDialog');
+	this.setController(controller);
+	this.init();
+	this.getDom().appendTo('body').dialog({
+		title: DBDesigner.lang.strreverseengineer,
+		modal: true,
+		autoOpen: false,
+		resizable: false,
+		width: 'auto'
+	});
+};
+$.extend(ReverseEngineerDialogUI.prototype, ComponentUI);
+
+ReverseEngineerDialogUI.prototype.open = function(tables){
+	var dom = this.getDom();
+	var $html = $();
+	var $option;
+	for(var i = 0; i < tables.length; i++) {
+		$option = $('<option></option>', {
+			text: tables[i].name,
+			value: tables[i].name,
+			selected: 'selected',
+			data: { jsontable: tables[i] }
+		});
+		$html = $html.add($option);
+	}
+	$('#reverseengineer-dialog_available-tables').html($html);
+	$('#reverseengineer-dialog_output').empty();
+	dom.removeClass('show-output')
+		.find('.error-list').empty().hide();
+	dom.dialog('open');
+};
+
+ReverseEngineerDialogUI.prototype.bindEvents = function(){
+	var dom = this.getDom();
+	dom.on('click', 'input[type="button"]', $.proxy(this.onButtonClick, this));
+	dom.on('dialogclose', function(event, ui) {
+		$('#reverseengineer-dialog_available-tables, #reverseengineer-dialog_selected-tables').empty();
+	});
+};
+
+ReverseEngineerDialogUI.prototype.onButtonClick = function(event){
+	switch(event.target.id) {
+		case 'reverseengineer-dialog_show-output':
+			this.getDom().addClass('show-output');
+			break;
+		case 'reverseengineer-dialog_hide-output':
+			this.getDom().removeClass('show-output');
+			break;
+		case 'reverseengineer-dialog_cancel':
+			this.getDom().dialog('close');
+			break;
+		case 'reverseengineer-dialog_ok':
+			var json = {tables: []};
+			$('#reverseengineer-dialog_selected-tables').find('option:selected').each(function() {
+				json.tables.push($(this).data('jsontable'));
+			});
+			if(json.tables.length == 0) {
+				this.getDom().find('.error-list').html(
+					'<li>' + DBDesigner.lang.stryouhavenotselectedanytable + '</li>'
+				).show();
+				break;
+			}
+			if(JSONLoader.load(json, true)){
+				DBDesigner.app.alignTables();
+				this.getDom().dialog('close');
+			} else {
+				var conflicts = JSONLoader.getConflicts();
+				var html = '<p><b>' + DBDesigner.lang.strreverseengineerconflictmessage + '</b></p>';
+				html += '<ul>';
+				for(var i = 0; i < conflicts.tables.length; i++) {
+					html += '<li>' + conflicts.tables[i] + '</li>';
+				}
+				html += '</ul>';
+				$('#reverseengineer-dialog_output').html(html);
+				this.getDom().addClass('show-output');
+			}
+			break;
+		case 'reverseengineer-dialog_remove-tables':
+			var targetID = '#reverseengineer-dialog_available-tables';
+			var sourceID = '#reverseengineer-dialog_selected-tables';
+		case 'reverseengineer-dialog_add-tables':
+			if(!targetID && !sourceID) {
+				var sourceID = '#reverseengineer-dialog_available-tables';
+				var targetID = '#reverseengineer-dialog_selected-tables';
+			}
+			$(sourceID).find('option:selected').appendTo(targetID);
+			break;
+		case 'forwardengineer-dialog_generate':
+			var dom = this.getDom();
+			var sql = SqlGenerator.generate({
+				selectedTablesOnly: $('#fordwardengineer-dialog_filter-selected-tables').prop('checked'),
+				generateDropTable: $('#fordwardengineer-dialog_dropstmt').prop('checked'), 
+				generateCascade: $('#fordwardengineer-dialog_cascadeprmt').prop('checked')
+			});
+			$('#forwardengineer-dialog_script').val(sql);
+			break;
+		case 'forwardengineer-dialog_execute':
+			var sql = $.trim($('#forwardengineer-dialog_script').val());
+			if(sql != ''){
+				var dom = this.getDom();
+				Ajax.sendRequest(Ajax.Action.EXECUTE_SQL, sql, function(response) {
+					$('#forwardengineer-dialog_output').html(response.data);
+					dom.addClass('show-output');
+				});
+			}
+			break;
+	}
+};

@@ -1,7 +1,7 @@
 <?php
 require_once 'classes/Plugin.php';
-require_once 'plugins/DBDesigner/classes/ERDiagram.php';
-require_once 'plugins/DBDesigner/conf/dbdesigner.config.inc.php';
+require_once 'classes/ERDiagram.php';
+require_once 'conf/dbdesigner.config.inc.php';
 
 
 class DBDesigner extends Plugin {
@@ -9,7 +9,7 @@ class DBDesigner extends Plugin {
 	/**
 	 * Attributes
 	 */
-	protected $name = 'DBDesigner';
+	protected $name = DBDesignerConfig::pluginName;
 	protected $lang;
 	protected $version = '1.0-BETA';
 
@@ -99,7 +99,10 @@ class DBDesigner extends Plugin {
 			'tree',
 			'drop',
 			'open',
-			'ajaxSave'
+			'ajaxSave',
+			'ajaxExecuteSQL',
+			'ajaxLoadSchemaStructure',
+			'ajaxKeepSessionAlive'
 		);
 		return $actions;
 	}
@@ -125,7 +128,7 @@ class DBDesigner extends Plugin {
 						'action' => 'showDefault', 
 						'plugin' => $this->name),
 					'hide' => false,
-					'icon' => array('plugin' => 'DBDesigner', 'image' => 'ERDiagrams')
+					'icon' => array('plugin' => $this->name, 'image' => 'ERDiagrams')
 				);
 				break;
 		}
@@ -226,11 +229,6 @@ class DBDesigner extends Plugin {
 	function showCreateEdit($msg = ''){
 		global $data, $misc;
 		$diagram = ERDiagram::loadFromRequest();
-		
-		if(is_null($diagram) || $diagram->id === 0){
-			$this->showDefault ();
-			exit;
-		}
 
 		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
@@ -248,7 +246,7 @@ class DBDesigner extends Plugin {
         $groups1 = ERDiagram::getGroups("*", $diagram->rolesWithPrivileges);
         $groups2 = ERDiagram::getGroups($diagram->rolesWithPrivileges);?>
 		
-		<script src="plugins/DBDesigner/js/erdiagrams.js" type="text/javascript"></script>
+		<script src="plugins/<?php echo $this->name; ?>/js/erdiagrams.js" type="text/javascript"></script>
 		<form action="plugin.php?plugin=<?php echo $this->name; ?>" method="post" onsubmit="ERDiagram.selectAllGranted();">
 			<table style="width:100%">
 				<tr>
@@ -560,7 +558,7 @@ class DBDesigner extends Plugin {
 
             $attrs = array(
                 'text'   => field('name'),
-                'icon' => array('plugin' => 'DBDesigner', 'image' => 'ERDiagram'),
+                'icon' => array('plugin' => $this->name, 'image' => 'ERDiagram'),
                 'toolTip'=> field('comment'),
                 'action' => url('plugin.php',
                     array(
@@ -665,16 +663,8 @@ class DBDesigner extends Plugin {
 		}
 		
 		$templateManager = $this->getTemplateManager();
-		
-		//$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/reset.css" />';
-		//$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::jqueryUiTheme.'" />';
-		//$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::theme.'" />';
-		
-		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jquery.'"></script>';
-		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jqueryUi.'"></script>';
-		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/dbdesigner.css" />';
-		$scripts .= '<script type="text/javascript" src="plugins/DBDesigner/js/dbdesigner.js"></script>';
-		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::dbdesignerJS.'"></script>';
+		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/' . $this->name . '/css/dbdesigner.css" />';
+		$scripts .= '<script type="text/javascript" src="plugins/' . $this->name . '/js/dbdesigner.js"></script>';
 		
 		ob_start(); ?>
 			<script type="text/javascript">
@@ -689,6 +679,10 @@ class DBDesigner extends Plugin {
 				DBDesigner.templateManager = <?php echo $templateManager; ?>;
 				DBDesigner.erdiagramStructure = <?php echo $diagram->getStructure(); ?>;
 				DBDesigner.version = "<?php echo $this->version; ?>";
+				DBDesigner.schemaName = "<?php echo $_GET['schema']; ?>";
+				DBDesigner.databaseName = "<?php echo $_GET['database']; ?>";
+				DBDesigner.pluginName = "<?php echo $this->name; ?>";
+				DBDesigner.keepSessionAliveInterval = <?php echo DBDesignerConfig::keepSessionAliveInterval; ?>;
 				
 				//Disable the default stylesheet
 				$(function(){
@@ -711,7 +705,7 @@ class DBDesigner extends Plugin {
 	function getTemplateManager(){
 		global $data;
 		$templateManager = array();
-		require_once 'plugins/DBDesigner/core/templates/index.php';
+		require_once 'core/templates/index.php';
 		return $this->jsonEncode($templateManager );
 	}
 	
@@ -814,7 +808,13 @@ class DBDesigner extends Plugin {
 			'stralteruniq',
 			'strempty',
 			'strsaving',
-			'strerdiagramsaved'
+			'strerdiagramsaved',
+			'strexecutingsql',
+			'strloadingschema',
+			'strreverseengineerconflictmessage',
+			'stryouhavenotselectedanytable',
+			'strunexpectedserverresponse',
+			'strservererror'
 		);
 		
 		$js_lang = array();
@@ -826,7 +826,7 @@ class DBDesigner extends Plugin {
 	
 	function jsonEncode($data){
 		if(!function_exists('json_encode')){
-			require_once 'plugins/DBDesigner/classes/JSON.php';
+			require_once 'classes/JSON.php';
 			$value = new Services_JSON();
 			return $value->encode($data);
 		}
@@ -835,7 +835,7 @@ class DBDesigner extends Plugin {
 	
 	function jsonDecode($data){
 		if(!function_exists('json_decode')){
-			require_once 'plugins/DBDesigner/classes/JSON.php';
+			require_once 'classes/JSON.php';
 			$value = new Services_JSON();
 			return $value->decode($data);
 		}
@@ -848,9 +848,29 @@ class DBDesigner extends Plugin {
 		$this->sendAjaxResponse($ret);
 	}
 	
+	function ajaxExecuteSQL(){
+		global $data;
+		ob_start();
+		$data->conn->setFetchMode(ADODB_FETCH_NUM);
+		$rs = $data->conn->Execute($_POST['sql']);
+		if(is_object($rs)) {
+			echo "<p>{$this->_('strsqlexecuted')}</p>\n";
+		}
+		$this->sendAjaxResponse(ob_get_clean());
+	}
+	
+	function ajaxLoadSchemaStructure(){
+		$schema = ERDiagram::loadCurrentSchema();
+		$this->sendAjaxResponse($schema);
+	}
+	
+	function ajaxKeepSessionAlive(){
+		$this->sendAjaxResponse();
+	}
+
 	function sendAjaxResponse($data = NULL){
 		$response = new stdClass();
-		$response->action = $_POST['action'];
+		$response->action = $_REQUEST['action'];
 		if(!is_null($data)){ $response->data = $data; }
 		echo $this->jsonEncode($response);
 	}
