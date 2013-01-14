@@ -4,9 +4,6 @@
      * Class to manage er diagrams
      */
 
-    //include_once './libraries/lib.inc.php';
-    /*include_once './conf/dbdesigner.config.inc.php';*/
-
     class ERDiagram{
         private static $settedUp = FALSE;
 
@@ -182,7 +179,7 @@
                 (SELECT usename FROM pg_catalog.pg_user WHERE usesysid = owner) AS owner_name";
             $tables = ERDiagram::$storeTable;
             $filters = 'pg_database = '.ERDiagram::getObjectOID('database').' AND pg_schema = '.ERDiagram::getObjectOID('schema');
-            if (DBDesignerConfig::ownedERDiagramsOnly) {
+            if (DBDesignerConfig::showOwnedERDiagramsOnly) {
                 $server_info = $misc->getServerInfo();
                 $filters .= " AND owner = (SELECT usesysid FROM pg_catalog.pg_user WHERE usename = '{$server_info['username']}')";
             }

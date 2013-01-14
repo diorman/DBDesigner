@@ -143,7 +143,7 @@ Ajax = {
 		Ajax._sessionTimerID = window.setTimeout(
 			function() {
 				Ajax.sendRequest(Ajax.Action.KEEP_SESSION_ALIVE);
-			}, 10000
+			}, DBDesigner.keepSessionAliveInterval * 1000
 		);
 	},
 	
@@ -193,7 +193,7 @@ Ajax = {
 					server: DBDesigner.server,
 					database: DBDesigner.databaseName,
 					schema: DBDesigner.schemaName,
-					plugin: 'DBDesigner'
+					plugin: DBDesigner.pluginName
 				}, null, 'json').always(alwaysCallback);
 				break;
 				
@@ -203,7 +203,7 @@ Ajax = {
 					server: DBDesigner.server,
 					database: DBDesigner.databaseName,
 					schema: DBDesigner.schemaName,
-					plugin: 'DBDesigner'
+					plugin: DBDesigner.pluginName
 				}, null, 'json').always(alwaysCallback);
 				break;
 		}
