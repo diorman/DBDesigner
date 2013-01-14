@@ -404,7 +404,7 @@
 						
 						if(preg_match('/^nextval/', strtolower($column->defaultDef)) && $column->notNull && ($column->type == "INTEGER" || $column->type == "BIGINT")){
 							$column->defaultDef = '';
-							$column->type = ($type == 'INTEGER')? 'SERIAL' : 'BIGSERIAL';
+							$column->type = ($column->type == 'INTEGER')? 'SERIAL' : 'BIGSERIAL';
 						}
 						
 						$table->columns[] = $column;
