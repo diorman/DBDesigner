@@ -229,11 +229,6 @@ class DBDesigner extends Plugin {
 	function showCreateEdit($msg = ''){
 		global $data, $misc;
 		$diagram = ERDiagram::loadFromRequest();
-		
-		if(is_null($diagram) || $diagram->id === 0){
-			$this->showDefault ();
-			exit;
-		}
 
 		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
@@ -668,16 +663,8 @@ class DBDesigner extends Plugin {
 		}
 		
 		$templateManager = $this->getTemplateManager();
-		
-		//$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/reset.css" />';
-		//$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::jqueryUiTheme.'" />';
-		//$scripts .= '<link rel="stylesheet" type="text/css" href="'.DBDesignerConfig::theme.'" />';
-		
-		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jquery.'"></script>';
-		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::jqueryUi.'"></script>';
 		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/DBDesigner/css/dbdesigner.css" />';
 		$scripts .= '<script type="text/javascript" src="plugins/DBDesigner/js/dbdesigner.js"></script>';
-		//$scripts .= '<script type="text/javascript" src="'.DBDesignerConfig::dbdesignerJS.'"></script>';
 		
 		ob_start(); ?>
 			<script type="text/javascript">
