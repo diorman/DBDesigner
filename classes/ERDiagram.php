@@ -5,29 +5,29 @@
      */
 
     class ERDiagram{
-        private static $settedUp = FALSE;
+        private static $setup = FALSE;
 
 		//store vars are used to get info about diagrams
-        private static $storeDriver;
-        private static $storeDatabase;
-        private static $storeSchema;
-        private static $storeTable;
+        private static $store_driver;
+        private static $store_database;
+        private static $store_schema;
+        private static $store_table;
 
         //logic vars are used to get info about objects in the current schema
-        private static $logicDriver;
-        private static $logicDatabase;
-        private static $logicSchema;
+        private static $logic_driver;
+        private static $logic_database;
+        private static $logic_schema;
 
 		public $id;
 		public $name;
-        public $pgDatabase;
-        public $pgSchema;
-        public $rolesWithPrivileges;
+        public $pg_database;
+        public $pg_schema;
+        public $roles_with_privileges;
 		public $comment;
-		public $dateCreated;
-		public $lastUpdate;
+		public $date_created;
+		public $last_update;
 		public $data;
-		public $ownerName;
+		public $owner_name;
 		public $owner;
 		
 
@@ -37,18 +37,18 @@
 			$server_info = $misc->getServerInfo();
 			$this->id = 0;
 			$this->name = '';
-			$this->pgDatabase = ERDiagram::getObjectOID('database');
-			$this->pgSchema = ERDiagram::getObjectOID('schema');
-			$this->rolesWithPrivileges = array();
+			$this->pg_database = ERDiagram::get_object_oid('database');
+			$this->pg_schema = ERDiagram::get_object_oid('schema');
+			$this->roles_with_privileges = array();
 			$this->comment = '';
-			$this->dateCreated = '';
-			$this->lastUpdate = '';
+			$this->date_created = null;
+			$this->last_update = null;
 			$this->data = '';
-			$this->ownerName = $server_info['username'];
-			$this->owner = ERDiagram::getObjectOID('role', $this->ownerName);
+			$this->owner_name = $server_info['username'];
+			$this->owner = ERDiagram::get_object_oid('role', $this->owner_name);
 		}
 		
-		public static function loadFromRequest(){
+		public static function load_from_request(){
 			$diagram = NULL;
 			
 			if(empty ($_POST) && isset($_GET['erdiagram_id'])){
@@ -63,10 +63,10 @@
 				if (isset($_POST['diagram']['name'])) $diagram->name = $_POST['diagram']['name'];
 
 				if (isset($_POST['diagram']['granted_groups'])) 
-					$diagram->rolesWithPrivileges = array_merge($diagram->rolesWithPrivileges, $_POST['diagram']['granted_groups']);
+					$diagram->roles_with_privileges = array_merge($diagram->roles_with_privileges, $_POST['diagram']['granted_groups']);
 
 				if (isset($_POST['diagram']['granted_users'])) 
-					$diagram->rolesWithPrivileges = array_merge($diagram->rolesWithPrivileges, $_POST['diagram']['granted_users']);
+					$diagram->roles_with_privileges = array_merge($diagram->roles_with_privileges, $_POST['diagram']['granted_users']);
 
 				if (isset($_POST['diagram']['comment'])) $diagram->comment = $_POST['diagram']['comment'];	
 			}
@@ -75,23 +75,23 @@
 		}
 		
 		
-		public static function isSettedUp(){
-			return ERDiagram::$settedUp;
+		public static function is_setup(){
+			return ERDiagram::$setup;
 		}
 		
-        public static function setUpDrivers(){
-			if(ERDiagram::$settedUp) return TRUE;
+        public static function setup_drivers($database, $schema, $table){
+			if(ERDiagram::$setup) return TRUE;
             global $misc;
-			ERDiagram::$storeDatabase = DBDesignerConfig::database;
-            ERDiagram::$storeSchema = DBDesignerConfig::schema;
-            ERDiagram::$storeTable = DBDesignerConfig::table;
-            $status = ERDiagram::checkDatabaseAndSchema();
+			ERDiagram::$store_database = $database;
+            ERDiagram::$store_schema = $schema;
+            ERDiagram::$store_table = $table;
+            $status = ERDiagram::check_database_and_schema();
             if($status){
-                ERDiagram::$logicDatabase = isset($_REQUEST['database'])? $_REQUEST['database'] : '';
-                ERDiagram::$logicSchema = isset($_REQUEST['schema'])?$_REQUEST['schema'] : '';
-                ERDiagram::$logicDriver = $misc->getDatabaseAccessor(ERDiagram::$logicDatabase);
+                ERDiagram::$logic_database = isset($_REQUEST['database'])? $_REQUEST['database'] : '';
+                ERDiagram::$logic_schema = isset($_REQUEST['schema'])?$_REQUEST['schema'] : '';
+                ERDiagram::$logic_driver = $misc->getDatabaseAccessor(ERDiagram::$logic_database);
             }
-			ERDiagram::$settedUp = $status;
+			ERDiagram::$setup = $status;
 			return $status;
         }
 
@@ -100,24 +100,22 @@
          * @return TRUE Success
          * @return FALSE Fail
          */
-        public static function checkDatabaseAndSchema(){
+        public static function check_database_and_schema(){
             global $data, $misc;
-            $rs = $data->getDatabase(ERDiagram::$storeDatabase);
+            $rs = $data->getDatabase(ERDiagram::$store_database);
             if ($rs->recordCount() != 1) return FALSE;
 
             // Create a new database access object.
-            ERDiagram::$storeDriver = $misc->getDatabaseAccessor(ERDiagram::$storeDatabase);
+            ERDiagram::$store_driver = $misc->getDatabaseAccessor(ERDiagram::$store_database);
             
-            $sql = "SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname='".pg_escape_string(ERDiagram::$storeSchema)."'";
-            $rs = ERDiagram::$storeDriver->selectSet($sql);
+            $sql = "SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname='".pg_escape_string(ERDiagram::$store_schema)."'";
+            $rs = ERDiagram::$store_driver->selectSet($sql);
             if($rs->recordCount() != 1) return FALSE;
-            ERDiagram::$storeDriver->setSchema(ERDiagram::$storeSchema);
+            ERDiagram::$store_driver->setSchema(ERDiagram::$store_schema);
             return TRUE;
         }
 
 		public static function load($id){
-			global $misc;
-
             $columns = "
 				erdiagram_id,
 				name,
@@ -130,12 +128,12 @@
 				pg_database,
 				data,
                 (SELECT usename FROM pg_catalog.pg_user WHERE usesysid = owner) AS owner_name";
-            $tables = ERDiagram::$storeTable;
-            $filters = 'pg_database = '.ERDiagram::getObjectOID('database').
-				' AND pg_schema = '.ERDiagram::getObjectOID('schema').
+            $tables = ERDiagram::$store_table;
+            $filters = 'pg_database = '.ERDiagram::get_object_oid('database').
+				' AND pg_schema = '.ERDiagram::get_object_oid('schema').
 				' AND erdiagram_id = '.pg_escape_string($id);
             $sql = "SELECT {$columns} FROM {$tables} WHERE {$filters} ORDER BY name";
-            $rs = ERDiagram::$storeDriver->selectSet($sql);
+            $rs = ERDiagram::$store_driver->selectSet($sql);
 			if($rs->recordCount() != 1) return NULL;
             
 			$roles = str_replace(array('{','}'), '', $rs->fields('roles_with_privileges'));
@@ -144,14 +142,14 @@
 			$diagram->id = $rs->fields('erdiagram_id');
 			$diagram->name = $rs->fields('name');
 			$diagram->comment = $rs->fields('comment');
-			$diagram->rolesWithPrivileges = empty ($roles)? array():explode(',', $roles);
+			$diagram->roles_with_privileges = empty ($roles)? array():explode(',', $roles);
 			$diagram->owner = $rs->fields('owner');
-			$diagram->dateCreated = $rs->fields('date_created');
-			$diagram->lastUpdate = $rs->fields('last_update');
-			$diagram->pgSchema = $rs->fields('pg_schema');
-			$diagram->pgDatabase = $rs->fields('pg_database');
+			$diagram->date_created = $rs->fields('date_created');
+			$diagram->last_update = $rs->fields('last_update');
+			$diagram->pg_schema = $rs->fields('pg_schema');
+			$diagram->pg_database = $rs->fields('pg_database');
 			$diagram->data = $rs->fields('data');
-			$diagram->ownerName = $rs->fields('owner_name');
+			$diagram->owner_name = $rs->fields('owner_name');
 
 			return $diagram;
 			
@@ -162,7 +160,7 @@
          * @param $id (optional) The ID of the diagram to get just one
          * @return ADORecordSet
          */
-        public static function getList(){
+        public static function get_list($owned_diagrams_only){
             global $misc;
 
             $columns = "
@@ -177,14 +175,14 @@
 				pg_database,
 				data,
                 (SELECT usename FROM pg_catalog.pg_user WHERE usesysid = owner) AS owner_name";
-            $tables = ERDiagram::$storeTable;
-            $filters = 'pg_database = '.ERDiagram::getObjectOID('database').' AND pg_schema = '.ERDiagram::getObjectOID('schema');
-            if (DBDesignerConfig::showOwnedERDiagramsOnly) {
+            $tables = ERDiagram::$store_table;
+            $filters = 'pg_database = '.ERDiagram::get_object_oid('database').' AND pg_schema = '.ERDiagram::get_object_oid('schema');
+            if ($owned_diagrams_only) {
                 $server_info = $misc->getServerInfo();
                 $filters .= " AND owner = (SELECT usesysid FROM pg_catalog.pg_user WHERE usename = '{$server_info['username']}')";
             }
             $sql = "SELECT {$columns} FROM {$tables} WHERE {$filters} ORDER BY name";
-            return ERDiagram::$storeDriver->selectSet($sql);
+            return ERDiagram::$store_driver->selectSet($sql);
         }
 
         /**
@@ -194,20 +192,20 @@
          * @return oid Success
          * @return -1 No object found
          */
-        public static function getObjectOID($type, $name = ''){
+        public static function get_object_oid($type, $name = ''){
             switch($type){
                 case 'database':
                     $sql = "SELECT oid FROM pg_catalog.pg_database WHERE datname = current_database()";
                     break;
                 case 'schema':
-                    $sql = "SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = '".pg_escape_string(ERDiagram::$logicSchema)."'";
+                    $sql = "SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = '".pg_escape_string(ERDiagram::$logic_schema)."'";
                     break;
                 case 'role':
                     $sql = "SELECT usesysid AS oid FROM pg_catalog.pg_user WHERE usename = '".pg_escape_string($name)."'";
                     break;
             }
 			
-            $rs = ERDiagram::$logicDriver->selectSet($sql);
+            $rs = ERDiagram::$logic_driver->selectSet($sql);
             if($rs->recordCount() != 1) return -1;
             return $rs->fields['oid'];
         }
@@ -219,7 +217,8 @@
          * @param $username The name of the user who wants to access
          * @return TRUE user has privileges
          */
-        public static function userHasPrivileges($diagram_id, $username){
+		/*
+        public static function user_has_privileges($diagram_id, $username){
             $erdiagram = $this->getERDiagrams($diagram_id);
             $roles_with_privileges = $erdiagram->fields['roles_with_privileges'];
             $owner = $erdiagram->fields['owner'];
@@ -234,10 +233,10 @@
                 WHERE usename = '{$username}'
 				AND usesysid = ANY (grolist)
 				AND grosysid = ANY('{$roles_with_privileges}')";
-            $rs = ERDiagram::$storeDriver->selectSet($sql);
+            $rs = ERDiagram::$store_driver->selectSet($sql);
             if($rs->recordCount() > 0) return TRUE;
             return FALSE;
-        }
+        }*/
 
         /**
          * Gets users from the database with some filters
@@ -247,7 +246,7 @@
          *      of users oids to exclude from the research. '' meant filter does not apply
          * @return ADORecordSet
          */
-        public static function getUsers($in = '*', $notin = ''){
+        public static function get_users($in = '*', $notin = ''){
             $filter = '';
 			if(is_array($in)) $in = implode(',', $in);
 			if(is_array($notin)) $notin = implode(',', $notin);
@@ -263,7 +262,7 @@
             }
             $sql = 'SELECT usename, usesysid FROM pg_catalog.pg_user';
             if (!empty ($filter)) $sql .= " WHERE {$filter}";
-            return ERDiagram::$storeDriver->selectSet($sql);
+            return ERDiagram::$store_driver->selectSet($sql);
         }
 
         /**
@@ -274,7 +273,7 @@
          *      of groups oids to exclude from the research. '' meant filter does not apply
          * @return ADORecordSet
          */
-        public static function getGroups($in = '*', $notin = ''){
+        public static function get_groups($in = '*', $notin = ''){
             $filter = '';
 			if(is_array($in)) $in = implode(',', $in);
 			if(is_array($notin)) $notin = implode(',', $notin);
@@ -290,7 +289,7 @@
             }
             $sql = "SELECT groname, grosysid FROM pg_catalog.pg_group";
             if (!empty ($filter)) $sql .= " WHERE {$filter}";
-            return ERDiagram::$storeDriver->selectSet($sql);
+            return ERDiagram::$store_driver->selectSet($sql);
         }
 
         /**
@@ -308,24 +307,24 @@
 					'name' => pg_escape_string($this->name),
 					'comment' => pg_escape_string($this->comment),
 					'owner' => pg_escape_string($this->owner),
-					'pg_database' => pg_escape_string($this->pgDatabase),
-					'pg_schema' => pg_escape_string($this->pgSchema),
-					'roles_with_privileges' => "{".implode(",", $this->rolesWithPrivileges)."}"
+					'pg_database' => pg_escape_string($this->pg_database),
+					'pg_schema' => pg_escape_string($this->pg_schema),
+					'roles_with_privileges' => "{".implode(",", $this->roles_with_privileges)."}"
 				);
-				return ERDiagram::$storeDriver->insert(ERDiagram::$storeTable, $values);
+				return ERDiagram::$store_driver->insert(ERDiagram::$store_table, $values);
 			}
 			else{
 				$values = array(
 					'name' => pg_escape_string($this->name),
 					'comment' => pg_escape_string($this->comment),
-					'roles_with_privileges' => "{".implode(",", $this->rolesWithPrivileges)."}"
+					'roles_with_privileges' => "{".implode(",", $this->roles_with_privileges)."}"
 				);
 				$filters = array(
-					'pg_database' => $this->pgDatabase,
-					'pg_schema' => $this->pgSchema,
+					'pg_database' => $this->pg_database,
+					'pg_schema' => $this->pg_schema,
 					'erdiagram_id' => $this->id
 				);
-				return ERDiagram::$storeDriver->update(ERDiagram::$storeTable, $values, $filters);
+				return ERDiagram::$store_driver->update(ERDiagram::$store_table, $values, $filters);
 			}
         }
 
@@ -336,16 +335,16 @@
          * @param $structure The structure to save
          * @return 0 Success
          */
-        public static function updateERDiagramStructure($id, $structure){
+        public static function update_diagram_structure($id, $structure){
 			$values = array(
                 'data' => $structure
             );
             $filters = array(
-                'pg_database' => ERDiagram::getObjectOID('database'),
-                'pg_schema' => ERDiagram::getObjectOID('schema'),
+                'pg_database' => ERDiagram::get_object_oid('database'),
+                'pg_schema' => ERDiagram::get_object_oid('schema'),
                 'erdiagram_id' => $id
             );
-            return ERDiagram::$storeDriver->update(ERDiagram::$storeTable, $values, $filters);
+            return ERDiagram::$store_driver->update(ERDiagram::$store_table, $values, $filters);
         }
 
         /**
@@ -357,22 +356,22 @@
             $filters = array(
                 'erdiagram_id' => $this->id
             );
-            return ERDiagram::$storeDriver->delete(ERDiagram::$storeTable, $filters);
+            return ERDiagram::$store_driver->delete(ERDiagram::$store_table, $filters);
         }
 
-		public static function loadCurrentSchema() {		 
-            $schemaOID = ERDiagram::getObjectOID('schema');
+		public static function load_current_schema() {		 
+            $schema_oid = ERDiagram::get_object_oid('schema');
 			$sql =	'SELECT "table"."oid" AS "tableOID", "table"."relname" AS "tableName", COALESCE("pg_catalog"."obj_description"("table"."oid", \'pg_class\'), \'\') AS "tableComment", NOT "table"."relhasoids" AS "tableWithoutOIDS",
 					"column"."attnum" AS "columnNum", "column"."attname" AS "columnName", "column"."attnotnull" AS "columnNotNull", COALESCE("columnDef"."adsrc", \'\') AS "columnDefaultDef", COALESCE("pg_catalog"."col_description"("column"."attrelid", "column"."attnum"), \'\') AS "columnComment", UPPER("pg_catalog"."format_type"("column"."atttypid", "column"."atttypmod")) as "columnType"
 					FROM "pg_catalog"."pg_class" AS "table"
 					LEFT JOIN "pg_catalog"."pg_attribute" AS "column" ON "table"."oid" = "column"."attrelid" AND "column"."attnum" > 0 AND NOT "column"."attisdropped"
 					LEFT JOIN "pg_catalog"."pg_attrdef" AS "columnDef" ON "column"."attrelid" = "columnDef"."adrelid" AND "column"."attnum" = "columnDef"."adnum"
-					WHERE "relkind"=\'r\' AND "relnamespace" = '.$schemaOID.'
+					WHERE "relkind"=\'r\' AND "relnamespace" = '.$schema_oid.'
 					ORDER BY "table"."oid", "column"."attnum"';
-            $rs = ERDiagram::$logicDriver->selectSet($sql);
+            $rs = ERDiagram::$logic_driver->selectSet($sql);
             $tables = array();
-			$indexedTables = array();
-			$indexedColumns = array();
+			$indexed_tables = array();
+			$indexed_columns = array();
 			$table = null;
 			$column = null;
 			if(is_object($rs)) {
@@ -386,7 +385,7 @@
 						$table->uniqueKeys = array();
 						$table->foreignKeys = array();
 						$tables[] = $table;
-						$indexedTables[(int)$rs->fields['tableOID']] = $table;
+						$indexed_tables[(int)$rs->fields['tableOID']] = $table;
 					}
 					if(!is_null($rs->fields['columnNum'])) {
 						$column = new stdClass();
@@ -405,7 +404,7 @@
 						}
 						
 						$table->columns[] = $column;
-						$indexedColumns[(int)$rs->fields['tableOID']][(int)$rs->fields['columnNum']] = $column;
+						$indexed_columns[(int)$rs->fields['tableOID']][(int)$rs->fields['columnNum']] = $column;
 					}
 					$rs->MoveNext();
 				}
@@ -416,13 +415,13 @@
                 "confrelid", "confupdtype", "confdeltype", "confmatchtype", "conkey", "confkey",
 				COALESCE("pg_catalog"."obj_description"("oid", \'pg_constraint\'), \'\') AS "comment"
                 FROM "pg_catalog"."pg_constraint"
-                WHERE "contype" IN (\'f\', \'p\', \'u\') AND connamespace = '.$schemaOID;
+                WHERE "contype" IN (\'f\', \'p\', \'u\') AND connamespace = '.$schema_oid;
             
-			$rs = ERDiagram::$logicDriver->selectSet($sql);
+			$rs = ERDiagram::$logic_driver->selectSet($sql);
 			
 			if(is_object($rs)) {
 				while(!$rs->EOF){
-					$tableOID = (int)$rs->fields['conrelid'];
+					$table_oid = (int)$rs->fields['conrelid'];
 					$conkey = explode(',', str_replace(array('{', '}'), '', $rs->fields['conkey']));
 					$constraint = new stdClass();
 					$constraint->name = $rs->fields['conname'];
@@ -434,8 +433,8 @@
 							$ftableOID = (int)$rs->fields['confrelid'];
 							foreach($conkey as $i => $key) {
 								$constraint->columns[] = array(
-									'localColumn' => $indexedColumns[$tableOID][(int)$key]->name,
-									'foreignColumn' => $indexedColumns[$ftableOID][(int)$confkey[$i]]->name 
+									'localColumn' => $indexed_columns[$table_oid][(int)$key]->name,
+									'foreignColumn' => $indexed_columns[$ftableOID][(int)$confkey[$i]]->name 
 								);
 							}
 							$constraint->deleteAction = $rs->fields['confdeltype'];
@@ -443,21 +442,21 @@
 							$constraint->deferred = $rs->fields['condeferred'];
 							$constraint->deferrable = $rs->fields['condeferrable'];
 							$constraint->matchFull = $rs->fields['confmatchtype'] == 'f';
-							$constraint->referencedTable = $indexedTables[$ftableOID]->name;
+							$constraint->referencedTable = $indexed_tables[$ftableOID]->name;
 							
-							$indexedTables[$tableOID]->foreignKeys[] = $constraint;
+							$indexed_tables[$table_oid]->foreignKeys[] = $constraint;
 							break;
 						case 'p':
 							foreach($conkey as $key) {
-								$indexedColumns[$tableOID][(int)$key]->primaryKey = true;
+								$indexed_columns[$table_oid][(int)$key]->primaryKey = true;
 							}
 							break;
 						case 'u':
 							$constraint->columns = array();
 							foreach($conkey as $key) {
-								$constraint->columns[] = $indexedColumns[$tableOID][(int)$key]->name;
+								$constraint->columns[] = $indexed_columns[$table_oid][(int)$key]->name;
 							}
-							$indexedTables[$tableOID]->uniqueKeys[] = $constraint;
+							$indexed_tables[$table_oid]->uniqueKeys[] = $constraint;
 							break;
 					}
 					$rs->MoveNext();
@@ -466,7 +465,7 @@
 			return array('tables' => $tables);
         }
 		
-		public function getStructure(){
+		public function get_structure(){
 			if(empty($this->data)){ return 'null'; } 
 			return $this->data;
 		}
