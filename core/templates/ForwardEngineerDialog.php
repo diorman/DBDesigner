@@ -32,4 +32,4 @@
 			<input type="button" id="forwardengineer-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['ForwardEngineerDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ForwardEngineerDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

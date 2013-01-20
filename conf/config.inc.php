@@ -1,9 +1,6 @@
 <?php
 
 	$plugin_conf = array(
-		'plugin_version' => '1.1',
-		'plugin_name' => 'DBDesigner',
-		
 		'database' => 'phppgadmin',
 		'schema' => 'dbdsgnr',
 		'table' => 'erdiagrams',
@@ -17,5 +14,5 @@
 		'keep_session_alive_interval' => 20,
 		
 		// If true, just diagrams owned by the current user will be listed
-		'owned_diagrams_only' => false,
+		'owned_diagrams_only' => FALSE,
 	);

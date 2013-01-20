@@ -8,10 +8,10 @@ class DBDesigner extends Plugin {
 	/**
 	 * Attributes
 	 */
-	protected $name;
+	protected $name = 'DBDesigner';
 	protected $lang;
-	protected $conf;
-	protected $version;
+	protected $conf = array();
+	protected $version = '1.1-BETA-2';
 
 	/**
 	 * Constructor
@@ -19,16 +19,10 @@ class DBDesigner extends Plugin {
 	 * @param $language Current phpPgAdmin language. If it was not found in the plugin, English will be used.
 	 */
 	function __construct($language) {
-		global $data;
 		parent::__construct($language);
-		$this->name = $this->conf['plugin_name'];
-		$this->plugin_version = $this->conf['plugin_version'];
-		if(!is_null($data)) { 
-			ERDiagram::setup_drivers($this->conf['database'], $this->conf['schema'], $this->conf['table']);	
-		}
 		if(isset($_REQUEST['plugin']) && $_REQUEST['plugin'] == $this->name && (!isset($_REQUEST['action']) || empty($_REQUEST['action']))){
 			//Set default action in case of empty action
-			$_REQUEST['action'] = 'show_default';				
+			$_REQUEST['action'] = 'default_action';				
 		}
 	}
 
@@ -46,23 +40,29 @@ class DBDesigner extends Plugin {
 		elseif(isset($lang[$langkey])) { return $lang[$langkey]; }
 		return '<b>Warning: String missing</b>';
 	}
-	
+
 	/**
 	 * Checks that the plugin's database has been created, otherwise it prints a message
 	 * @global type $misc
 	 */
-	function check_installation(){
-		if(!ERDiagram::is_setup()){
-			global $misc;
-			$misc->printHeader($this->_('strerdiagrams'));
-			$misc->printBody();
-			$misc->printTrail('schema');
-			$misc->printMsg($this->_('strbadinstallation'));
-			$misc->printFooter();
-			exit;
+	function connect_or_redirect(){	
+		if(!$this->connect()) {
+			$this->redirect_action('default_action');
 		}
 	}
-	
+
+	/**
+	 * Checks that the plugin's database has been created, otherwise it prints a message
+	 * @global type $misc
+	 */
+	function connect(){	
+		return ERDiagram::setup_drivers(
+			$this->conf['database'],
+			$this->conf['schema'],
+			$this->conf['table']
+		);
+	}
+
 	/**
 	 * This method returns the functions that will hook in the phpPgAdmin core.
 	 * To do include a function just put in the $hooks array the follwing code:
@@ -99,16 +99,14 @@ class DBDesigner extends Plugin {
 	 * @return $actions
 	 */
 	function get_actions() {
-		if(!ERDiagram::is_setup()) return array('show_default', 'tree');
-		
+
 		$actions = array(
-			'show_default',
-			'show_create_edit',
-			'show_diagram',
-			'show_drop',
-			'save',
-			'tree',
+			'default_action',
+			'create',
+			'edit',
+			'show',
 			'drop',
+			'tree',
 			'open',
 			'ajax_save',
 			'ajax_execute_sql',
@@ -128,93 +126,130 @@ class DBDesigner extends Plugin {
 
 		switch ($plugin_functions_parameters['section']) {
 			case 'schema':
-				$tabs['show_default'] = array (
+				$tabs['default_action'] = array (
 					'title' => $this->_('strerdiagrams'),
 					'url' => 'plugin.php',
 					'urlvars' => array(
 						'subject' => 'server', 
 						'database' => $_REQUEST['database'],
 						'schema' => $_REQUEST['schema'],
-						'action' => 'show_default', 
+						'action' => 'default_action', 
 						'plugin' => $this->name),
 					'hide' => false,
-					'icon' => array('plugin' => $this->name, 'image' => 'ERDiagrams')
+					'icon' => $this->icon('ERDiagrams')
 				);
 				break;
 		}
 	}
 
-	function show_default($msg = '') {
-        global $misc;
-		$this->check_installation();
+	function default_action($msg = '') {
+		global $misc;
 		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
-        $misc->printTrail('schema');
-		$misc->printTabs('schema','show_default');
-        $misc->printMsg($msg);
+		$misc->printTrail('schema');
+		if(!$this->connect()){
+			$misc->printMsg($this->_('strbadinstallation'));
+			$misc->printFooter();
+			exit;
+		}
+		$this->update_tree();
+		$misc->printTabs('schema','default_action');
+		$this->print_messages($msg);
 
-        $diagrams = ERDiagram::get_list();
+		$diagrams = ERDiagram::get_list($this->conf['owned_diagrams_only']);
 
-        $columns = array(
-            'erdiagram' => array(
-                'title' => $this->_('strerdiagram'),
-                'field' => field('name'),
-                'url' => "plugin.php?plugin={$this->name}&amp;action=show_diagram&amp;{$misc->href}&amp;",
-                'vars'  => array('erdiagram_id' => 'erdiagram_id'),
-            ),
-            'owner' => array(
-                'title' => $this->_('strowner'),
-                'field' => field('owner_name'),
-            ),
-            'date_created' => array(
-                'title' => $this->_('strcreated'),
-                'field' => field('date_created'),
-            ),
-            'last_update' => array(
-                'title' => $this->_('strlastupdate'),
-                'field' => field('last_update'),
-            ),
-            'actions' => array(
-                'title' => $this->_('stractions'),
-            ),
-            'comment' => array(
-                'title' => $this->_('strcomment'),
-                'field' => field('comment'),
-            ),
-        );
+		$columns = array(
+			'erdiagram' => array(
+				'title' => $this->_('strerdiagram'),
+				'field' => field('name'),
+				'url' => "plugin.php?plugin={$this->name}&amp;action=show&amp;{$misc->href}&amp;",
+				'vars'  => array('erdiagram_id' => 'erdiagram_id'),
+			),
+			'owner' => array(
+				'title' => $this->_('strowner'),
+				'field' => field('owner_name'),
+			),
+			'date_created' => array(
+				'title' => $this->_('strcreated'),
+				'field' => field('date_created'),
+			),
+			'last_update' => array(
+				'title' => $this->_('strlastupdate'),
+				'field' => field('last_update'),
+			),
+			'actions' => array(
+				'title' => $this->_('stractions'),
+			),
+			'comment' => array(
+				'title' => $this->_('strcomment'),
+				'field' => field('comment'),
+			),
+		);
+		$urlvars = $misc->getRequestVars();
+		$actions = array(
+			'multiactions' => array(
+				'keycols' => array('erdiagram_id' => 'erdiagram_id'),
+				'url' => 'plugin.php?plugin='.$this->name,
+			),
+			'edit' => array(
+				'content' => $this->_('stredit'),
+				'attr' => array(
+					'href' => array(
+						'url' => 'plugin.php',
+						'urlvars' => array_merge($urlvars, array(
+							'plugin' => $this->name,
+							'action' => 'edit',
+							'erdiagram_id' => field('erdiagram_id')
+						))
+					)
+				)
+			),
+			'drop' => array(
+				'multiaction' => 'drop',
+				'content' => $this->_('strdrop'),
+				'attr' => array(
+					'href' => array(
+						'url' => 'plugin.php',
+						'urlvars' => array_merge($urlvars, array(
+							'plugin' => $this->name,
+							'action' => 'drop',
+							'erdiagram_id' => field('erdiagram_id')
+						))
+					)
+				)
+			),
+			'open' => array(
+				'content' => $this->_('stropen'),
+				'attr' => array(
+					'href' => array(
+						'url' => 'plugin.php',
+						'urlvars' => array_merge($urlvars, array(
+							'plugin' => $this->name,
+							'action' => 'open',
+							'erdiagram_id' => field('erdiagram_id')
+						))
+					)
+				)
+			),
+			'opennewtab' => array(
+				'content' => $this->_('stropeninnewtab'),
+				'attr' => array(
+					'target' => '_blank',
+					'href' => array(
+						'url' => 'plugin.php',
+						'urlvars' => array_merge($urlvars, array(
+							'plugin' => $this->name,
+							'action' => 'open',
+							'erdiagram_id' => field('erdiagram_id')
+						))
+					)
+				)
+			),
+		);
 
-        $actions = array(
-            'multiactions' => array(
-                'keycols' => array('erdiagram_id' => 'erdiagram_id'),
-                'url' => 'plugin.php?plugin='.$this->name,
-            ),
-            'edit' => array(
-                'title' => $this->_('stredit'),
-                'url'   => "plugin.php?plugin={$this->name}&amp;action=show_create_edit&amp;{$misc->href}&amp;",
-                'vars'  => array('erdiagram_id' => 'erdiagram_id'),
-            ),
-            'drop' => array(
-                'title' => $this->_('strdrop'),
-                'url'   => "plugin.php?plugin={$this->name}&amp;action=show_drop&amp;{$misc->href}&amp;",
-                'vars'  => array('erdiagram_id' => 'erdiagram_id'),
-                'multiaction' => 'show_drop',
-            ),
-            'open' => array(
-                'title' => $this->_('stropen'),
-                'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;{$misc->href}&amp;",
-                'vars'  => array('erdiagram_id' => 'erdiagram_id'),
-            ),
-            'opennewtab' => array(
-				'target' => '_blanck',
-                'title' => $this->_('stropeninnewtab'),
-                'url'   => "plugin.php?plugin={$this->name}&amp;action=open&amp;{$misc->href}&amp;",
-                'vars'  => array('erdiagram_id' => 'erdiagram_id'),
-            ),
-        );
-				
-		
-        $misc->printTable($diagrams, $columns, $actions, 'dbdesigner-dbdesigner', $this->_('strnoerdiagrams'));
-		
+
+		$misc->printTable($diagrams, $columns, $actions, 'dbdesigner-dbdesigner', $this->_('strnoerdiagrams'));
+
 		$navlinks = array (
 			array (
 				'attr'=> array (
@@ -225,37 +260,62 @@ class DBDesigner extends Plugin {
 							'server' => field('server'),
 							'database' => field('database'),
 							'schema' => field('schema'),
-							'action' => 'show_create_edit')
+							'action' => 'create')
 					)
 				),
 				'content' => $this->_('strcreateerdiagram') 
 			)
 		);
 		$misc->printNavLinks($navlinks, 'dbdesigner-dbdesigner');
-		
+
 		$misc->printFooter();
 	}
-	
-	function show_create_edit($msg = ''){
-		global $data, $misc;
+
+	function create($msg = '') {
+		if(isset($_POST['cancel'])) { $this->redirect_action('default_action'); }
+		$this->connect_or_redirect();
 		$diagram = ERDiagram::load_from_request();
+		if(isset($_POST['diagram'])){
+			$this->save($diagram);
+		}
+		$this->print_form($msg, $diagram);
+	}
+
+	function edit($msg = '') {
+		if(isset($_POST['cancel'])) { $this->redirect_action('default_action'); }
+		$this->connect_or_redirect();
+		$diagram = ERDiagram::load_from_request();
+
+		if(is_null($diagram) || $diagram->id === 0){
+			$this->redirect_action('default_action');
+		}
+
+		if(isset($_POST['diagram'])){
+			$this->save($diagram);
+		}
+		$this->print_form($msg, $diagram);
+	}
+
+	protected function print_form($msg, $diagram) {
+		global $data, $misc;
+		$action = $diagram->id == 0? 'create' : 'edit';
 
 		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
-        $misc->printTrail('schema');
-		$misc->printTabs('schema','show_default');
-		$misc->printTitle(($diagram->id == 0)? $this->_('strcreateerdiagram'): $this->_('strediterdiagram'));
-        $misc->printMsg($msg);
+		$misc->printTrail('schema');
+		$misc->printTabs('schema','default_action');
+		$misc->printTitle($action == 'create' ? $this->_('strcreateerdiagram') : $this->_('strediterdiagram'));
+		$this->print_messages($msg);
 
-        //Due owner always have privileges, he is removed from select controls
+		//Due owner always have privileges, he is removed from select controls
 		$temp = array_merge($diagram->roles_with_privileges, array($diagram->owner));
-		
-        //Get users/groups wich are and are not a part of users/groups with privileges for the current diagram
-        $users1 = ERDiagram::get_users("*", $temp);
-        $users2 = ERDiagram::get_users($diagram->roles_with_privileges, $diagram->owner);
-        $groups1 = ERDiagram::get_groups("*", $diagram->roles_with_privileges);
-        $groups2 = ERDiagram::get_groups($diagram->roles_with_privileges);?>
-		
+
+		//Get users/groups wich are and are not a part of users/groups with privileges for the current diagram
+		$users1 = ERDiagram::get_users("*", $temp);
+		$users2 = ERDiagram::get_users($diagram->roles_with_privileges, $diagram->owner);
+		$groups1 = ERDiagram::get_groups("*", $diagram->roles_with_privileges);
+		$groups2 = ERDiagram::get_groups($diagram->roles_with_privileges);?>
+
 		<script src="plugins/<?php echo $this->name; ?>/js/erdiagrams.js" type="text/javascript"></script>
 		<form action="plugin.php?plugin=<?php echo $this->name; ?>" method="post" onsubmit="ERDiagram.selectAllGranted();">
 			<table style="width:100%">
@@ -275,16 +335,16 @@ class DBDesigner extends Plugin {
 						<textarea id="diagramComment" name="diagram[comment]" rows="3" cols="32"><?php echo htmlspecialchars($diagram->comment)?></textarea>
 					</td>
 				</tr>
-				
+
 				<tr>
 					<th class="data left" colspan="2" style="text-align:center;"><?php echo $this->_('strprivileges'); ?></th>
 				</tr>
 				<tr>
 					<th class="data left"><?php echo $this->_('strowner'); ?></th>
-					<td class="data1"><?php echo htmlspecialchars($diagram->ownerName); ?></td>
+					<td class="data1"><?php echo htmlspecialchars($diagram->owner_name); ?></td>
 				</tr>
-				
-				
+
+
 				<tr>
 					<th class="data left"><label for="diagramGroups"><?php echo $this->_('strgroups'); ?></label></th>
 					<td class="data1">
@@ -319,7 +379,7 @@ class DBDesigner extends Plugin {
 						</table>
 					</td>
 				</tr>
-				
+
 				<tr>
 					<th class="data left"><label for="diagramUsers"><?php echo $this->_('strusers'); ?></label></th>
 					<td class="data1">
@@ -355,66 +415,62 @@ class DBDesigner extends Plugin {
 					</td>
 				</tr>
 			</table>
-			
-			
+
+
 			<?php echo $misc->form; ?>
 			<input type="hidden" name="diagram[id]" value="<?php echo htmlspecialchars($diagram->id);?>" />
-			<input type="hidden" name="action" value="save" />
+			<input type="hidden" name="action" value="<?php echo $action; ?>" />
 			<div>
 				<input type="submit" name="create" value="<?php echo ($diagram->id == 0)? $this->_('strcreate'): $this->_('stralter'); ?>" />
 				<input type="submit" name="cancel" value="<?php echo $this->_('strcancel');?>" />
 			</div>
 		</form>
-		
+
 		<?php
 		$misc->printFooter();
 	}
-	
-	function save(){
-		if(isset($_POST['cancel'])) $this->show_default();
-		else {
-			$diagram = ERDiagram::load_from_request();
-			if(empty ($diagram->name)) $this->show_create_edit($this->_('strerdiagramneedsname'));
-			else {
-				$success_msg = ($diagram->id == 0)? $this->_('strerdiagramcreated') : $this->_('strerdiagramaltered');
-				$fail_msg = ($diagram->id == 0)? $this->_('strerdiagramcreatedbad'): $this->_('strerdiagramalteredbad');
-				
-				$status = $diagram->save();
-				if ($status == 0){
-					global $_reload_browser;
-					$_reload_browser = true;
-					$this->show_default($success_msg);
-				}else
-					$this->show_create_edit($fail_msg);
+
+	protected function save($diagram){
+		$is_valid = $diagram->validate();
+		if($diagram->id == 0) {
+			$success_msg = $this->_('strerdiagramcreated');
+			$fail_msg = $this->_('strerdiagramcreatedbad');
+		} else {
+			$success_msg = $this->_('strerdiagramaltered');
+			$fail_msg = $this->_('strerdiagramalteredbad');
+		}
+		if($is_valid && $diagram->save() === 0) {
+			$this->set_update_tree();
+			$this->add_message($success_msg);
+			$this->redirect_action('default_action');
+		} elseif(!$is_valid) {
+			foreach ($diagram->get_errors() as $error) {
+				$this->add_message($this->_($error));
 			}
+		} else {
+			$msg = $this->_($fail_msg);
 		}
 	}
-	
-	function show_diagram(){
-		global $data, $misc;
+
+	function show(){
+		global $misc;
+		$this->connect_or_redirect();
 		$diagram = ERDiagram::load_from_request();
-		
+
 		if(is_null($diagram) || $diagram->id === 0){
-			$this->show_default ();
-			exit;
+			$this->redirect_action('default_action');
 		}
 
 		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
-        $misc->printTrail('schema');
-		$misc->printTabs('schema','show_default');
+		$misc->printTrail('schema');
+		$misc->printTabs('schema','default_action');
 		$misc->printTitle($this->_('strerdiagramproperties'));
 
-        //Due owner always have privileges, he is removed from select controls
-		$temp = array_merge($diagram->roles_with_privileges, array($diagram->owner));
-		
-        //Get users/groups wich are and are not a part of users/groups with privileges for the current diagram
-        $users1 = ERDiagram::get_users("*", $temp);
-        $users2 = ERDiagram::get_users($diagram->roles_with_privileges, $diagram->owner);
-        $groups1 = ERDiagram::get_groups("*", $diagram->roles_with_privileges);
-        $groups2 = ERDiagram::get_groups($diagram->roles_with_privileges);
+		$users = ERDiagram::get_users($diagram->roles_with_privileges, $diagram->owner);
+		$groups = ERDiagram::get_groups($diagram->roles_with_privileges);
 		?>
-		
+
 		<table>
 			<tr>
 				<th class="data left">
@@ -429,7 +485,7 @@ class DBDesigner extends Plugin {
 					<?php echo htmlspecialchars($this->_('strcreated')) ?>
 				</th>
 				<td class="data1">
-					<?php echo htmlspecialchars($diagram->dateCreated) ?>
+					<?php echo htmlspecialchars($diagram->date_created) ?>
 				</td>
 			</tr>
 			<tr>
@@ -437,7 +493,7 @@ class DBDesigner extends Plugin {
 					<?php echo htmlspecialchars($this->_('strlastupdate')) ?>
 				</th>
 				<td class="data1">
-					<?php echo htmlspecialchars($diagram->lastUpdate) ?>
+					<?php echo htmlspecialchars($diagram->last_update) ?>
 				</td>
 			</tr>
 			<tr>
@@ -454,17 +510,17 @@ class DBDesigner extends Plugin {
 			</tr>
 			<tr>
 				<th class="data left"><?php echo $this->_('strowner') ?></th>
-				<td class="data1"><?php echo htmlspecialchars($diagram->ownerName); ?></td>
+				<td class="data1"><?php echo htmlspecialchars($diagram->owner_name); ?></td>
 			</tr>
 
 
 			<tr>
 				<th class="data left"><?php echo $this->_('strgroups'); ?></th>
 				<td class="data1">
-					<?php while (!$groups2->EOF){
+					<?php while (!$groups->EOF){
 						echo htmlspecialchars($groups2->fields['groname']);
-						$groups2->moveNext();
-						if(!$groups2->EOF) echo ', ';
+						$groups->moveNext();
+						if(!$groups->EOF) echo ', ';
 					}?>
 				</td>
 			</tr>
@@ -472,17 +528,17 @@ class DBDesigner extends Plugin {
 			<tr>
 				<th class="data left"><?php echo $this->_('strusers'); ?></th>
 				<td class="data1">
-					<?php while (!$users2->EOF){
-						echo htmlspecialchars($users2->fields['usename']);
-						$users2->moveNext();
-						if(!$users2->EOF) echo ', ';
+					<?php while (!$users->EOF){
+						echo htmlspecialchars($users->fields['usename']);
+						$users->moveNext();
+						if(!$users->EOF) echo ', ';
 					}?>
 				</td>
 			</tr>
 		</table>
-		
+
 		<?php
-		
+
 		$navlinks = array (
 			array (
 				'attr'=> array (
@@ -494,7 +550,7 @@ class DBDesigner extends Plugin {
 							'database' => field('database'),
 							'schema' => field('schema'),
 							'erdiagram_id' => $diagram->id,
-							'action' => 'show_create_edit'
+							'action' => 'edit'
 						)
 					)
 				),
@@ -510,7 +566,8 @@ class DBDesigner extends Plugin {
 							'database' => field('database'),
 							'schema' => field('schema'),
 							'confirm'=> 'true',
-							'action' => 'drop'
+							'action' => 'drop',
+							'erdiagram_id' => $diagram->id
 						)
 					)
 				),
@@ -551,57 +608,78 @@ class DBDesigner extends Plugin {
 			),
 		);
 		$misc->printNavLinks($navlinks, 'dbdesigner-dbdesigner');
-		
+
 		$misc->printFooter();
 	}
-	
+
 	function tree() {
-        global $misc, $data;
+		global $misc;
 
 		$diagrams = new ADORecordSet_empty();
 		$attrs = array();
-		
-        if(ERDiagram::isSettedUp()){
-            $diagrams = ERDiagram::get_list($this->conf['owned_diagrams_only']);
+		if($this->connect()) {
+			$diagrams = ERDiagram::get_list($this->conf['owned_diagrams_only']);
 
-            $reqvars = $misc->getRequestVars();
+			$reqvars = $misc->getRequestVars();
 
-            $attrs = array(
-                'text'   => field('name'),
-                'icon' => array('plugin' => $this->name, 'image' => 'ERDiagram'),
-                'toolTip'=> field('comment'),
-                'action' => url('plugin.php',
-                    array(
+			$attrs = array(
+				'text'   => field('name'),
+				'icon' => $this->icon('ERDiagram'),
+				'toolTip'=> field('comment'),
+				'action' => url('plugin.php',
+					array(
 						'plugin' => $this->name,
-                        'action' => 'show_diagram',
-                        'erdiagram_id' => field('erdiagram_id')
-                    ),
-                    $reqvars
-                ),
-            );
-        }
-        $misc->printTreeXML($diagrams, $attrs);
-        exit;
-    }
-	
-	function show_drop(){
+						'action' => 'show',
+						'erdiagram_id' => field('erdiagram_id')
+					),
+					$reqvars
+				),
+			);
+		}
+		$misc->printTree($diagrams, $attrs, $this->name);
+		exit;
+	}
+
+	function drop(){
 		global $misc;
+		if(isset($_POST['cancel'])) { $this->redirect_action('default_action'); }
+		$this->connect_or_redirect();
+		
+		if(isset($_POST['erdiagram_id'])) {
+			if(is_array($_POST['erdiagram_id'])) {
+				$id_list = $_POST['erdiagram_id'];
+			} else {
+				$id_list = array($_POST['erdiagram_id']);
+			}
+			foreach($id_list as $id) {
+				$diagram = ERDiagram::load($id);
+				if(!is_null($diagram)) {
+					$status = $diagram->drop();
+					if ($status == 0){
+						$this->set_update_tree();
+						$this->add_message(sprintf('%s: %s<br />', htmlentities($diagram->name), $this->_('strerdiagramdropped')));
+					} else {
+						$this->add_message(sprintf('%s: %s<br />', htmlentities($diagram->name), $this->_('strerdiagramdroppedbad')));
+					}
+				}
+			}
+			$this->redirect_action('default_action');
+		}
 		
 		if (empty($_REQUEST['erdiagram_id']) && empty($_REQUEST['ma'])) {
-			$this->show_default($this->_('strspecifyerdiagramtodrop'));
-            exit;
-        }
-		
-		
+			$this->add_message($this->_('strspecifyerdiagramtodrop'));
+			$this->redirect_action('default_action');
+		}
+
 		$misc->printHeader($this->_('strerdiagrams'));
 		$misc->printBody();
 		$misc->printTrail('schema');
-		$misc->printTabs('schema','show_default');
+		$misc->printTabs('schema','default_action');
 		$misc->printTitle($this->_('strdroperdiagram'));
-		
+
 		echo '<form action="plugin.php?plugin='.$this->name.'" method="post">';
-		
-		
+
+
 		if (isset($_REQUEST['ma'])) {
 			foreach($_REQUEST['ma'] as $v) {
 				$a = unserialize(htmlspecialchars_decode($v, ENT_QUOTES));
@@ -627,54 +705,24 @@ class DBDesigner extends Plugin {
 		echo '<input type="submit" name="drop" value="'.$this->_('strdrop').'" />';
 		echo '<input type="submit" name="cancel" value="'.$this->_('strcancel').'" />';
 		echo '</form>';
-		
-		
-	}
-	
-	
-	function drop(){
-		$msg = '';
-		if(!isset($_POST['cancel'])) {
-			if (is_array($_REQUEST['erdiagram_id'])) {
-                foreach($_REQUEST['erdiagram_id'] as $id) {
-                    $diagram = ERDiagram::load($id);
-					if(!is_null($diagram)) {
-						$status = $diagram->drop();
-						if ($status == 0){
-							$_reload_browser = true;
-							$msg.= sprintf('%s: %s<br />', htmlentities($diagram->name), $this->_('strerdiagramdropped'));
-						}else
-							$msg.= sprintf('%s: %s<br />', htmlentities($diagram->name), $this->_('strerdiagramdroppedbad'));
-					}
-                }
-            } else {
-				$diagram = new ERDiagram();
-				$diagram->id = $_POST['erdiagram_id'];
-                $status = $diagram->drop();
-                if ($status == 0) {
-                    $_reload_browser = true;
-					$msg = $this->_('strerdiagramdropped');
-                }
-                else
-                    $msg = $this->_('strerdiagramdroppedbad');
-            }
-		}
-		$this->show_default($msg);
+
+
 	}
 	
 	function open(){
 		global $misc, $_no_bottom_link, $data;
 		$scripts = '';
-		
+
+		$this->connect_or_redirect();
 		$diagram = ERDiagram::load_from_request();
 		if(is_null($diagram) || $diagram->id === 0) {
-			$this->show_default();
+			$this->redirect_action('default_action');
 			exit;
 		}
-		
+
 		$scripts .= '<link rel="stylesheet" type="text/css" href="plugins/' . $this->name . '/css/dbdesigner.css" />';
 		$scripts .= '<script type="text/javascript" src="plugins/' . $this->name . '/js/dbdesigner.js"></script>';
-		
+
 		ob_start(); ?>
 			<script type="text/javascript">
 				//<!--//--><![CDATA[//><!--
@@ -692,7 +740,7 @@ class DBDesigner extends Plugin {
 				DBDesigner.databaseName = "<?php echo $_GET['database']; ?>";
 				DBDesigner.pluginName = "<?php echo $this->name; ?>";
 				DBDesigner.keepSessionAliveInterval = <?php echo $this->conf['keep_session_alive_interval']; ?>;
-				
+
 				//Disable the default stylesheet
 				$(function(){
 					$('head link[rel="stylesheet"][href$="global.css"]').prop('disabled', true);
@@ -702,7 +750,7 @@ class DBDesigner extends Plugin {
 				//--><!]]>
 			</script>
 		<?php $scripts .= ob_get_clean();
-		
+
 		$_no_bottom_link = TRUE;
 		$misc->printHeader(htmlspecialchars($diagram->name), $scripts);
 		$misc->printBody();
@@ -710,41 +758,40 @@ class DBDesigner extends Plugin {
 		echo '<p id="loading-msg">'.$this->_('strloading').'</p>';
 		$misc->printFooter();
 	}
-	
+
 	function get_template_manager(){
 		global $data;
 		$template_manager = array();
 		require_once 'core/templates/index.php';
 		return $this->json_encode($template_manager);
 	}
-	
-	
+
 	function get_data_types($json = TRUE){
-        global $data;
-        $types = $data->getTypes(true, false, true);
-        $types_for_js = array();
-        foreach ($data->extraTypes as $v) {
-            $types_for_js[strtolower($v)] = 1;
-        }
-        while (!$types->EOF) {
-            $typname = $types->fields['typname'];
-            $types_for_js[$typname] = 1;
-            $types->moveNext();
-        }
-        $predefined_size_types = array_intersect($data->predefined_size_types,array_keys($types_for_js));
-        $unpredefined_size_types = array_diff(array_keys($types_for_js), $predefined_size_types);
-        foreach($predefined_size_types as $value) {
+		global $data;
+		$types = $data->getTypes(true, false, true);
+		$types_for_js = array();
+		foreach ($data->extraTypes as $v) {
+			$types_for_js[strtolower($v)] = 1;
+		}
+		while (!$types->EOF) {
+			$typname = $types->fields['typname'];
+			$types_for_js[$typname] = 1;
+			$types->moveNext();
+		}
+		$predefined_size_types = array_intersect($data->predefined_size_types,array_keys($types_for_js));
+		$unpredefined_size_types = array_diff(array_keys($types_for_js), $predefined_size_types);
+		foreach($predefined_size_types as $value) {
 			$escaped_types[] = array('typedef' => strtoupper($value), 'size_predefined' => TRUE);
-        }
-        foreach($unpredefined_size_types as $value) {
+		}
+		foreach($unpredefined_size_types as $value) {
 			$escaped_types[] = array('typedef' => strtoupper($value), 'size_predefined' => FALSE);
-        }
+		}
 		sort($escaped_types);
-		
+
 		if($json) return $this->json_encode($escaped_types);
 		return $escaped_types;
-    }
-	
+	}
+
 	function get_js_language(){
 		$lang_keys = array(
 			'stryes',
@@ -824,14 +871,15 @@ class DBDesigner extends Plugin {
 			'strunexpectedserverresponse',
 			'strservererror'
 		);
-		
+
 		$js_lang = array();
 		foreach ($lang_keys as $key){
-			$js_lang[$key] = htmlspecialchars(html_entity_decode($this->_($key), ENT_NOQUOTES, $this->_('appcharset')));
+			//$js_lang[$key] = htmlspecialchars(html_entity_decode($this->_($key), ENT_NOQUOTES, $this->_('appcharset')));
+			$js_lang[$key] = htmlspecialchars($this->_($key));
 		}
 		return $this->json_encode($js_lang);
 	}
-	
+
 	function json_encode($data){
 		if(!function_exists('json_encode')){
 			require_once 'classes/JSON.php';
@@ -840,8 +888,8 @@ class DBDesigner extends Plugin {
 		}
 		return json_encode($data);
 	}
-	
-	function jsonDecode($data){
+
+	function json_decode($data){
 		if(!function_exists('json_decode')){
 			require_once 'classes/JSON.php';
 			$value = new Services_JSON();
@@ -849,14 +897,15 @@ class DBDesigner extends Plugin {
 		}
 		return json_decode($data);
 	}
-	
-	function ajaxSave(){
+
+	function ajax_save(){
+		$this->connect();
 		$diagram_id = intval($_POST['erdiagram_id']);
 		$ret = ERDiagram::update_diagram_structure($diagram_id, $_POST['data']);
 		$this->send_ajax_response($ret);
 	}
-	
-	function ajaxExecuteSQL(){
+
+	function ajax_execute_sql(){
 		global $data;
 		ob_start();
 		$data->conn->setFetchMode(ADODB_FETCH_NUM);
@@ -866,13 +915,14 @@ class DBDesigner extends Plugin {
 		}
 		$this->send_ajax_response(ob_get_clean());
 	}
-	
-	function ajaxLoadSchemaStructure(){
+
+	function ajax_load_schema_structure(){
+		$this->connect();
 		$schema = ERDiagram::load_current_schema();
 		$this->send_ajax_response($schema);
 	}
-	
-	function ajaxKeepSessionAlive(){
+
+	function ajax_keep_session_alive(){
 		$this->send_ajax_response();
 	}
 
@@ -881,5 +931,58 @@ class DBDesigner extends Plugin {
 		$response->action = $_REQUEST['action'];
 		if(!is_null($data)){ $response->data = $data; }
 		echo $this->json_encode($response);
+	}
+
+	function redirect_action($action, $reqvars = array()) {
+		global $misc;
+		$fields = array();
+		$action = array(
+			'url' => 'plugin.php',
+			'urlvars' => array(
+				'plugin' => $this->name,
+				'action' => $action
+			)
+		);
+		$url = $misc->getActionUrl(
+			$action,
+			$reqvars
+		);
+
+		header("Location: {$url}") ;
+		exit;
+	}
+
+	protected function print_messages($msg = '') {
+		global $misc;
+		if(isset($_SESSION[$this->name.'.'.'flash_message']) && !empty($_SESSION[$this->name.'.'.'flash_message'])) {
+			foreach($_SESSION[$this->name.'.'.'flash_message'] as $m) {
+				$misc->printMsg($m);
+			}
+			unset($_SESSION[$this->name.'.'.'flash_message']);
+		}
+		$misc->printMsg($msg);
+	}
+
+	protected function add_message($msg) {
+		if(!isset($_SESSION[$this->name.'.'.'flash_message'])) {
+			$_SESSION[$this->name.'.'.'flash_message'] = array();
+		}
+		if(is_array($msg)) {
+			$_SESSION[$this->name.'.'.'flash_message'] = array_merge($_SESSION[$this->name.'.'.'flash_message'], $msg);
+		} else {
+			$_SESSION[$this->name.'.'.'flash_message'][] = $msg;
+		}
+	}
+	
+	protected function set_update_tree() {
+		$_SESSION[$this->name.'.'.'update_tree'] = TRUE;
+	}
+	
+	protected function update_tree() {
+		if(isset($_SESSION[$this->name.'.'.'update_tree'])) {
+			unset($_SESSION[$this->name.'.'.'update_tree']);
+			global $_reload_browser;
+			$_reload_browser = true;
+		}
 	}
 }

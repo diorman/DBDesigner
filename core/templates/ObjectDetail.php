@@ -89,4 +89,4 @@
 			</div>
 		</div>
 	</div>
-<?php $templateManager['ObjectDetail'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ObjectDetail'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

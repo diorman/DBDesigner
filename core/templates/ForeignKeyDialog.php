@@ -98,4 +98,4 @@
 			<input type="button" id="foreignkey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['ForeignKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ForeignKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

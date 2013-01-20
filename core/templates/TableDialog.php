@@ -23,4 +23,4 @@
 			<input type="button" id="table-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['TableDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['TableDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

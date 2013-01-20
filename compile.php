@@ -2,7 +2,7 @@
 
 if(php_sapi_name() != 'cli') { exit; }
 
-include_once 'conf/dbdesigner.config.inc.php';
+include_once 'conf/config.inc.php';
 
 
 function concat($o, $fs){
@@ -12,11 +12,12 @@ function concat($o, $fs){
 }
 
 function concatCSS($c) {
+	global $plugin_conf;
 	$o = 'css/dbdesigner.css';
 	$fs = array(
 		'css/reset.css',
-		'css/'.DBDesignerConfig::jqueryUiTheme,
-		'css/'.DBDesignerConfig::theme
+		'css/'.$plugin_conf['jquery_ui_theme'],
+		'css/'.$plugin_conf['theme']
 	);
 	if($c) {
 		echo "Compiling Stylesheet\n";
@@ -27,12 +28,13 @@ function concatCSS($c) {
 	}
 }
 function concatJS($c) {
+	global $plugin_conf;
 	$o = 'js/dbdesigner.js';
 	$fs = array(
 
 		//jquery & plugins
-		'js/'.DBDesignerConfig::jquery,
-		'js/'.DBDesignerConfig::jqueryUi,
+		'js/'.$plugin_conf['jquery'],
+		'js/'.$plugin_conf['jquery_ui'],
 		'js/jquery.json-2.4.min.js',
 		'js/jquery.multidraggable.js',
 

@@ -34,4 +34,4 @@
 		</ul>
 		<div class="clear"></div>
 	</div>
-<?php $templateManager['ToolBar'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ToolBar'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

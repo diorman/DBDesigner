@@ -8,4 +8,4 @@
 		<div class="column-container">
 		</div>
 	</div>
-<?php $templateManager['Table'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['Table'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

@@ -5,4 +5,4 @@
 			<input type="button" id="alert-dialog_ok" value="<?php echo $this->_('strok'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['AlertDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['AlertDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
