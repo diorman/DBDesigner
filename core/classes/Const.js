@@ -81,3 +81,10 @@ ForeignKeyUI.TRIANGLE_SIZE = 7;
 
 Vector.SVG = 'svg';
 Vector.VML = 'vml';
+
+Ajax.Action = {
+	SAVE: 'ajax_save',
+	EXECUTE_SQL: 'ajax_execute_sql',
+	LOAD_SCHEMA_STRUCTURE: 'ajax_load_schema_structure',
+	KEEP_SESSION_ALIVE: 'ajax_keep_session_alive'
+};

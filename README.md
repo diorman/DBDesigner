@@ -4,11 +4,9 @@ Database designer plugin for phpPgAdmin
 Installation
 ------------
 
-1. You need a copy of the phpPgAdmin version developed by Leonardo Sapiras in order to use this plugin.
-	- [tarball](https://github.com/asleonardo/phppgadmin/tarball/ppa_new_plugin_arch)
-	- [zipball](https://github.com/asleonardo/phppgadmin/zipball/ppa_new_plugin_arch)
+1. You need a copy of the latest phpPgAdmin version on github.
 
-2. Place this plugin as a subfolder of the directory plugins/ (The name "DBDesigner" must be preserved)
+2. Place this plugin as a subfolder of the directory plugins/ (The name "DBDesigner" must be preserved).
 
 3. Go to the file sql/erdiagrams-pgsql and run the sql commands to create a the database responsible for storing the ER Diagrams.
 

@@ -231,13 +231,6 @@ Ajax = {
 			);
 		}
 		DBDesigner.app.setDisabled(false);
-	},
-	
-	Action: {
-		SAVE: 'ajaxSave',
-		EXECUTE_SQL: 'ajaxExecuteSQL',
-		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure',
-		KEEP_SESSION_ALIVE: 'ajaxKeepSessionAlive'
 	}
 };
 
@@ -5231,7 +5224,14 @@ UniqueKey.Event = {
 ForeignKeyUI.TRIANGLE_SIZE = 7;
 
 Vector.SVG = 'svg';
-Vector.VML = 'vml';(function($){	
+Vector.VML = 'vml';
+
+Ajax.Action = {
+	SAVE: 'ajax_save',
+	EXECUTE_SQL: 'ajax_execute_sql',
+	LOAD_SCHEMA_STRUCTURE: 'ajax_load_schema_structure',
+	KEEP_SESSION_ALIVE: 'ajax_keep_session_alive'
+};(function($){	
 	$.partOf = function(array, subArray){
 		for(var i = 0, n = array.length; i < n; i++)
 			if($.inArray(array[i], subArray) != -1) return true;

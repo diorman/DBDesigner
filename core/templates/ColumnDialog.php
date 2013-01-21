@@ -9,7 +9,7 @@
 		<div class="field-select required">
 			<label class="label" for="column-dialog_column-type"><?php echo $this->_('strtype'); ?></label>
 			<select type="text" id="column-dialog_column-type">
-				<?php foreach($this->getDataTypes(FALSE) as $dataType): ?>
+				<?php foreach($this->get_data_types(FALSE) as $dataType): ?>
 					<option value="<?php echo htmlspecialchars($dataType['typedef']) ?>"><?php echo htmlspecialchars($dataType['typedef']) ?></option>
 				<?php endforeach; ?>
 			</select>
@@ -56,4 +56,4 @@
 			<input type="button" id="column-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['ColumnDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ColumnDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

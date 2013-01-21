@@ -94,13 +94,6 @@ Ajax = {
 			);
 		}
 		DBDesigner.app.setDisabled(false);
-	},
-	
-	Action: {
-		SAVE: 'ajaxSave',
-		EXECUTE_SQL: 'ajaxExecuteSQL',
-		LOAD_SCHEMA_STRUCTURE: 'ajaxLoadSchemaStructure',
-		KEEP_SESSION_ALIVE: 'ajaxKeepSessionAlive'
 	}
 };
 

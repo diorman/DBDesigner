@@ -6,4 +6,4 @@
 			<input type="button" id="confirm-dialog_no" value="<?php echo $this->_('strno'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['ConfirmDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ConfirmDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

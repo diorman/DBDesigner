@@ -32,4 +32,4 @@
 			<input type="button" id="uniquekey-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['UniqueKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['UniqueKeyDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>

@@ -26,4 +26,4 @@
 			<input type="button" id="reverseengineer-dialog_cancel" value="<?php echo $this->_('strcancel'); ?>" />
 		</div>
 	</div>
-<?php $templateManager['ReverseEngineerDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
+<?php $template_manager['ReverseEngineerDialog'] = str_replace(array("\n", "\t"), '', ob_get_clean()); ?>
