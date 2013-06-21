@@ -1,5 +1,5 @@
-//= require jquery-1.8.3.min.js
-//= require jquery-ui-1.9.2.custom.min.js
+//= require jquery-1.9.1.js
+//= require jquery-ui-1.10.3.custom.js
 //= require jquery.json-2.4
 //= require jquery.multidraggable
 //= require Message

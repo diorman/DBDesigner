@@ -286,7 +286,7 @@ ForeignKeyDialogUI.prototype.open = function(title){
 		$referencedTable.trigger('change');
 		controller.setSelectedColumns(foreignKeyModel.getColumns());
 		this.updateLocalColumns();
-		dom.find('div.tabs').tabs('select', 0);
+		dom.find('div.tabs').tabs('option', 'active', 0);
 		dom.dialog('open').dialog('option', 'title', title);
 		this.focus();
 	}

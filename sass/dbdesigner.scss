@@ -1,5 +1,5 @@
 @import "compass/reset";
-@import "jquery-ui-1.9.2.custom.min";
+@import "jquery-ui-1.10.3.custom";
 
 body {
     width: 100%;
@@ -376,9 +376,6 @@ div.reverseengineer-dialog.show-output .hide-output,
 div.fordwardengineer-dialog.show-output .hide-output {display: none;}
 
 svg {position: absolute; top: 0; left: 0;}
-
-/* Overlay */
-div.ui-widget-overlay { z-index: 2000; }
 
 /* Tooltip */
 div.ui-tooltip { z-index: 100; }
