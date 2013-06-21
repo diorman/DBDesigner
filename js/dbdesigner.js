@@ -23481,7 +23481,7 @@ DBDesigner.prototype.alterTable = function(event){
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('body')
 		.tooltip({track: true})
-		.on('hover', 'a.button', function(event){ 
+		.on('mouseenter mouseleave', 'a.button', function(event){ 
 			var $this = $(this);
 			if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
 		});
@@ -23922,13 +23922,13 @@ CanvasUI.prototype.bindEvents = function() {
 			if(column instanceof Column) ColumnUI.prototype.onDblClick.call(column.getUI(), event);
 		})
 		
-		.on('hover', 'div.db-column', function(event){ 
+		.on('mouseenter mouseleave', 'div.db-column', function(event){ 
 			var $this = $(this);
 			$this.toggleClass('db-column-hover'); 
 		})
 		
 		//db foreign keys
-		.on('hover', 'polyline', function(event){ 
+		.on('mouseenter mouseleave', 'polyline', function(event){ 
 			var foreignKey = $(this).data('dbobject');
 			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorHover.call(foreignKey.getUI(), event);
 		})
@@ -24240,7 +24240,7 @@ ObjectDetailUI.prototype.bindEvents = function() {
 		click: $.proxy(this.panelStateChange, this)
 	});
 	dom.find('input[type="button"]').click($.proxy(this.onInputButtonClick, this));
-	dom.on('hover', 'table.data-mgr tbody tr', this.onTrHover);
+	dom.on('mouseenter mouseleave', 'table.data-mgr tbody tr', this.onTrHover);
 	dom.on('click', 'a.action-btn', $.proxy(this.onActionButtonClick, this));
 };
 
