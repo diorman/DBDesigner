@@ -1,0 +1,134 @@
+div.object-detail {
+    position:absolute;
+    bottom: 0;
+    height: 250px;
+    width: 100%;
+    background-color: #FFFFFF;
+    overflow: hidden;
+
+	div.title-bar {
+		height: 25px;
+		padding: 0px 5px;
+		text-align: center;
+		background-color: #F3F3E9;
+		position: relative;
+
+		span.title {
+			padding: 0px 10px;
+			color: #336699;
+			line-height: 25px;
+			white-space: nowrap;
+		}
+
+		a.collapse-button {
+			display:block;
+			position: absolute;
+			top: 3px;
+			right: 10px;
+			width: 18px;
+			height: 18px;
+		
+			&:active {top: 4px;}
+			span {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				margin-top: -8px;
+				margin-left: -8px;
+			}
+		}
+	}
+
+	div.buttons-placeholder {
+		margin: 2px 0;
+		text-align: right;
+	}
+
+	div.right-container {
+		float:left;
+		background-color: #F3F3E9;
+		height: 100%;
+		width: 15%;
+	}
+
+	div.data-table-container {
+		float: left;
+		width: 100%;
+		overflow: auto;
+		height: 167px;
+	}
+
+	table { width: 100%; border-collapse: collapse; }
+
+	tr {
+		height: 18px;
+		line-height: 18px;
+	}
+
+	table.data-mgr {
+		tbody tr {cursor: pointer;}
+
+		tr {
+			&.hover { background-color: #F3F3E9; }
+			&.selected { background-color: #336699; color: #fff; }
+		}
+
+		th {
+			font-weight: bold;
+			background-color: #E6E6CC;
+			&.check { width: 30px; }
+		}
+
+		a.action-btn {
+			float:left;
+			span.ui-icon { margin-left: 5px; }
+		}
+	}
+
+	td, th {
+		border: 2px solid #E6E6CC;
+		text-align: center;
+	}
+
+	td span.ui-icon { margin-left: 7px; }
+
+}
+div.object-detail-collapsed { height: 25px }
+
+div.object-detail-tabs {
+	height: 100%;
+
+	div.ui-tabs-panel {
+		height: 190px;
+		padding: 2px 0 0 0;
+	}
+}
+
+#od-tab-properties dt {
+	font-weight: bold;
+	background-color: #E6E6CC;
+	width: 200px;
+	text-align: center;
+	float: left;
+	margin-right: 10px;
+
+	div.buttons-placeholder {
+		margin-left: 210px;
+		margin-top: 20px;
+		text-align: left;
+	}
+
+	dd { clear: right; }
+
+	dt, dd {
+		height: 20px;
+		line-height: 20px;
+		margin-bottom: 2px;
+	}
+}
+
+#od-tab-columns th.actions { width: 90px; }
+
+#od-tab-uniquekeys th.actions, #od-tab-foreignkeys th.actions { width: 47px; }
+
+#od-tab-foreignkeys th.fixed-prop { width: 95px; }

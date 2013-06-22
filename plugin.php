@@ -42,6 +42,23 @@ class DBDesigner extends Plugin {
 	}
 
 	/**
+	 * Misc's printHeader method wrapper. It gets rid of unwanted tags in header.
+	 * @param $title The title of the page
+	 * @param $script script tag
+	 */
+	function printHeader($title = '', $script = null, $frameset = false) {
+		global $misc;
+		ob_start();
+		$misc->printHeader($title, $script, $frameset);
+		$header = ob_get_clean();
+		// Remove Global CSS
+		$header = str_replace('<link rel="stylesheet" href="themes/default/global.css" type="text/css" />', '', $header);
+		// Remove jQuery
+		$header = str_replace('<script type="text/javascript" src="libraries/js/jquery.js"></script>', '', $header);
+		echo $header;
+	}
+
+	/**
 	 * Checks that the plugin's database has been created, otherwise it prints a message
 	 * @global type $misc
 	 */
@@ -752,7 +769,7 @@ class DBDesigner extends Plugin {
 		<?php $scripts .= ob_get_clean();
 
 		$_no_bottom_link = TRUE;
-		$misc->printHeader(htmlspecialchars($diagram->name), $scripts);
+		$this->printHeader(htmlspecialchars($diagram->name), $scripts);
 		$misc->printBody();
 		echo "<noscript>{$this->_('strerdiagramnoscript')}</noscript>";
 		echo '<p id="loading-msg">'.$this->_('strloading').'</p>';

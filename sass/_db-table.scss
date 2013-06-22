@@ -1,0 +1,93 @@
+div.canvas div.db-table {
+	border: 2px solid #E6E6CC;
+    cursor: pointer;
+    position: absolute;
+    z-index: 20;
+    padding: 0px;
+    margin: 0px;
+
+	div.header {
+		position: relative;
+		height: 25px;
+		padding: 0px 5px;
+		text-align: center;
+		background-color: #F3F3E9;
+
+		span.title {
+			padding: 0px 10px;
+			color: #336699;
+			line-height: 25px;
+			white-space: nowrap;
+		}
+
+		a.button {
+			display:block;
+			position: relative;
+			float: right;
+			width: 18px;
+			height: 18px;
+			margin: 2px 1px 0px;
+			visibility: hidden;
+
+			&:active { top: 1px; }
+
+			span {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				margin-top: -8px;
+				margin-left: -8px;
+			}
+		}
+	}
+
+	&.ui-selected, &.ui-selecting{
+		border-color: #336699;
+		z-index: 30;
+		@include box-shadow(4px 4px 8px #888888);
+		/* filter: progid:DXImageTransform.Microsoft.Shadow(Strength=5, Direction=135, Color='#888888'); /* IE 6, IE 7 */
+		-ms-filter: progid:DXImageTransform.Microsoft.Shadow(Strength=5, Direction=135, Color='#888888'); /* IE 8 */
+	}
+
+	&.ui-selected div.header a.button { visibility: visible; }
+
+	&.db-table-collapsed div.column-container { display: none; }
+
+	div.column-container {
+		padding: 3px;
+		background-color: #FFFFFF;
+
+		div.db-column {
+			border-bottom: 1px solid #fff;
+
+			span.definition {
+				color: #000000;
+				line-height: 16px;
+				height: 16px;
+				white-space: nowrap;
+				text-decoration: none;
+				padding: 0px 10px;
+			}
+			&.notnull span.definition { text-decoration: underline; }
+
+			span.keys {
+				background-repeat: no-repeat;
+				display: block;
+				overflow: hidden;
+				text-indent: -99999px;
+				width: 16px;
+				height: 16px;
+				float: left;
+			}
+
+			span.pk { @include icons-sprite(PrimaryKey); }
+			span.fk { @include icons-sprite(ForeignKey); }
+			span.uk { @include icons-sprite(UniqueConstraint); }
+			span.pk-fk { @include icons-sprite(PrimaryKey_ForeignKey); }
+			span.uk-fk { @include icons-sprite(UniqueConstraint_ForeignKey); }
+
+			&.db-column-hover, &.db-column-highlight { background-color: #EFEFEF; }
+			&.db-column-highlight span.definition { color: #E59700; }
+		}
+	}
+}

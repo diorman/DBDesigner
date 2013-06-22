@@ -229,7 +229,7 @@ ObjectDetailUI.prototype.bindEvents = function() {
 		click: $.proxy(this.panelStateChange, this)
 	});
 	dom.find('input[type="button"]').click($.proxy(this.onInputButtonClick, this));
-	dom.on('hover', 'table.data-mgr tbody tr', this.onTrHover);
+	dom.on('mouseenter mouseleave', 'table.data-mgr tbody tr', this.onTrHover);
 	dom.on('click', 'a.action-btn', $.proxy(this.onActionButtonClick, this));
 };
 

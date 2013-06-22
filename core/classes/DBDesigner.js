@@ -247,7 +247,7 @@ DBDesigner.prototype.alterTable = function(event){
 DBDesigner.prototype.setGlobalUIBehavior = function(){
 	$('body')
 		.tooltip({track: true})
-		.on('hover', 'a.button', function(event){ 
+		.on('mouseenter mouseleave', 'a.button', function(event){ 
 			var $this = $(this);
 			if(!$this.hasClass('ui-state-disabled')) $this.toggleClass('ui-state-hover'); 
 		});

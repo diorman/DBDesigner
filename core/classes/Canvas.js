@@ -171,13 +171,13 @@ CanvasUI.prototype.bindEvents = function() {
 			if(column instanceof Column) ColumnUI.prototype.onDblClick.call(column.getUI(), event);
 		})
 		
-		.on('hover', 'div.db-column', function(event){ 
+		.on('mouseenter mouseleave', 'div.db-column', function(event){ 
 			var $this = $(this);
 			$this.toggleClass('db-column-hover'); 
 		})
 		
 		//db foreign keys
-		.on('hover', 'polyline', function(event){ 
+		.on('mouseenter mouseleave', 'polyline', function(event){ 
 			var foreignKey = $(this).data('dbobject');
 			if(foreignKey instanceof ForeignKey) ForeignKeyUI.prototype.onConnectorHover.call(foreignKey.getUI(), event);
 		})

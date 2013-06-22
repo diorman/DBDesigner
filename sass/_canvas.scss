@@ -1,0 +1,28 @@
+div.canvas {
+    position: absolute;
+    width: 100%;
+    top: 36px;
+    bottom: 25px;
+    background-color: #FFFFFF;
+    border-top: 1px solid #E6E6CC;
+    overflow: scroll;
+	@include user-select(none);
+	cursor: default;
+
+	div.inner-canvas {
+		/*position:absolute;
+		left: 0px;
+		right: 15px;/*space for some browser's scroll bar*/
+		/*top:0px;
+		bottom:15px;/*space for some browser's scroll bar*/
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	svg {position: absolute; top: 0; left: 0;}
+
+	&.canvas-collapsed { bottom: 250px; }
+}

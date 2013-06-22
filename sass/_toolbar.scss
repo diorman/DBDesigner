@@ -1,0 +1,36 @@
+div.tool-bar {
+    padding: 5px;
+    background-color: #F3F3E9;
+	@include user-select(none);
+
+	li {
+		float:left;
+		margin-right: 5px;
+	}
+
+	a {
+		padding: 4px;
+		display: block;
+
+		&.ui-state-default {position: relative;}
+		&:active { top: 1px; }
+		&.add-table span { @include icons-sprite(Table); }
+		&.align-tables span { @include icons-sprite(Tables); }
+		&.add-column span { @include icons-sprite(Column); }
+		&.add-foreignkey span { @include icons-sprite(ForeignKey); }
+		&.add-uniquekey span { @include icons-sprite(UniqueConstraint); }
+		&.save span { @include icons-sprite(Save); }
+		&.drop-table span { @include icons-sprite(Erase);}
+		&.forward-engineer span { @include icons-sprite(ForwardEngineer);}
+		&.reverse-engineer span { @include icons-sprite(ReverseEngineer);}
+		&.select span { @include icons-sprite(Arrow); }
+	}
+
+	span {
+		text-indent: -99999px;
+		display: block;
+		width: 16px;
+		height: 16px;
+		overflow: hidden;
+	}
+}

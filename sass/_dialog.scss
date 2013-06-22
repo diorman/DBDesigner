@@ -1,0 +1,145 @@
+div.ui-dialog-content {
+	.label {
+		display: block;
+		float: left;
+		background-color: #E6E6CC;
+		width: 200px;
+		text-align: center;
+		font-weight: bold;
+		line-height: 20px;
+		height: 20px;
+		margin-right: 4px;
+	}
+
+	div.field-check, div.field-select  {
+		clear:both;
+		margin-bottom: 2px;
+	}
+
+	div.field-text input, div.field-textarea textarea, div.field-select select {
+		width: 200px;
+		height: 14px;
+		padding: 2px;
+		border: 1px solid #E6E6CC;
+	}
+
+	div.field-select select { width: 206px; height: 20px; }
+
+	div.field-textarea {
+		textarea {
+			resize: none;
+			height: 39px;
+		}
+
+		.label {
+			height: 45px;
+			line-height: 45px;
+		}
+	}
+
+	div.field-multiselection {
+		margin-bottom: 2px; clear: both;
+
+		.label{
+			display: block;
+			background-color: #E6E6CC;
+			width: 100%;
+			text-align: center;
+			font-weight: bold;
+			line-height: 20px;
+			height: 20px;
+		}
+
+		select { width: 100%; border: 1px solid #E6E6CC; }
+
+		div.layout-select {
+			float:left;
+			width: 165px;
+		}
+
+		div.layout-buttons {
+			float:left;
+			width: 80px;
+			text-align: center;
+			padding-top: 50px;
+		}
+	}
+
+	div.buttons-placeholder {
+		text-align: center; padding: 10px 0px;
+
+		input{
+			min-width: 80px;
+			margin-right: 5px;
+		}
+	}
+
+	ul.error-list {
+		color: #CD0A0A;
+		margin: 10px 0px;
+
+		li {
+			list-style-type: disc;
+			list-style-position: inside;
+		}
+	}
+
+	div.required .label { text-decoration: underline; }
+}
+
+div.foreignkey-dialog {
+	table {
+		border-collapse: collapse;
+		margin-bottom: 15px;
+
+		tr {
+			height: 20px;
+			line-height: 20px;
+			text-align: center;
+		}
+
+		th {
+			background-color: #E6E6CC;
+			width: 184px;
+			font-weight: bold;
+			&.remove { width: 38px; }
+		}
+
+		th, td { border: 1px solid #E6E6CC; }
+	}
+}
+
+div.fordwardengineer-dialog {
+	div.field-textarea textarea {
+		width: 410px;
+		height: 200px;
+	}
+
+	div.output-text { 
+		background-color: #E6E6CC;
+		width: 410px;
+		height: 270px;
+		padding: 2px 3px;
+		overflow: auto;
+	}
+}
+
+div.reverseengineer-dialog {
+	div.output-text { 
+		background-color: #E6E6CC;
+		width: 404px;
+		height: 233px;
+		padding: 2px 3px;
+		overflow: auto;
+		ul { list-style: disc inside; }
+	}
+}
+
+div.fordwardengineer-dialog, div.reverseengineer-dialog { 
+	.show-output { display: none; }
+	&.show-output {
+		input.show-output {display: inline;}
+		div.show-output {display: block;}
+		.hide-output { display: none; }
+	}
+}
