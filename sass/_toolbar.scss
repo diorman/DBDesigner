@@ -1,0 +1,36 @@
+div.tool-bar {
+    padding: 5px;
+    background-color: #F3F3E9;
+	@include user-select(none);
+
+	li {
+		float:left;
+		margin-right: 5px;
+	}
+
+	a {
+		padding: 4px;
+		display: block;
+
+		&.ui-state-default {position: relative;}
+		&:active { top: 1px; }
+		&.add-table span { background-image: url(../../../images/themes/default/Table.png); }
+		&.align-tables span { background-image: url(../../../images/themes/default/Tables.png); }
+		&.add-column span { background-image: url(../../../images/themes/default/Column.png); }
+		&.add-foreignkey span { background-image: url(../../../images/themes/default/ForeignKey.png); }
+		&.add-uniquekey span { background-image: url(../../../images/themes/default/UniqueConstraint.png); }
+		&.save span { background-image: url(../../../images/themes/default/Save.png); }
+		&.drop-table span { background-image: url(../../../images/themes/default/Erase.png);}
+		&.forward-engineer span { background-image: url(../images/ForwardEngineer.png);}
+		&.reverse-engineer span { background-image: url(../images/ReverseEngineer.png);}
+		&.select span { background-image: url(../images/Arrow.png); }
+	}
+
+	span {
+		background-repeat: no-repeat;
+		text-indent: -99999px;
+		display: block;
+		width: 16px;
+		height: 16px;
+	}
+}
