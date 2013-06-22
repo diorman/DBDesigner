@@ -27,7 +27,7 @@ namespace :css do
 
 		args.with_defaults(pmts: '')
 
-		params = ['compile', '--css-dir', 'css', '--sass-dir', 'sass', '--images-dir', 'images']
+		params = ['compile', '--css-dir', 'css', '--sass-dir', 'sass', '--images-dir', 'images', '--relative-assets']
 
 		params.push('--output-style', 'compressed') if args[:pmts].index('c')
 

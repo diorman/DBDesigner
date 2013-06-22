@@ -14,23 +14,23 @@ div.tool-bar {
 
 		&.ui-state-default {position: relative;}
 		&:active { top: 1px; }
-		&.add-table span { background-image: url(../../../images/themes/default/Table.png); }
-		&.align-tables span { background-image: url(../../../images/themes/default/Tables.png); }
-		&.add-column span { background-image: url(../../../images/themes/default/Column.png); }
-		&.add-foreignkey span { background-image: url(../../../images/themes/default/ForeignKey.png); }
-		&.add-uniquekey span { background-image: url(../../../images/themes/default/UniqueConstraint.png); }
-		&.save span { background-image: url(../../../images/themes/default/Save.png); }
-		&.drop-table span { background-image: url(../../../images/themes/default/Erase.png);}
-		&.forward-engineer span { background-image: url(../images/ForwardEngineer.png);}
-		&.reverse-engineer span { background-image: url(../images/ReverseEngineer.png);}
-		&.select span { background-image: url(../images/Arrow.png); }
+		&.add-table span { @include icons-sprite(Table); }
+		&.align-tables span { @include icons-sprite(Tables); }
+		&.add-column span { @include icons-sprite(Column); }
+		&.add-foreignkey span { @include icons-sprite(ForeignKey); }
+		&.add-uniquekey span { @include icons-sprite(UniqueConstraint); }
+		&.save span { @include icons-sprite(Save); }
+		&.drop-table span { @include icons-sprite(Erase);}
+		&.forward-engineer span { @include icons-sprite(ForwardEngineer);}
+		&.reverse-engineer span { @include icons-sprite(ReverseEngineer);}
+		&.select span { @include icons-sprite(Arrow); }
 	}
 
 	span {
-		background-repeat: no-repeat;
 		text-indent: -99999px;
 		display: block;
 		width: 16px;
 		height: 16px;
+		overflow: hidden;
 	}
 }

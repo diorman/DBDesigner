@@ -80,11 +80,11 @@ div.canvas div.db-table {
 				float: left;
 			}
 
-			span.pk { background-image: url(../../../images/themes/default/PrimaryKey.png); }
-			span.fk { background-image: url(../../../images/themes/default/ForeignKey.png); }
-			span.uk { background-image: url(../../../images/themes/default/UniqueConstraint.png); }
-			span.pk-fk { background-image: url(../images/PrimaryKey_ForeignKey.png); }
-			span.uk-fk { background-image: url(../images/UniqueConstraint_ForeignKey.png); }
+			span.pk { @include icons-sprite(PrimaryKey); }
+			span.fk { @include icons-sprite(ForeignKey); }
+			span.uk { @include icons-sprite(UniqueConstraint); }
+			span.pk-fk { @include icons-sprite(PrimaryKey_ForeignKey); }
+			span.uk-fk { @include icons-sprite(UniqueConstraint_ForeignKey); }
 
 			&.db-column-hover, &.db-column-highlight { background-color: #EFEFEF; }
 			&.db-column-highlight span.definition { color: #E59700; }
