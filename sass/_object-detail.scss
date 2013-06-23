@@ -104,13 +104,15 @@ div.object-detail-tabs {
 	}
 }
 
-#od-tab-properties dt {
-	font-weight: bold;
-	background-color: #E6E6CC;
-	width: 200px;
-	text-align: center;
-	float: left;
-	margin-right: 10px;
+#od-tab-properties {
+	dt {
+		font-weight: bold;
+		background-color: #E6E6CC;
+		width: 200px;
+		text-align: center;
+		float: left;
+		margin-right: 10px;
+	}
 
 	div.buttons-placeholder {
 		margin-left: 210px;
