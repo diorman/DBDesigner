@@ -36,3 +36,9 @@
 //= require ConfirmDialog
 //= require ForwardEngineerDialog
 //= require ReverseEngineerDialog
+
+
+$(function(){
+	DBDesigner.init();
+	$('#loading-msg').remove();
+});

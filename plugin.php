@@ -757,13 +757,6 @@ class DBDesigner extends Plugin {
 				DBDesigner.databaseName = "<?php echo $_GET['database']; ?>";
 				DBDesigner.pluginName = "<?php echo $this->name; ?>";
 				DBDesigner.keepSessionAliveInterval = <?php echo $this->conf['keep_session_alive_interval']; ?>;
-
-				//Disable the default stylesheet
-				$(function(){
-					$('head link[rel="stylesheet"][href$="global.css"]').prop('disabled', true);
-					DBDesigner.init();
-					$('#loading-msg').remove();
-				});
 				//--><!]]>
 			</script>
 		<?php $scripts .= ob_get_clean();
