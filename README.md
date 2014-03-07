@@ -12,4 +12,4 @@ Installation
 
 4. Enable the plugin by adding and entry in the phpPgAdmin's file config/config.php.inc. It should look something like this: $conf['plugins'] = array('DBDesigner');
 
-5. Navigate to the schema where you want to create the ER Diagram and your done!.
+5. Navigate to the schema where you want to create the ER Diagram and you're done!.
