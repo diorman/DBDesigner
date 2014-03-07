@@ -11,7 +11,7 @@ class DBDesigner extends Plugin {
 	protected $name = 'DBDesigner';
 	protected $lang;
 	protected $conf = array();
-	protected $version = '1.1-BETA-2';
+	protected $version = '1.0.0';
 
 	/**
 	 * Constructor
