@@ -33,14 +33,12 @@
 	$plugin_lang['strinvalididentifier'] = 'Invalid indentifier';
 	$plugin_lang['strforeignkeys'] = 'Foreign Keys';
 	$plugin_lang['strlocal'] = 'Local';
-	$plugin_lang['strreferenced'] = 'Referenced';
 	$plugin_lang['strreferencing'] = 'Referencing';
 	$plugin_lang['strlocalcolumn'] = 'Local column';
 	$plugin_lang['strlocalcolumns'] = 'Local columns';
 	$plugin_lang['strconfdroptables'] = 'Are you sure you want to drop the %d selected tables?';
 	$plugin_lang['strdropobject'] = 'Drop object';
 	$plugin_lang['strsavingchanges'] = 'Saving changes';
-	$plugin_lang['strloadingschema'] = 'Loading schema';
 	$plugin_lang['strloggingout'] = 'Logging out';
 	$plugin_lang['strajaxerrormsg'] = 'There\'s an error with the server';
 	$plugin_lang['strforwardengineer'] = 'Forward engineer';
@@ -51,7 +49,7 @@
 	$plugin_lang['strconstraintneedsname'] = 'You must give a name for your constraint.';
 	$plugin_lang['strbadinteger'] = 'Invalid input syntax for integer';
 	$plugin_lang['strbadnumericlength'] = 'Scale %d must be between 0 and precision %d';
-	$plugin_lang['strnographics'] = 'Your brownser do not support graphics';
+	$plugin_lang['strnographics'] = 'Your browser do not support graphics';
 	$plugin_lang['strmoveup'] = 'Move up';
 	$plugin_lang['strmovedown'] = 'Move down';
 	$plugin_lang['stralteruniq'] = 'Alter unique key';
