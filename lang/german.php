@@ -67,7 +67,7 @@
 	$plugin_lang['strloadingschema'] = 'Lade Schema...';
 	$plugin_lang['strtablesinschema'] = 'Tabellen innerhalb Schema';
 	$plugin_lang['strselectedtables'] = 'Ausgewählte Tabellen';
-	$plugin_lang['strreverseengineerconflictmessage'] = 'Die folgenden Tabellen stehen im Konflikt mit bereits existierenden Tabellen:';
+	$plugin_lang['strreverseengineerconflictmessage'] = 'Die folgenden Tabellen stehen in Konflikt mit bereits existierenden Tabellen:';
 	$plugin_lang['stryouhavenotselectedanytable'] = 'Sie haben keine Tabelle ausgewählt';
 	$plugin_lang['strservererror'] = 'Server-Fehler';
 	$plugin_lang['strunexpectedserverresponse'] = 'Unerwartete Server-Meldung. Ihre Sitzung könnte abgelaufen sein';
