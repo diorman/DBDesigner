@@ -17,7 +17,7 @@
 	$plugin_lang['strerdiagramproperties'] = 'ER-Diagramm Eigenschaften';
 	$plugin_lang['strspecifyerdiagramtodrop'] = 'Sie müssen mindestens ein ER-Diagramm zum Löschen auswählen.';
 	$plugin_lang['strdroperdiagram'] = 'ER-Diagramm löschen';
-	$plugin_lang['strconfdroperdiagram'] = 'Sidn Sie sicher, dass Sie das ER-Diagram "%s" löschen wollen?';
+	$plugin_lang['strconfdroperdiagram'] = 'Sind Sie sicher, dass Sie das ER-Diagram "%s" löschen wollen?';
 	$plugin_lang['strerdiagramdropped'] = 'ER-Diagram dropped.';
 	$plugin_lang['strerdiagramdroppedbad'] = 'ER-Diagram drop failed.';
 	$plugin_lang['strerdiagramnoscript'] = 'Ihr Browser unterstützt kein JavaScript';
