@@ -53,7 +53,7 @@
 	$plugin_lang['strmoveup'] = 'Nach oben';
 	$plugin_lang['strmovedown'] = 'Nach unten';
 	$plugin_lang['stralteruniq'] = 'Alter unique key';
-	$plugin_lang['struniquekeys'] = 'Unique Keys';
+	$plugin_lang['struniquekeys'] = 'Eindeutige Schlüssel';
 	$plugin_lang['strsaveandnew'] = 'Speichern & Neu';
 	$plugin_lang['strsaving'] = 'Speicherung läuft...';
 	$plugin_lang['strerdiagramsaved'] = 'ER-Diagramm gespeichert.';
