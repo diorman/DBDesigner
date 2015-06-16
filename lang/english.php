@@ -30,7 +30,7 @@
 	$plugin_lang['strtableexists'] = 'A table with this name exists already';
 	$plugin_lang['strcolexists'] = 'A column with this name exists already';
 	$plugin_lang['strsort'] = 'Sort';
-	$plugin_lang['strinvalididentifier'] = 'Invalid indentifier';
+	$plugin_lang['strinvalididentifier'] = 'Invalid identifier';
 	$plugin_lang['strforeignkeys'] = 'Foreign Keys';
 	$plugin_lang['strlocal'] = 'Local';
 	$plugin_lang['strreferencing'] = 'Referencing';
@@ -49,7 +49,7 @@
 	$plugin_lang['strconstraintneedsname'] = 'You must give a name for your constraint.';
 	$plugin_lang['strbadinteger'] = 'Invalid input syntax for integer';
 	$plugin_lang['strbadnumericlength'] = 'Scale %d must be between 0 and precision %d';
-	$plugin_lang['strnographics'] = 'Your browser do not support graphics';
+	$plugin_lang['strnographics'] = 'Your browser does not support graphics';
 	$plugin_lang['strmoveup'] = 'Move up';
 	$plugin_lang['strmovedown'] = 'Move down';
 	$plugin_lang['stralteruniq'] = 'Alter unique key';
